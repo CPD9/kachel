@@ -1,4 +1,4 @@
-import { kachelAt, type Kachel } from "@kachel/economics/model";
+import { kachelAt, type Kachel, type ServerSize } from "@kachel/economics/model";
 
 /**
  * What Kachel servers could do in a building, scaled from the scheduler's Basel reference house
@@ -13,8 +13,12 @@ import { kachelAt, type Kachel } from "@kachel/economics/model";
 export type KachelEstimate = Kachel;
 
 /** Null when the building needs too little heat for even one server. */
-export function kachelEstimate(heatKwh: number, chfPerKwh?: number): KachelEstimate | null {
-  return kachelAt(heatKwh, chfPerKwh);
+export function kachelEstimate(
+  heatKwh: number,
+  chfPerKwh?: number,
+  size?: ServerSize,
+): KachelEstimate | null {
+  return kachelAt(heatKwh, chfPerKwh, size);
 }
 
 /** "12,300 CHF" or "−4,770 CHF", to three significant figures. */

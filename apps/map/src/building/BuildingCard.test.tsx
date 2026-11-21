@@ -90,6 +90,17 @@ describe("building card", () => {
     expect(screen.getByText("about 44")).toBeTruthy();
   });
 
+  it("lets the server size choose how many servers the heat needs", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    const size = screen.getByRole("combobox", { name: /Server size/ });
+    // 386,067 kWh needs 74.2 kW, as the reference house's 6 kW for 31,231 kWh.
+    fireEvent.change(size, { target: { value: "2kw" } });
+    expect(screen.getByText("Servers needed, 2 kW each")).toBeTruthy();
+    expect(screen.getByText("about 37")).toBeTruthy();
+    fireEvent.change(size, { target: { value: "gpu" } });
+    expect(screen.getByText("about 106")).toBeTruthy();
+  });
+
   it("prices the servers' electricity at the municipality's tariff", () => {
     render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
     // Basel: IWB's 2027 H4 tariff, saved from ElCom, until the live answer comes.

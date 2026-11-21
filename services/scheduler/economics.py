@@ -37,12 +37,18 @@ def net(k, cfg):
 CASE_COLORS = {"low": GLACIER, "mid": EMBER, "high": SLATE}
 
 
-def hardware(cfg, case=None, n=N):
-    """Hardware costs per house for one case in config.json: what is paid up front, upkeep, and the yearly annuity."""
+def hardware(cfg, case=None, n=N, kw=1.0, gpu=False):
+    """Hardware costs per house for one case in config.json: what is paid up front, upkeep, and the yearly annuity.
+
+    n servers of kw each (#159): a server costs server_chf per kW, or its full server_chf for the GPU
+    workstation (gpu=True); each needs its own water loop; fitting and upkeep follow the kW installed,
+    against the reference house's N kW."""
     hw = cfg["hardware"]; h = hw["cases"][case or hw["case_for_results"]]
-    capex = (n * (h["server_chf"] + h["cooling_kit_chf"]) + h["fitter_hours_per_house"] * h["fitter_chf_per_hour"]
-             + h["electrician_hours_per_house"] * h["electrician_chf_per_hour"])
-    upkeep = h["service_visits_per_year"] * (h["service_hours_per_visit"] * hw["service_chf_per_hour"] + hw["service_callout_chf"])
+    unit = h["server_chf"] if gpu else h["server_chf"] * kw
+    per_kw = n * kw / N
+    capex = (n * (unit + h["cooling_kit_chf"]) + per_kw * (h["fitter_hours_per_house"] * h["fitter_chf_per_hour"]
+             + h["electrician_hours_per_house"] * h["electrician_chf_per_hour"]))
+    upkeep = per_kw * h["service_visits_per_year"] * (h["service_hours_per_visit"] * hw["service_chf_per_hour"] + hw["service_callout_chf"])
     r, life = h["discount_rate"], h["lifetime_years"]
     annuity = r / (1 - (1 + r) ** -life)
     return dict(capex=capex, upkeep=upkeep, r=r, life=life, annuity=annuity, per_year=capex * annuity + upkeep)

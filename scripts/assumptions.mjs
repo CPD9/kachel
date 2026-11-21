@@ -72,6 +72,18 @@ export const VALUES = {
   "server.power_kw": ["Server power", "kW", show.plain, BRIEF],
   "server.heat_recovery": ["Share of server power recovered as heat", "", show.pct, BRIEF],
   "server.idle_power_kw": ["Power a paused server draws", "kW", show.plain, GUESS],
+  "server.sizes_kw": [
+    "Server sizes the map's card offers; price, flows and heat per kW",
+    "kW",
+    (v) => v.join(", "),
+    GUESS,
+  ],
+  "server.gpu_workstation_kw": [
+    "GPU workstation's power, at its case's full price",
+    "kW",
+    show.plain,
+    `${VRLA}: 600 W GPU; the rest of the machine ${GUESS}`,
+  ],
   "prices.electricity_chf_per_kwh": ["Electricity price", "CHF/kWh", show.plain, ELCOM],
   "prices.heat_pump_cop": [
     "Heat pump efficiency (COP) the server heat replaces",

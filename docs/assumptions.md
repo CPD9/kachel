@@ -55,13 +55,15 @@ Note in config.json: DigitalHeat case brief (reference house). hot_water_shape=f
 
 ## Server
 
-| What                                    | Key             | Value | Unit | Source                     |
-| --------------------------------------- | --------------- | ----- | ---- | -------------------------- |
-| Server power                            | `power_kw`      | 1     | kW   | [1] DigitalHeat case brief |
-| Share of server power recovered as heat | `heat_recovery` | 80 %  |      | [1] DigitalHeat case brief |
-| Power a paused server draws             | `idle_power_kw` | 0     | kW   | our guess                  |
+| What                                                             | Key                  | Value     | Unit | Source                                                                        |
+| ---------------------------------------------------------------- | -------------------- | --------- | ---- | ----------------------------------------------------------------------------- |
+| Server power                                                     | `power_kw`           | 1         | kW   | [1] DigitalHeat case brief                                                    |
+| Share of server power recovered as heat                          | `heat_recovery`      | 80 %      |      | [1] DigitalHeat case brief                                                    |
+| Power a paused server draws                                      | `idle_power_kw`      | 0         | kW   | our guess                                                                     |
+| Server sizes the map's card offers; price, flows and heat per kW | `sizes_kw`           | 0.5, 1, 2 | kW   | our guess                                                                     |
+| GPU workstation's power, at its case's full price                | `gpu_workstation_kw` | 0.7       | kW   | [10] VRLA Tech workstation 2026: 600 W GPU; the rest of the machine our guess |
 
-Note in config.json: Case brief. idle_power_kw=0 is OUR simplification: a paused server is assumed to draw nothing.
+Note in config.json: Case brief. idle_power_kw=0 is OUR simplification: a paused server is assumed to draw nothing. sizes_kw: the server sizes the map's card offers (issue #159); a server costs its case's server_chf per kW and draws, earns and heats in proportion to its kW, while each server needs its own water loop: OUR GUESS. gpu_workstation_kw: the mid case's workstation, an RTX PRO 6000 Blackwell at up to 600 W (VRLA Tech, 30 Jun 2026) plus about 100 W for the rest of the machine (OUR GUESS), at its case's full server_chf.
 
 ## Prices
 
