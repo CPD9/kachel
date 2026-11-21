@@ -1,13 +1,30 @@
 import heatLoopStill from "./heat-loop-still.png";
-import heatLoopUrl from "./heat-loop.webp";
+import heatLoopWideStill from "./heat-loop-wide-still.png";
+import heatLoopWide from "./heat-loop-wide.webp";
+import heatLoop from "./heat-loop.webp";
 
-/** A small looping picture of the idea: the servers' heat fills the tank and warms the house. */
-export function HeatLoop({ className = "" }: { className?: string }) {
+const pictures = {
+  house: { motion: heatLoop, still: heatLoopStill },
+  wide: { motion: heatLoopWide, still: heatLoopWideStill },
+};
+
+/**
+ * A small looping picture of the idea: the servers' heat fills the tank and warms the house.
+ * "house" shows the whole house; "wide" is a 3:1 crop on the basement, for a header.
+ */
+export function HeatLoop({
+  className = "",
+  variant = "house",
+}: {
+  className?: string;
+  variant?: keyof typeof pictures;
+}) {
+  const { motion, still } = pictures[variant];
   return (
     <picture>
-      <source srcSet={heatLoopStill} media="(prefers-reduced-motion: reduce)" />
+      <source srcSet={still} media="(prefers-reduced-motion: reduce)" />
       <img
-        src={heatLoopUrl}
+        src={motion}
         className={className}
         alt="A basement server runs a job, its heat fills the hot-water tank and warms the house"
       />

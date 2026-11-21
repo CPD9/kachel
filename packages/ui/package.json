@@ -6,7 +6,9 @@
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
     "./heat-loop.webp": "./src/heat-loop.webp",
-    "./heat-loop-still.png": "./src/heat-loop-still.png"
+    "./heat-loop-still.png": "./src/heat-loop-still.png",
+    "./heat-loop-wide.webp": "./src/heat-loop-wide.webp",
+    "./heat-loop-wide-still.png": "./src/heat-loop-wide-still.png"
   },
   "scripts": {
     "lint": "eslint .",

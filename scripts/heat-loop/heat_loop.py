@@ -1,17 +1,19 @@
 """Build the Kachel heat loop in Blender from nothing and render its frames.
 
-Rebuild the animation from the repository root with
+Rebuild the animations from the repository root with
 
     make heat-loop
 
-which runs
+which runs, once for each view,
 
     TMPDIR=~/.cache/kachel/tmp blender --background --factory-startup \
-        --python scripts/heat-loop/heat_loop.py -- --out ~/.cache/kachel/heat-loop/frames
+        --python scripts/heat-loop/heat_loop.py -- \
+        --out ~/.cache/kachel/heat-loop/house --view house --width 1080 --height 900
 
-and then encodes the frames with ffmpeg into packages/ui/src/heat-loop.webp
-and packages/ui/src/heat-loop-still.png. It needs Blender 5.2 and an ffmpeg
-built with libwebp.
+and then encodes the frames with ffmpeg: the whole house into
+packages/ui/src/heat-loop.webp and heat-loop-still.png for the README, and a
+wide crop on the basement into heat-loop-wide.webp and heat-loop-wide-still.png
+for the app header. It needs Blender 5.2 and an ffmpeg built with libwebp.
 
 The picture is a cutaway of a small house. Six server tiles in the basement
 run jobs, their heat flows into an insulated hot-water tank, and from there to
@@ -28,6 +30,8 @@ Options after "--":
     --width W        render width in pixels (default 1080)
     --height H       render height in pixels (default 900)
     --samples N      Cycles samples per pixel (default 40)
+    --view NAME      "house" for the whole house (default) or "wide" for a
+                     3:1 crop on the basement, for the app header
     --only 1,43      render only these frames (numbered from 1)
     --blend FILE     also save the built scene to FILE
 """
@@ -906,14 +910,22 @@ def lights_and_world(scene):
     aim(fill, Vector((0.3, 0.5, 0.6)) - fill.location)
 
 
-def camera(scene, width, height):
+# Where each view looks and how wide it sees, in scene units.
+VIEWS = {
+    # The whole house, for the README.
+    "house": {"target": (0.15, 0.3, 0.15), "scale": 10.6},
+    # The basement and the pipes up to the floor above, for the app header.
+    "wide": {"target": (0.0, 0.4, -1.4), "scale": 9.0},
+}
+
+
+def camera(scene, width, height, view):
     data = bpy.data.cameras.new("camera")
     data.type = "ORTHO"
-    data.ortho_scale = 10.6
-    data.shift_y = 0.0
+    data.ortho_scale = VIEWS[view]["scale"]
     cam = link(bpy.data.objects.new("camera", data), "fx")
     az, el = math.radians(28), math.radians(13)
-    target = Vector((0.15, 0.3, 0.15))
+    target = Vector(VIEWS[view]["target"])
     direction = Vector(
         (-math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el))
     )
@@ -1002,7 +1014,7 @@ def build(args):
     build_pipes(m)
     shadow_catcher()
     lights_and_world(scene)
-    camera(scene, args.width, args.height)
+    camera(scene, args.width, args.height, args.view)
     render_settings(scene, args.samples, args.width)
     return scene
 
@@ -1015,6 +1027,7 @@ def main():
     parser.add_argument("--width", type=int, default=1080)
     parser.add_argument("--height", type=int, default=900)
     parser.add_argument("--samples", type=int, default=40)
+    parser.add_argument("--view", choices=sorted(VIEWS), default="house")
     parser.add_argument("--only", default="")
     parser.add_argument("--blend", type=Path)
     args = parser.parse_args(argv)
