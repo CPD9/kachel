@@ -32,10 +32,13 @@ export function kachelEstimate(heatKwh: number): KachelEstimate | null {
   if (servers < 1) return null;
   const scale = servers / PER_HOUSE;
   const hw = summary.hardware;
+  // Heat follows the servers, like every other figure, and never exceeds what the building needs.
+  const refHeatUsed = (REF.heat_demand_kwh * REF.share_of_heat_covered_pct) / 100;
+  const heatFromServersKwh = Math.min(heatKwh, refHeatUsed * scale);
   return {
     servers,
-    heatFromServersKwh: (heatKwh * REF.share_of_heat_covered_pct) / 100,
-    sharePct: REF.share_of_heat_covered_pct,
+    heatFromServersKwh,
+    sharePct: (100 * heatFromServersKwh) / heatKwh,
     electricityKwh: REF.server_hours_sold * scale,
     beforeHardwareChf: summary.net_chf_per_house_before_hardware * scale,
     afterHardwareChf: {

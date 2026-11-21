@@ -18,6 +18,13 @@ describe("Kachel estimate", () => {
     expect(e?.heatFromServersKwh).toBeCloseTo(3 * 31_231 * 0.796);
   });
 
+  it("gives a small house only the heat its one server makes", () => {
+    const e = kachelEstimate(7_000);
+    expect(e?.servers).toBe(1);
+    expect(e?.heatFromServersKwh).toBeCloseTo((31_231 * 0.796) / 6);
+    expect(e?.sharePct).toBeCloseTo((100 * (31_231 * 0.796)) / 6 / 7_000);
+  });
+
   it("has nothing for a building too small for one server", () => {
     expect(kachelEstimate(2_000)).toBeNull();
   });
