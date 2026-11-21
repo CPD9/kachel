@@ -396,7 +396,7 @@ def chart_solar_bill(by_price, cfg):
     top = max(r["electricity_cost_chf"] for res in by_price.values() for r in res.values())
     ax.set(ylabel="Servers' electricity, CHF per year", ylim=(0, top * 1.3), title="Solar cuts the servers' power bill")
     ax.legend(frameon=False, loc="upper right")
-    save(fig, "10_solar_bill", "Grid power bought minus PV sold at 14 Rp. Payback: mid prices, after the federal one-off payment, discounted at 3.75%")
+    save(fig, "10_solar_bill", "Grid power bought minus PV sold at 14 Rp (fixed by IWB for 12 years). Payback: mid prices, after the federal payment, at 3.75%")
 
 
 def main():
