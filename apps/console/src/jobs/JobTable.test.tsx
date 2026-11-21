@@ -160,7 +160,7 @@ describe("JobTable", () => {
       const running = screen.getByText("Embeddings backlog, part 3").closest("li") as HTMLElement;
       expect(within(running).getByText("Running").dataset["state"]).toBe("RUNNING");
       const fact = (term: string) => within(running).getByText(term).nextElementSibling;
-      expect(fact("House · server")?.textContent).toBe("Reference house, Basel · Server 4");
+      expect(fact("House and server")?.textContent).toBe("Reference house, Basel · Server 4");
       expect(fact("Heat delivered")?.textContent).toBe("0.40 kWh");
       expect(fact("Deadline")?.textContent).toBe("None");
 

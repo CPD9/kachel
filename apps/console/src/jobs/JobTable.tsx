@@ -155,7 +155,7 @@ function JobCards({ rows, empty }: { rows: Row[]; empty: boolean }) {
           <dl className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs">
             <dt className="text-idle">Kind</dt>
             <dd>{KINDS[row.job.kind]}</dd>
-            <dt className="text-idle">House · server</dt>
+            <dt className="text-idle">House and server</dt>
             <dd className="break-words">
               <House {...row} />
               {row.server && !row.job.moved_offsite && ` · ${row.server.name}`}
