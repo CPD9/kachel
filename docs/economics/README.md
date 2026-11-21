@@ -4,8 +4,7 @@ One reference house in Basel with six 1 kW servers in the basement. The servers 
 only when the house can use their heat. This page shows what that means for heat, money and
 risk. It lists where every input comes from and which questions are still open.
 
-The charts use real Basel weather for 2025. The README figures still come from the synthetic
-preview weather, and the two agree within 1.5 points (heat covered: 79.6% here, 78.1% there).
+The charts use real Basel weather for 2025, as does `services/scheduler/out/kpis.json`.
 
 Rebuild everything on this page with:
 

@@ -39,32 +39,30 @@ These are our assumptions. Change a value here and every result and chart change
 [Open kpis.json](https://github.com/CPD9/kachel/blob/main/services/scheduler/out/kpis.json).
 These are the results for one house over one year.
 
-One caveat: the numbers in this file come from synthetic preview weather, so the model can
-run offline. The results with real Basel weather for 2025 are on the
-[economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md). The two
-agree within about 1.5 points (heat covered: 78.1% here, 79.6% with real weather).
+The numbers in this file come from real Basel weather for 2025 (Open-Meteo), the same run
+as on the [economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md).
 
 | Output                               | Value      | What it means                                                                                                               |
 | ------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `servers_per_house`                  | 6          | How many servers the model puts in the house. It stops adding once the last one would run under 40% of the year (our rule). |
-| `heat_demand_kwh`                    | 31,296 kWh | Heat the house needs in the year: space heating plus hot water.                                                             |
-| `share_of_heat_covered_pct`          | 78.1%      | Share of that demand met by server heat.                                                                                    |
-| `heat_dumped_kwh`                    | 11.3 kWh   | Server heat the house could not use and had to get rid of (from evening sessions that cannot wait).                         |
-| `backup_heat_kwh`                    | 6,864 kWh  | Heat the backup heater still has to make.                                                                                   |
-| `utilisation_pct`                    | 58.1%      | Share of all hours in the year that the servers run.                                                                        |
-| `server_hours_sold`                  | 30,554     | Server-hours of work done and sold in the year.                                                                             |
+| `heat_demand_kwh`                    | 31,231 kWh | Heat the house needs in the year: space heating plus hot water.                                                             |
+| `share_of_heat_covered_pct`          | 79.6%      | Share of that demand met by server heat.                                                                                    |
+| `heat_dumped_kwh`                    | 9.1 kWh    | Server heat the house could not use and had to get rid of (from evening sessions that cannot wait).                         |
+| `backup_heat_kwh`                    | 6,380 kWh  | Heat the backup heater still has to make.                                                                                   |
+| `utilisation_pct`                    | 59.1%      | Share of all hours in the year that the servers run.                                                                        |
+| `server_hours_sold`                  | 31,075     | Server-hours of work done and sold in the year.                                                                             |
 | `missed_deadlines_pct_of_jobs`       | 0%         | Share of jobs that finished late.                                                                                           |
 | `moved_offsite_pct_of_deadline_jobs` | 0%         | Share of jobs sent to an ordinary data centre because the house had no use for the heat in time.                            |
-| `electricity_cost_chf`               | 8,463 CHF  | Electricity bought for the servers.                                                                                         |
-| `value_of_heat_used_chf`             | 2,707 CHF  | Heat credit: what the heat pump would have spent on electricity to make the same heat.                                      |
-| `computing_income_chf`               | 15,277 CHF | Server-hours sold times the compute price.                                                                                  |
+| `electricity_cost_chf`               | 8,608 CHF  | Electricity bought for the servers.                                                                                         |
+| `value_of_heat_used_chf`             | 2,753 CHF  | Heat credit: what the heat pump would have spent on electricity to make the same heat.                                      |
+| `computing_income_chf`               | 15,538 CHF | Server-hours sold times the compute price.                                                                                  |
 | `break_even_chf_per_server_hour`     | 0.188 CHF  | Lowest price per server-hour at which income covers electricity minus the heat credit. Hardware not included.               |
 | `pays_off_at_assumed_compute_price`  | true       | Whether the assumed 0.50 CHF is above that break-even.                                                                      |
-| `profile_source`                     | synthetic  | Which weather the run used.                                                                                                 |
-| `heating_days`                       | 202        | Days in the year with a mean temperature below 12 °C, when space heating is on.                                             |
+| `profile_source`                     | Basel 2025 | Which weather the run used.                                                                                                 |
+| `heating_days`                       | 206        | Days in the year with a mean temperature below 12 °C, when space heating is on.                                             |
 
-Income minus electricity plus the heat credit leaves about 9,700 CHF per house and year
-with real weather, before anyone pays for the servers themselves.
+Income minus electricity plus the heat credit leaves 9,683 CHF per house and year,
+before anyone pays for the servers themselves.
 
 ## Hardware: three cases
 
@@ -133,7 +131,7 @@ mostly in winter, so solar trims the bill rather than removing it. These figures
 ## The charts
 
 These are the same ten charts as on the economics page. Chart 6 now shows the result after
-hardware (mid case), so its numbers are lower than the 9,700 CHF above. Charts 8 to 10 are
+hardware (mid case), so its numbers are lower than the 9,683 CHF above. Charts 8 to 10 are
 the solar ones.
 
 ![When the house needs heat](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/01_weather_and_demand.png)
