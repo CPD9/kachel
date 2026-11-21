@@ -12,6 +12,7 @@ function fakeScene(): Scene {
       on = v;
     },
     flyTo: vi.fn(),
+    onPick: () => () => undefined,
     destroy: vi.fn(),
   };
 }

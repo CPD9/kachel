@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { BuildingCard } from "./building/BuildingCard";
+import { lookUp, type BuildingFacts } from "./building/geoadmin";
 import { swissTime } from "./clock";
 import type { Scene } from "./scene/viewer";
 import { CREDITS } from "./sources";
@@ -12,6 +14,23 @@ export function App({ start }: { start: StartScene }) {
   const [failed, setFailed] = useState(false);
   const [time, setTime] = useState<Date | null>(null);
   const [playing, setPlaying] = useState(true);
+  const [building, setBuilding] = useState<BuildingFacts | "loading" | null>(null);
+
+  useEffect(() => {
+    if (scene === null) return;
+    let latest = 0;
+    return scene.onPick((picked) => {
+      const call = ++latest;
+      if (picked === null) {
+        setBuilding(null);
+        return;
+      }
+      setBuilding("loading");
+      void lookUp(picked).then((facts) => {
+        if (call === latest) setBuilding(facts);
+      });
+    });
+  }, [scene]);
 
   useEffect(() => {
     const el = container.current;
@@ -77,6 +96,8 @@ export function App({ start }: { start: StartScene }) {
         </button>
       </section>
 
+      {building !== null && <BuildingCard facts={building} onClose={() => setBuilding(null)} />}
+
       {failed && (
         <p
           role="alert"
@@ -98,7 +119,11 @@ export function App({ start }: { start: StartScene }) {
             {c.label}
           </a>
         ))}
-        <span className="ml-auto">Lit windows are an illustration, not data.</span>
+        <span>Source: BFS GWR</span>
+        <span>Source: SFOE</span>
+        <span className="ml-auto">
+          Click a building. Lit windows are an illustration, not data.
+        </span>
       </footer>
     </main>
   );
