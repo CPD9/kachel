@@ -82,13 +82,15 @@ video-setup:
 		--mp4 $(VIDEO_OUT)/02-setup.mp4 --sheet $(VIDEO_OUT)/02-setup-sheet.png
 
 video-scheduler:
-	test -f $(SCHED_OUT)/hourly.csv || (cd services/scheduler && uv run python run_year.py)
+	test -f $(SCHED_OUT)/day_january.csv -a -f $(SCHED_OUT)/day_july.csv || $(MAKE) year
 	mkdir -p $(VIDEO_OUT)/work/scheduler $(HOME)/.cache/kachel/tmp
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/scheduler.py -- \
-		--csv $(SCHED_OUT)/hourly.csv --out $(VIDEO_OUT)/work/scheduler --samples $(VIDEO_SAMPLES)
+		--days $(SCHED_OUT)/day_january.csv $(SCHED_OUT)/day_july.csv \
+		--out $(VIDEO_OUT)/work/scheduler --samples $(VIDEO_SAMPLES)
 	uv run --no-project --with pillow python scripts/video/compose.py \
-		--frames $(VIDEO_OUT)/work/scheduler --csv $(SCHED_OUT)/hourly.csv \
+		--frames $(VIDEO_OUT)/work/scheduler \
+		--days $(SCHED_OUT)/day_january.csv $(SCHED_OUT)/day_july.csv \
 		--mp4 $(VIDEO_OUT)/03-scheduler.mp4 --sheet $(VIDEO_OUT)/03-scheduler-sheet.png
 
 # The plant room meshes as they appear in the video, for three.js.

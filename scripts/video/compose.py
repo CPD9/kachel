@@ -2,7 +2,7 @@
 
     uv run --with pillow python scripts/video/compose.py \
         --frames ~/.cache/kachel/video/work/scheduler \
-        --csv services/scheduler/out/hourly.csv \
+        --days services/scheduler/out/day_january.csv services/scheduler/out/day_july.csv \
         --mp4 ~/.cache/kachel/video/03-scheduler.mp4 \
         --sheet ~/.cache/kachel/video/03-scheduler-sheet.png
 
@@ -22,13 +22,12 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-DAYS = ("2025-01-15", "2025-07-15")
 W, H, FPS = 1920, 1080, 24
 CARD = 36  # frames of the day title card
 HOUR = 11  # frames per hour
 FADE = 5  # frames of cross-fade into each hour
 TAIL = 12
-SHEET = ((DAYS[0], "12"), (DAYS[0], "19"), (DAYS[1], "12"))  # contact-sheet hours
+SHEET = ((0, 12), (0, 19), (1, 12))  # contact-sheet (day, hour)
 INK = (245, 244, 240)
 DIM = (165, 170, 178)
 PANEL = (16, 19, 24, 190)
@@ -106,13 +105,13 @@ def hud(r, ctx):
     # Top left: date, hour and the weather.
     rounded(d, (40, 36, 560, 196), PANEL)
     d.text((70, 52), long_date(r["time"]), font=F["date"], fill=INK)
-    d.text((66, 96), r["time"][11:16], font=F["hour"], fill=INK)
+    d.text((66, 96), f"{int(r['hour']):02d}:00", font=F["hour"], fill=INK)
     d.text((300, 132), f"Outdoors {num(temp)} \u00b0C", font=F["body"], fill=DIM)
     # Bottom: the three kinds of job.
     paused = "paused" in r["reason"]
     tiles = [
         ("Interactive session", int(r["interactive"]), None),
-        ("Batch job, due in 24 h", int(r["batch"]), None),
+        (f"Batch job, due in {ctx['batch_due_h']} h", int(r["batch"]), None),
         (
             "Backlog: embeddings",
             int(r["opportunistic"]),
@@ -219,27 +218,30 @@ def push(img, k):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--frames", required=True)
-    ap.add_argument("--csv", required=True)
+    ap.add_argument("--days", nargs="+", required=True)
     ap.add_argument("--mp4", required=True)
     ap.add_argument("--sheet", required=True)
     a = ap.parse_args()
     fr = Path(a.frames)
-    out = Path(a.csv).parent
+    out = Path(a.days[0]).parent
     cfg = json.loads((out.parent / "config.json").read_text())
     kpis = json.loads((out / "kpis.json").read_text())
-    with open(a.csv, newline="") as f:
-        rows = [r for r in csv.DictReader(f) if r["time"][:10] in DAYS]
+    days = []
+    for p in a.days:
+        with open(p, newline="") as f:
+            days.append(sorted(csv.DictReader(f), key=lambda r: int(r["hour"])))
     iw = W // 4
     ctx = {
         "tank": float(cfg["house"]["tank_kwh"]),
         "servers": int(kpis["servers_per_house"]),
         "hot_water": float(cfg["house"]["hot_water_kwh_per_day"]) / 24,
+        "batch_due_h": cfg["jobs"]["batch"]["deadline_h"],
         "anchors": json.loads((fr / "anchors.json").read_text()),
         "inset": (W - iw - 40, 36, iw, iw * 9 // 16),
     }
 
     def still(r):
-        key = f"{r['time'][:10]}_{r['time'][11:13]}"
+        key = f"{r['time'][:10]}_{int(r['hour']):02d}"
         p = (
             Image.open(fr / "plant" / f"{key}.png")
             .convert("RGB")
@@ -282,10 +284,9 @@ def main():
         ],
         stdin=subprocess.PIPE,
     )
-    sheet_at, sheet = {}, []
+    sheet = []
     n = 0
-    for day in DAYS:
-        dr = [r for r in rows if r["time"].startswith(day)]
+    for day, dr in enumerate(days):
         total = len(dr) * HOUR
         prev = None
         p0, _ = still(dr[0])
@@ -307,11 +308,10 @@ def main():
                 img.paste(qq, (ix, iy))
                 img = Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
                 ff.stdin.write(img.tobytes())
-                if j == HOUR - 1 and (day, r["time"][11:13]) in SHEET:
+                if j == HOUR - 1 and (day, int(r["hour"])) in SHEET:
                     sheet.append(img.resize((640, 360), Image.LANCZOS))
                 n += 1
             prev = (p, q)
-        sheet_at[day] = n
     last = img
     for _ in range(TAIL):
         ff.stdin.write(last.tobytes())

@@ -4,9 +4,11 @@ Run by `make video-scheduler`, inside Blender:
 
     blender --background scripts/video/assets/plantroom.blend \
         --python scripts/video/scheduler.py -- \
-        --csv services/scheduler/out/hourly.csv --out ~/.cache/kachel/video/scheduler
+        --days services/scheduler/out/day_january.csv services/scheduler/out/day_july.csv \
+        --out ~/.cache/kachel/video/work/scheduler
 
-Every visible state comes from one row of the scheduler's hourly output: the
+The two day files are written by `make year` (24 rows each, one per hour).
+Every visible state comes from one row of the scheduler's output: the
 number of servers lit is server_hours, the tank strip is soc_kwh over the tank
 size, the pipe colour follows heat_produced, the backup heater follows
 backup_kwh, and in the flat upstairs the radiator follows the space-heat part
@@ -30,13 +32,11 @@ import bpy
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kachel_scene as ks
 
-DAYS = ("2025-01-15", "2025-07-15")
-
 
 def args():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", required=True)
+    ap.add_argument("--days", nargs="+", required=True, help="one CSV per day")
     ap.add_argument("--out", required=True)
     ap.add_argument("--width", type=int, default=1920)
     ap.add_argument("--height", type=int, default=1080)
@@ -49,18 +49,25 @@ def args():
     return ap.parse_args(argv)
 
 
-def load(csv_path):
-    out = Path(csv_path).parent
+def load(paths):
+    """Rows of each day file, in hour order, with the scheduler's config and kpis."""
+    out = Path(paths[0]).parent
     cfg = json.loads((out.parent / "config.json").read_text())
     kpis = json.loads((out / "kpis.json").read_text())
-    with open(csv_path, newline="") as f:
-        rows = list(csv.DictReader(f))
-    return rows, cfg, kpis
+    days = []
+    for p in paths:
+        with open(p, newline="") as f:
+            days.append(sorted(csv.DictReader(f), key=lambda r: int(r["hour"])))
+    return days, cfg, kpis
+
+
+def key(r):
+    return f"{r['time'][:10]}_{int(r['hour']):02d}"
 
 
 def main():
     a = args()
-    rows, cfg, kpis = load(a.csv)
+    days, cfg, kpis = load(a.days)
     tank = float(cfg["house"]["tank_kwh"])
     n_servers = int(kpis["servers_per_house"])
     heat_per_server = float(cfg["server"]["power_kw"]) * float(
@@ -68,7 +75,7 @@ def main():
     )
     # Hot water is drawn evenly over the day (config "hot_water_shape": "flat").
     hot_water = float(cfg["house"]["hot_water_kwh_per_day"]) / 24
-    picked = [r for r in rows if r["time"][:10] in DAYS]
+    picked = [r for d in days for r in d]
     space_max = max(float(r["demand_kwh"]) - hot_water for r in picked) or 1.0
     backup_max = max(float(r["backup_kwh"]) for r in picked) or 1.0
     only = {s.strip() for s in a.only.split(",") if s.strip()}
@@ -88,8 +95,8 @@ def main():
     (out / "anchors.json").write_text(json.dumps(anchors, indent=1))
 
     for r in picked:
-        key = f"{r['time'][:10]}_{r['time'][11:13]}"
-        if only and key.replace("_", " ") not in only:
+        k = key(r)
+        if only and k.replace("_", " ") not in only:
             continue
         demand = float(r["demand_kwh"])
         ks.apply_state(
@@ -102,9 +109,9 @@ def main():
             draw_on=min(demand, hot_water) > 0,
         )
         for sc, sub in ((plant, "plant"), (flat, "flat")):
-            sc.render.filepath = str(out / sub / f"{key}.png")
+            sc.render.filepath = str(out / sub / f"{k}.png")
             bpy.ops.render.render(write_still=True, scene=sc.name)
-        print(f"rendered {key}", flush=True)
+        print(f"rendered {k}", flush=True)
 
 
 main()
