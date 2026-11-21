@@ -260,7 +260,10 @@ the heat as in the reference house, 6 kW for 31,231 kWh, and the count of server
 size. A kW draws, earns and heats the same in any size, and a server costs its case's price per
 kW (our guess); the GPU workstation costs its case's full price. Each server needs its own water
 loop [11], so smaller servers cost more per kW. For the reference house at the 2026 median, mid
-case: 12 servers of 0.5 kW, 6 of 1 kW or 3 of 2 kW, all making 9,683 CHF before hardware.
+case: 12 servers of 0.5 kW, 6 of 1 kW or 3 of 2 kW, all making 9,683 CHF before hardware,
+keep 568, 1,415 or 1,839 CHF after it. Nine GPU workstations lose 1,927 CHF a year: they cost
+the full 1 kW price for 0.7 kW, and we let a kW earn 0.50 CHF an hour whatever runs on it. A
+GPU-hour selling for more would change that; it is the same open question as the compute price.
 
 ## Sources
 
