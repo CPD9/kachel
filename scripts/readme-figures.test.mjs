@@ -4,12 +4,12 @@ import { END, FIGURES, START, figuresBlock, withFigures } from "./readme-figures
 
 const kpis = {
   servers_per_house: 6,
-  heat_covered_share: 0.734,
+  share_of_heat_covered_pct: 73.4,
   heat_dumped_kwh: 1234.4,
-  utilisation: 0.61,
-  missed_deadlines_share: 0.004,
+  utilisation_pct: 61,
+  missed_deadlines_pct_of_jobs: 0.4,
   electricity_cost_chf: 2890.2,
-  compute_income_chf: 4100.9,
+  computing_income_chf: 4100.9,
   break_even_chf_per_server_hour: 0.2851,
   profile_source: "Open-Meteo archive, Basel 2025",
   generated: "2026-11-21",
@@ -25,8 +25,8 @@ test("prints every figure with its unit, and the source line", () => {
 });
 
 test("refuses kpis with a figure missing", () => {
-  const { utilisation: _, ...partial } = kpis;
-  assert.throws(() => figuresBlock(partial), /utilisation/);
+  const { utilisation_pct: _, ...partial } = kpis;
+  assert.throws(() => figuresBlock(partial), /utilisation_pct/);
 });
 
 test("replaces only the block between the markers", () => {
