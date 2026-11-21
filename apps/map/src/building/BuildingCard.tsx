@@ -87,13 +87,14 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
           register?.heatingKind ?? "unknown",
           area,
         );
-  // Without the group, the per-m² figure may divide a whole block by one address: show it only
-  // when it is plausible, and call the total what it is.
-  const groupUnknown = group === null;
+  // Then the per-m² figure may divide a whole block by one address: show it only when it is
+  // plausible, and call the total what it is. The figure is a group figure when the group is unknown, or when it has several buildings but
+  // this one has no floor area to take a share by.
+  const groupFigure = group === null || (group.egids.length > 1 && share === null);
   const perM2 =
     estimate?.perSquareMetre === null || estimate === null
       ? null
-      : groupUnknown && estimate.perSquareMetre > HIGH_KWH_PER_M2
+      : groupFigure && estimate.perSquareMetre > HIGH_KWH_PER_M2
         ? null
         : estimate.perSquareMetre;
   return (
@@ -106,7 +107,7 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
           <h3 className="font-medium text-heat">
             {share !== null
               ? "Heat a year, estimated, this building's share"
-              : groupUnknown
+              : groupFigure
                 ? "Heat a year, SFOE estimate for the building group"
                 : "Heat a year, estimated"}
           </h3>
@@ -145,7 +146,7 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
             />
           )}
           <Source>
-            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023), for a whole swissBUILDINGS3D building${share !== null ? `, here split among its ${group?.egids.length ?? 0} GWR buildings by floor area (our split)` : groupUnknown ? `; the buildings under its roof could not be found, so the per-m² figure shows only when plausible` : ""}. Months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
+            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023), for a whole swissBUILDINGS3D building${share !== null ? `, here split among its ${group?.egids.length ?? 0} GWR buildings by floor area (our split)` : groupFigure ? `; it may cover neighbouring buildings too, so the per-m² figure shows only when plausible` : ""}. Months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
           </Source>
         </section>
       )}

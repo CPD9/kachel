@@ -115,6 +115,16 @@ describe("building card", () => {
     expect(screen.queryByText(/kWh, high, check/)).toBeNull();
   });
 
+  it("calls it the group figure when this building has no floor area to split by", () => {
+    const facts = {
+      ...FACTS,
+      register: FACTS.register && { ...FACTS.register, heatedAreaM2: null },
+      group: { egids: [441428, 2, 3], floorM2: 5000 },
+    };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("Heat a year, SFOE estimate for the building group")).toBeTruthy();
+  });
+
   it("says so when nothing is published", () => {
     render(
       <BuildingCard
