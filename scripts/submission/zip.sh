@@ -5,6 +5,7 @@
 #   scripts/submission/zip.sh                 build into ~/.cache/kachel/submission
 #   OUT=/some/dir scripts/submission/zip.sh   build somewhere else
 #   FILM=/path/to/cut.mp4 scripts/submission/zip.sh   pick the film yourself
+#   FILM_NOTE="..." sets what README-FIRST.txt says about the film
 #
 # Without FILM the newest 1080p rough cut in ~/.cache/kachel/pitch/edit is used, and without one
 # of those the draft film is downloaded from the media-v1 release. The zip is never committed.
@@ -29,6 +30,16 @@ if [ -z "$film" ]; then
   curl -fsSL -o "$film" "$RELEASE_FILM"
 fi
 
+# What README-FIRST.txt says about the film: draft wording for a rough cut or the release draft,
+# plain wording otherwise. FILM_NOTE overrides both.
+case "$(basename "$film")" in
+  rough-cut-* | kachel-pitch-draft*)
+    default_note="A draft cut without voice; the final cut with the
+                       voice-over replaces it in the media-v1 release on GitHub." ;;
+  *) default_note="With the voice-over." ;;
+esac
+film_note="${FILM_NOTE:-$default_note}"
+
 cp "$ROOT/docs/paper/kachel-model.pdf" "$stage/1-model-paper.pdf"
 cp "$ROOT/docs/pitch/slides.pdf" "$stage/2-slides.pdf"
 cp "$film" "$stage/3-pitch-film.mp4"
@@ -43,8 +54,7 @@ Built from commit $commit on $(date -u +%Y-%m-%d).
 1-model-paper.pdf      The model paper: the reference house, the scheduler, the yearly balance,
                        every assumption with its source, and when it does not pay off.
 2-slides.pdf           The two pitch slides. Every figure comes from the model's output files.
-3-pitch-film.mp4       The pitch film, 1080p. A draft cut without voice; the final cut with the
-                       voice-over replaces it in the media-v1 release on GitHub.
+3-pitch-film.mp4       The pitch film, 1080p. $film_note
 4-demo-checklist.md    The steps for the live demo: start the database and the apps, run a real
                        job, and pause and resume it from the heat signal.
 README-FIRST.txt       This file.
