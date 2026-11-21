@@ -100,6 +100,16 @@ const reference = (): Building => {
   return ref;
 };
 
+/**
+ * The Basel tariff a building pays by what it is used for: homes pay IWB's household price
+ * (H4), everything else IWB's business price (C3). Both 2027, from ElCom.
+ */
+export function tariffFor(
+  use: "house" | "flats" | "office" | "school" | "campus" | string,
+): TariffId {
+  return use === "house" || use === "flats" ? "iwb_h4_2027" : "iwb_c3_2027";
+}
+
 /** A rough estimate for any building from its yearly heat demand, scaled from the reference house. */
 export interface Estimate {
   servers: number;
@@ -115,7 +125,7 @@ export interface Estimate {
  * house's servers per kWh of demand and its result per server, at the chosen tariff. The
  * simulated buildings above land within about 10% of this line.
  */
-export function estimate(heatDemandKwh: number, tariff: TariffId = "iwb_h4_2027"): Estimate {
+export function estimate(heatDemandKwh: number, tariff: TariffId = tariffFor("house")): Estimate {
   const ref = reference();
   const servers = Math.max(1, Math.round((heatDemandKwh * ref.servers) / ref.heatDemandKwh));
   const r = ref.results[tariff];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BASIS, BUILDINGS, TARIFFS, building, estimate } from "./index";
+import { BASIS, BUILDINGS, TARIFFS, building, estimate, tariffFor } from "./index";
 
 describe("reference buildings", () => {
   it("keeps the reference house as on the economics page", () => {
@@ -54,6 +54,13 @@ describe("estimate", () => {
       const e = estimate(b.heatDemandKwh, b.defaultTariff);
       expect(Math.abs(e.servers - b.servers) / b.servers).toBeLessThan(0.1);
     }
+  });
+
+  it("picks the business tariff for anything that is not a home", () => {
+    expect(tariffFor("flats")).toBe("iwb_h4_2027");
+    expect(tariffFor("office")).toBe("iwb_c3_2027");
+    expect(estimate(144_000, tariffFor("office")).tariff).toBe("iwb_c3_2027");
+    expect(estimate(31_231).tariff).toBe("iwb_h4_2027");
   });
 
   it("never gives a building fewer than one server", () => {
