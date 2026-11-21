@@ -113,7 +113,9 @@ export function App() {
         )}
         <div className="absolute inset-x-0 bottom-6 flex justify-center px-4">
           <VoiceBar
-            said={said}
+            // The transcript shows only while the globe looks for the building, then it's a follow-up box
+            said={stage === "building" ? undefined : said}
+            light={houseShown}
             onEnd={() => {
               setSaid(null);
               setStage(null);

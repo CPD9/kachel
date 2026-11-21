@@ -120,12 +120,46 @@ export function VoicePrompt({ onSend }: { onSend: (text: string) => void }) {
   );
 }
 
-/** The collapsed bar at the bottom: keeps "listening" while the globe is shown. */
-export function VoiceBar({ said, onEnd }: { said: string; onEnd: () => void }) {
+/**
+ * The collapsed bar at the bottom: keeps "listening" while the globe is shown.
+ * Shows what was said until `said` is cleared, then invites a follow-up (like the adobe project).
+ * `light` switches to the light theme for the house view.
+ */
+export function VoiceBar({
+  said,
+  light = false,
+  onEnd,
+}: {
+  said?: string | undefined;
+  light?: boolean;
+  onEnd: () => void;
+}) {
+  const [text, setText] = useState("");
   return (
-    <div className="flex w-full max-w-md animate-bar-in items-center gap-3 rounded-2xl border border-white/10 bg-[#1b1d21]/85 py-2 pr-2 pl-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
+    <div
+      className={`flex w-full max-w-md animate-bar-in items-center gap-3 rounded-2xl border py-2 pr-2 pl-4 backdrop-blur-md transition-colors duration-500 ${
+        light
+          ? "border-border bg-surface/95 shadow-[0_8px_30px_rgba(17,20,24,0.12)]"
+          : "border-white/10 bg-[#1b1d21]/85 shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
+      }`}
+    >
       <Waveform bars={10} className="h-5 shrink-0" />
-      <span className="min-w-0 flex-1 truncate text-sm text-white/75">{said}</span>
+      {said ? (
+        <span className={`min-w-0 flex-1 truncate text-sm ${light ? "text-ink" : "text-white/75"}`}>
+          {said}
+        </span>
+      ) : (
+        <input
+          value={text}
+          placeholder="Ask a follow-up..."
+          aria-label="Ask a follow-up"
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && setText("")}
+          className={`min-w-0 flex-1 bg-transparent text-sm outline-none ${
+            light ? "text-ink placeholder:text-muted" : "text-white placeholder:text-white/50"
+          }`}
+        />
+      )}
       <button
         onClick={onEnd}
         className="h-10 rounded-xl bg-clay px-4 text-sm font-medium text-white hover:bg-clay-dark"

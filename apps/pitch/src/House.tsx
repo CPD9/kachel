@@ -68,7 +68,7 @@ export const FLOORS: Floor[] = [
 ];
 
 const COLORS = {
-  ground: "#1b1d21",
+  ground: "#dcdad5",
   slab: "#d6d0c6",
   wall: "#ece7df",
   glass: "#ece7df",
@@ -375,7 +375,7 @@ export function HouseScene(props: HouseProps) {
   const level = FLOORS.find((f) => f.id === props.open)?.level;
   return (
     <Canvas dpr={[1, 2]} camera={{ position: [34, 30, 30], fov: 35 }}>
-      <hemisphereLight args={["#fff4e8", "#1b1d21", 1.4]} />
+      <hemisphereLight args={["#ffffff", "#d8d4cc", 1.6]} />
       <directionalLight position={[8, 14, 10]} intensity={2.2} />
       <Camera {...(level === undefined ? HOUSE_FRAMING : floorFraming(level))} />
       <House {...props} />
