@@ -6,8 +6,11 @@ import type { NewJob, SubmitJob } from "./submit";
 export type Fields = { label: string; kind: JobKind; size: string; deadline: string };
 export type Errors = Partial<Record<keyof Fields, string>>;
 
-/** The largest job the form takes: a week on all six servers of the reference house. */
-export const MAX_SERVER_HOURS = 6 * 24 * 7;
+/** Servers in the reference house (services/scheduler/out/kpis.json: servers_per_house). */
+export const SERVERS_PER_HOUSE = 6;
+
+/** The largest job the form takes: a week on every server of the reference house. */
+export const MAX_SERVER_HOURS = SERVERS_PER_HOUSE * 24 * 7;
 
 const HINTS: Record<JobKind, string> = {
   interactive: "Runs at once and cannot be paused; its heat is used or dumped.",
@@ -36,8 +39,11 @@ export function check(fields: Fields, now: Date): { job: NewJob } | { errors: Er
       errors.deadline = "A batch job needs a deadline.";
     } else if (at <= now) {
       errors.deadline = "The deadline has to be in the future.";
-    } else if (Number.isFinite(size) && at.getTime() - now.getTime() < (size / 6) * 3_600_000) {
-      errors.deadline = "Too soon: even all six servers could not finish it by then.";
+    } else if (
+      Number.isFinite(size) &&
+      at.getTime() - now.getTime() < (size / SERVERS_PER_HOUSE) * 3_600_000
+    ) {
+      errors.deadline = "Too soon: even every server in the house could not finish it by then.";
     } else {
       deadline = at.toISOString();
     }
