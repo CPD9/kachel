@@ -2,6 +2,7 @@
 import numpy as np, pandas as pd
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from .profile import showcase_days
 
 INK, PAPER, GRID = "#14161A", "#FAF8F5", "#E4DFD8"
 EMBER, AMBER, GLACIER, MINT, SLATE = "#FF5A1F", "#FFB020", "#1F6FEB", "#19B38A", "#9AA0A8"
@@ -90,8 +91,7 @@ def money(k, cfg, syn):
 
 def make_all(prof, sw, df, k, cfg, synthetic=False):
     load_duration(prof, k, cfg, synthetic); frontier(sw, k, synthetic); year(df, k, synthetic)
-    daily = prof.groupby("date")["temp_c"].mean()
-    jan = str(min((d for d in daily.index if d.month == 1), key=lambda d: daily[d]))
-    day(df, jan, "04_day_january", "A cold January day: every server runs all day, the backup tops up", k, cfg, synthetic)
-    day(df, "2025-07-15", "05_day_july", "A July day: sessions heat the shower, the backlog waits for room in the tank", k, cfg, synthetic)
+    days = showcase_days(prof)
+    day(df, days["january"], "04_day_january", "A cold January day: every server runs all day, the backup tops up", k, cfg, synthetic)
+    day(df, days["july"], "05_day_july", "A July day: sessions heat the shower, the backlog waits for room in the tank", k, cfg, synthetic)
     money(k, cfg, synthetic)

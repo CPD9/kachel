@@ -18,6 +18,10 @@ python economics.py                                 # charts, tables and sources
 
 Outputs land in `out/`: `kpis.json`, `sweep.csv`, `hourly.csv`, `measurements.json`, six plots (PNG + SVG).
 
+`make year` (from the repo root) runs the year on the saved Basel 2025 weather and also writes `out/day_january.csv`
+(the coldest January day) and `out/day_july.csv` (15 July), one row per hour, for the animation. `kpis.json` and the
+two day CSVs are committed; rerun `make year` after any model change.
+
 ## Before you present: three things to replace
 
 1. `config.json → prices.electricity_chf_per_kwh` is a placeholder (Swiss H4 median 2026, 27.7 Rp). Put in IWB Basel H4.

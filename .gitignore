@@ -17,5 +17,7 @@ out/*
 !out/kpis.json
 **/out/*
 !**/out/kpis.json
+!**/out/day_january.csv
+!**/out/day_july.csv
 
 .DS_Store
