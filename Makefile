@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year fleet video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet video-charts
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -37,6 +37,16 @@ check-py:
 # January and July day CSVs (the animation reads those two), plus the plots.
 year:
 	cd $(SCHED) && uv run python run_year.py --weather tests/data/weather_basel_2025.csv
+
+# The same reference house on Bern 2025 weather: day files and kpis in $(SCHED)/out/bern/.
+# run_year.py writes to ./out, so it runs in a scratch folder and the results are copied.
+BERN_RUN := $(HOME)/.cache/kachel/tmp/bern-year
+
+bern-days:
+	rm -rf $(BERN_RUN) && mkdir -p $(BERN_RUN) $(SCHED)/out/bern
+	cd $(BERN_RUN) && uv run --project $(CURDIR)/$(SCHED) python $(CURDIR)/$(SCHED)/run_year.py \
+		--config $(CURDIR)/$(SCHED)/config.json --weather $(CURDIR)/$(SCHED)/tests/data/weather_bern_2025.csv
+	cp $(BERN_RUN)/out/day_january.csv $(BERN_RUN)/out/day_july.csv $(BERN_RUN)/out/kpis.json $(SCHED)/out/bern/
 
 # The row level security tests (supabase/tests) need the local stack from `make dev`. Without
 # it they are skipped here with a note; the Database CI job always runs them.
@@ -138,6 +148,8 @@ video-daynight:
 # The same film with Bern outside: the scene is built once from swissBUILDINGS3D tiles into
 # the cache (scripts/video/bern.py), never into heat-atlas or the repo.
 BERN_BLEND ?= $(HOME)/.cache/kachel/bern/bern.blend
+# Day files and kpis for the Bern film (`make bern-days`); servers come from its kpis.json.
+DAYS_DIR ?= $(SCHED)/out/bern
 BERN_WORK = $(VIDEO_OUT)/work/daynight-bern-$(DAYNIGHT_DAY)
 
 $(BERN_BLEND):
@@ -145,17 +157,18 @@ $(BERN_BLEND):
 		--python scripts/video/bern.py -- --out $(BERN_BLEND)
 
 video-daynight-bern: $(BERN_BLEND)
+	test -f $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv || $(MAKE) bern-days
 	mkdir -p $(BERN_WORK) $(HOME)/.cache/kachel/tmp
 	scripts/video/gpu_wait.sh
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(BERN_BLEND) \
 		--python scripts/video/daynight.py -- --part outside --city bern \
-		--day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) \
+		--day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) \
 		--samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS)
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
-		--day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) --samples $(DAYNIGHT_SAMPLES)
+		--day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) --samples $(DAYNIGHT_SAMPLES)
 	uv run --no-project --with pillow python scripts/video/compose_daynight.py --city bern \
-		--frames $(BERN_WORK) --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
+		--frames $(BERN_WORK) --day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv \
 		--mp4 $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY).mp4 \
 		--sheet $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY)-sheet.png
 

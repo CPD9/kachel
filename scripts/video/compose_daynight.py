@@ -30,8 +30,8 @@ HALF = c.W // 2
 CREDITS = {
     "basel": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river outline "
     "approximated. Heat demand: SFOE, hectare cells, data status 2013.",
-    "bern": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain approximated; "
-    "the Aare is not shown.",
+    "bern": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river course "
+    "approximated.",
 }
 CITY = {"name": "basel"}
 
@@ -47,7 +47,10 @@ def overlay(r, ctx, minute=0):
         max(d.textlength(t, font=c.F["hour"]), d.textlength(date, font=c.F["body"]))
         + 60
     )
-    c.rounded(d, (HALF - w / 2, 28, HALF + w / 2, 196), c.PANEL)
+    city = CITY["name"].title()
+    sub = f"{city} reference house \u00b7 {city} {r['time'][:4]} weather"
+    w = max(w, d.textlength(sub, font=c.F["small"]) + 60)
+    c.rounded(d, (HALF - w / 2, 28, HALF + w / 2, 226), c.PANEL)
     d.text(
         (HALF - d.textlength(t, font=c.F["hour"]) / 2, 34),
         t,
@@ -60,29 +63,24 @@ def overlay(r, ctx, minute=0):
         font=c.F["body"],
         fill=c.DIM,
     )
-    # Left: outside.
+    d.text(
+        (HALF - d.textlength(sub, font=c.F["small"]) / 2, 184),
+        sub,
+        font=c.F["small"],
+        fill=c.AMBER,
+    )
+    # Left: outside, the weather and demand of this city's run.
     temp = float(r["temp_c"])
     demand = float(r["demand_kwh"])
-    if CITY["name"] == "basel":
-        c.rounded(d, (28, 28, 400, 160), c.PANEL)
-        d.text((50, 40), "Basel, outside", font=c.F["bodyb"], fill=c.INK)
-        d.text((50, 78), f"{c.num(temp)} \u00b0C", font=c.F["date"], fill=c.INK)
-        d.text(
-            (50, 126),
-            f"House needs {c.num(demand)} kWh this hour",
-            font=c.F["small"],
-            fill=c.HOT,
-        )
-    else:
-        # The scheduler models the Basel reference house: its weather and figures stay on
-        # the plant-room side, and the outside panel only names the place and the sky.
-        c.rounded(d, (28, 28, 420, 120), c.PANEL)
-        d.text(
-            (50, 40), f"{CITY['name'].title()}, outside", font=c.F["bodyb"], fill=c.INK
-        )
-        d.text(
-            (50, 78), "Figures: Basel reference house", font=c.F["small"], fill=c.DIM
-        )
+    c.rounded(d, (28, 28, 400, 160), c.PANEL)
+    d.text((50, 40), f"{city}, outside", font=c.F["bodyb"], fill=c.INK)
+    d.text((50, 78), f"{c.num(temp)} \u00b0C", font=c.F["date"], fill=c.INK)
+    d.text(
+        (50, 126),
+        f"House needs {c.num(demand)} kWh this hour",
+        font=c.F["small"],
+        fill=c.HOT,
+    )
     # Right: the plant room.
     on = round(float(r["server_hours"]))
     soc = float(r["soc_kwh"])
@@ -199,7 +197,11 @@ def assemble(lim, rim, r, ctx, t, phase, minute=0):
 
 def context(fr, day):
     out = Path(day).parent
-    cfg = json.loads((out.parent / "config.json").read_text())
+    cfg = next(
+        json.loads((d / "config.json").read_text())
+        for d in (out.parent, out.parent.parent)
+        if (d / "config.json").exists()
+    )
     kpis = json.loads((out / "kpis.json").read_text())
     n = int(kpis["servers_per_house"])
     return {
