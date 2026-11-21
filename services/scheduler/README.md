@@ -27,6 +27,7 @@ two day CSVs are committed; rerun `make year` after any model change.
 1. `config.json → prices.electricity_chf_per_kwh` is a placeholder (Swiss H4 median 2026, 27.7 Rp). Put in IWB Basel H4.
 2. Run on the case CSV. The numbers in this folder were produced with `--synthetic` weather and are previews only.
 3. Run `measure.py` on your own machine with a stated power figure; install sentence-transformers so the job is real inference.
+   Our run, its method and the cited second job type are in `docs/measurements.md` and `docs/job-types.md`.
 
 ## How the scheduler decides (every hour)
 

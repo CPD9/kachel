@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-readme heat-loop year video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year video-charts
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -21,7 +21,7 @@ db-stop:
 db-reset:
 	pnpm exec supabase db reset
 
-check: check-js check-py check-readme
+check: check-js check-py check-db check-readme
 
 check-js:
 	pnpm format:check
@@ -37,6 +37,12 @@ check-py:
 # January and July day CSVs (the animation reads those two), plus the plots.
 year:
 	cd $(SCHED) && uv run python run_year.py --weather tests/data/weather_basel_2025.csv
+
+# The row level security tests (supabase/tests) need the local stack from `make dev`. Without
+# it they are skipped here with a note; the Database CI job always runs them.
+check-db:
+	@if pnpm exec supabase status >/dev/null 2>&1; then pnpm exec supabase test db; \
+	else echo "check-db: local Supabase is not running (make dev); skipped, CI runs it."; fi
 
 check-readme:
 	node --test scripts/*.test.mjs

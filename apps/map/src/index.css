@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "@kachel/ui/tokens.css";
+
+/* Cesium's own credit line sits above our footer. */
+.cesium-viewer-bottom {
+  bottom: 1.5rem !important;
+}
+
+/* The map uses no Cesium ion service, so ion's logo would mislead. */
+.cesium-credit-logoContainer {
+  display: none !important;
+}

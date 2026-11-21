@@ -4,6 +4,13 @@ Renders for the pitch video, made in Blender. Every figure on screen is read fro
 scheduler's output or from [docs/economics/data](../economics/data) at render time, never
 typed by hand. The videos are in the [media-v1 release](https://github.com/CPD9/kachel/releases/tag/media-v1).
 
+## One day in Basel
+
+![Split screen at 09:00 on 13 January 2025: Basel outside in morning light, the plant room inside with six servers running](daynight.webp)
+
+One January day, outside and inside on the same clock. Sun, temperature, heat demand, servers and backup heater all come from the scheduler's output for 13 January 2025.
+[Video, 36 s](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-january.mp4)
+
 ## In the basement
 
 ![The plant room with each part labelled: server rack, pump, heat exchanger, tank and backup heater](setup.webp)

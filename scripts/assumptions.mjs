@@ -22,6 +22,19 @@ const EIT = "[13] EIT.nordwest rates 2026";
 const LIFE = "[14] SiliconANGLE, [15] Amazon 10-K 2025";
 const WACC = "[16] UVEK grid WACC, [17] pv magazine";
 export const GUESS = "our guess";
+const ASR = "[19] Open ASR Leaderboard";
+const MLPERF = "[21] MLPerf Inference v6.0";
+const BATCH_API = "[22] OpenAI Batch API";
+const MEASURED = "[24] our measurement";
+
+/** Job values that have a source; every other job value is our guess (docs/job-types.md). */
+const JOB_SOURCES = {
+  "batch.label": `${MLPERF}, ${ASR}`,
+  "batch.interruptible": `${MLPERF} (offline: the whole batch is there at the start)`,
+  "batch.deadline_h": BATCH_API,
+  "opportunistic.label": MEASURED,
+  "opportunistic.interruptible": `${MEASURED}: it checkpoints every 64 items`,
+};
 
 const hour = (h) => `${String(h).padStart(2, "0")}:00`;
 
@@ -78,7 +91,7 @@ const JOB_VALUES = {
 
 for (const kind of ["interactive", "batch", "opportunistic"]) {
   for (const [key, [what, unit, print]] of Object.entries(JOB_VALUES)) {
-    VALUES[`jobs.${kind}.${key}`] = [what, unit, print, GUESS];
+    VALUES[`jobs.${kind}.${key}`] = [what, unit, print, JOB_SOURCES[`${kind}.${key}`] ?? GUESS];
   }
 }
 
