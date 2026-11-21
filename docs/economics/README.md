@@ -193,7 +193,8 @@ Our own assumptions, with no outside source yet:
 - A plate heat exchanger to the tank costs about what the water loop's radiator does.
 - Fitting six servers takes 6, 10 or 16 fitter hours and 2, 3 or 4 electrician hours.
 - Upkeep is one or two service visits a year.
-- A 6% discount rate for the high case.
+- A 6% discount rate for the high case: a young business with no track record should pay
+  more for its money than a power grid (3.28%) or a solar roof (3.75%).
 
 ## Research topics for the report
 
