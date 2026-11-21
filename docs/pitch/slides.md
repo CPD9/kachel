@@ -133,7 +133,7 @@ Servers in the basement run AI jobs **only when the house can use their heat**: 
 <div class="kpi"><b>31,075</b><span>server-hours sold</span><i>kpis.json</i></div>
 <div class="kpi"><b>0.188 CHF</b><span>break-even per server-hour</span><i>kpis.json</i></div>
 <div class="kpi"><b>9,683 CHF</b><span>left a year before hardware</span><i>summary.json</i></div>
-<div class="kpi"><b>1,415 CHF</b><span>left a year after hardware, mid case</span><i>summary.json</i></div>
+<div class="kpi"><b>1,415 CHF</b><span>left a year after hardware (mid)</span><i>summary.json</i></div>
 <div class="kpi"><b>4.2 years</b><span>payback, mid case</span><i>summary.json</i></div>
 </div>
 
