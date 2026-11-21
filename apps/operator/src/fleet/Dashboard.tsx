@@ -261,6 +261,23 @@ export function Dashboard({
 
         <section aria-label="Map" className="relative">
           <FleetMap houses={m.houses} places={live.places} buyers={rows} brightest={brightest} />
+          <ul
+            aria-label="Map legend"
+            className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-1 text-[14px] text-white/65"
+          >
+            <li className="flex items-center gap-2">
+              <span className="inline-block size-3 rounded-full bg-[#ff5a1f] shadow-[0_0_10px_#ff5a1f]" />
+              Home: its server heat in {name}, model
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="inline-block size-3 rounded-[3px] border-2 border-[#ff5a1f]" />
+              Rack in the database
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="inline-block w-5 border-t-2 border-dashed border-[#06b6d4]" />A
+              buyer&apos;s job now, live
+            </li>
+          </ul>
           {rows.length === 0 && (
             <p className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto w-[200px] -translate-y-1/2 text-center text-[14px] text-white/55">
               Sign in as the operator to see the buyers and their jobs.
