@@ -1,33 +1,24 @@
-import { HeatLoop } from "@kachel/ui";
-import { useEffect, useState } from "react";
-import type { HostAuth } from "./auth/session";
-import { SignIn } from "./auth/SignIn";
-import type { JobFeed } from "@kachel/db";
+import { DEMO_HOST, type AppAuth, type HouseFeed, type JobFeed } from "@kachel/db";
+import { HeatLoop, SignIn, useSession } from "@kachel/ui";
+import { House } from "./house/House";
 import { LiveJobs } from "./live/LiveJobs";
 
 /**
  * Host app: the homeowner's view of their house, its heat and its servers.
  * Row level security shows a host only their own house, so the screen asks them to sign in.
  */
-export function App({ feed, auth, local }: { feed: JobFeed; auth: HostAuth; local: boolean }) {
-  const [email, setEmail] = useState<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    let current = true;
-    const stop = auth.onChange((next) => setEmail(next));
-    auth.current().then(
-      (first) => {
-        if (current) setEmail((seen) => (seen === undefined ? first : seen));
-      },
-      () => {
-        if (current) setEmail(null);
-      },
-    );
-    return () => {
-      current = false;
-      stop();
-    };
-  }, [auth]);
+export function App({
+  feed,
+  house,
+  auth,
+  local,
+}: {
+  feed: JobFeed;
+  house: HouseFeed;
+  auth: AppAuth;
+  local: boolean;
+}) {
+  const email = useSession(auth);
 
   return (
     <main className="min-h-screen bg-paper text-ink">
@@ -46,8 +37,21 @@ export function App({ feed, auth, local }: { feed: JobFeed; auth: HostAuth; loca
           </div>
         )}
       </header>
-      {email === null && <SignIn auth={auth} local={local} />}
-      {email && <LiveJobs key={email} feed={feed} />}
+      {email === null && (
+        <SignIn
+          auth={auth}
+          heading="Sign in to see your servers"
+          {...(local ? { demo: DEMO_HOST } : {})}
+        />
+      )}
+      {email && (
+        <div key={email} className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6">
+          <House feed={house} />
+          <div className="rounded-lg border border-grid bg-paper py-1">
+            <LiveJobs feed={feed} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

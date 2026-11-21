@@ -1,9 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import { isLocalStack, supabaseAuth } from "./auth/session";
 import { db } from "./db";
-import { supabaseFeed } from "@kachel/db";
+import { isLocalStack, supabaseAuth, supabaseFeed, supabaseHouseFeed } from "@kachel/db";
 import "./index.css";
 
 const root = document.getElementById("root");
@@ -12,6 +11,7 @@ createRoot(root).render(
   <StrictMode>
     <App
       feed={supabaseFeed(db)}
+      house={supabaseHouseFeed(db)}
       auth={supabaseAuth(db)}
       local={isLocalStack(import.meta.env.VITE_SUPABASE_URL)}
     />

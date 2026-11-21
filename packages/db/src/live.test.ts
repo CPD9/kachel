@@ -29,6 +29,7 @@ const job: LiveJob = {
   server_hours: null,
   deadline_at: null,
   active_cpu_s: 3600,
+  moved_offsite: false,
   created_at: "2026-11-21T09:00:00+00:00",
   updated_at: "2026-11-21T10:00:00+00:00",
 };

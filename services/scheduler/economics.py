@@ -7,6 +7,8 @@ Same model as run_year.py, real weather, six servers. Sources for every input ar
 import copy, json, os
 import numpy as np, pandas as pd
 from heatsched import profile as P
+from heatsched import buildings as B
+from heatsched import solar
 from heatsched.sim import House, kpis, sweep
 from heatsched.plots import plt, INK, PAPER, GRID, EMBER, AMBER, GLACIER, MINT, SLATE
 
@@ -284,6 +286,166 @@ def tornado(prof, cfg, k_base):
     return t.drop(columns="swing"), base
 
 
+SETUPS = (("none", "No solar", False, False), ("pv_plain", "Roof PV, scheduler ignores the sun", False, False),
+          ("pv", "Roof PV, scheduler prefers the sun", True, False), ("pv_battery", "Roof PV + battery, prefers the sun", True, True))
+
+
+def solar_costs(cfg, case=None):
+    """What the roof PV and the battery cost for one case in config.json: up front (after the federal payment) and upkeep."""
+    s = cfg["solar"]; c = s["cases"][case or s["case_for_results"]]
+    pv = s["roof_kwp"] * (c["pv_chf_per_kwp"] - s["subsidy_chf_per_kwp"])
+    return dict(pv_capex=pv, battery_capex=c["battery_chf"], upkeep=s["roof_kwp"] * c["pv_chf_per_kwp"] * c["pv_upkeep_share_per_year"],
+                r=c["discount_rate"], pv_life=c["pv_lifetime_years"], battery_life=c["battery_lifetime_years"])
+
+
+def annuity(capex, r, life):
+    return capex * r / (1 - (1 + r) ** -life)
+
+
+def run_pv(prof, cfg, pv, n=N):
+    df = House(prof, cfg, n, pv=pv).run()
+    return df, kpis(df, cfg, n)
+
+
+def solar_setups(prof, weather, cfg, price):
+    """One house, one year, at one electricity price: each solar setup's flows and money."""
+    c = with_(cfg, prices__electricity_chf_per_kwh=price); s = cfg["solar"]
+    pv = solar.pv_kwh(weather, s)
+    out, runs = {}, {}
+    for key, label, prefer, battery in SETUPS:
+        df, k = run_pv(prof, c, pv if prefer else None)
+        load = df["server_hours"].to_numpy() * c["server"]["power_kw"]
+        f = solar.own_power(load, pv if key != "none" else np.zeros(len(pv)), s["battery_kwh"] if battery else 0.0,
+                            s["battery_round_trip"])
+        grid, exported = f["from_grid"].sum(), f["exported"].sum()
+        cost = grid * price - exported * s["feed_in_chf_per_kwh"]
+        out[key] = dict(setup=label, electricity_chf_per_kwh=price, server_kwh=round(load.sum()),
+                        pv_kwh=round(pv.sum()) if key != "none" else 0,
+                        own_pv_share_of_server_power_pct=round(100 * (1 - grid / load.sum()), 1),
+                        from_battery_kwh=round(f["from_battery"].sum()), from_grid_kwh=round(grid),
+                        exported_kwh=round(exported), electricity_cost_chf=round(cost),
+                        share_of_heat_covered_pct=k["share_of_heat_covered_pct"], server_hours_sold=k["server_hours_sold"],
+                        net_chf_before_hardware=round(k["computing_income_chf"] - cost + k["value_of_heat_used_chf"]))
+        runs[key] = (df, f)
+    for key in ("pv_plain", "pv", "pv_battery"):
+        for case in s["cases"]:
+            sc = solar_costs(cfg, case)
+            capex = sc["pv_capex"] + (sc["battery_capex"] if key == "pv_battery" else 0)
+            saving = out["none"]["electricity_cost_chf"] - out[key]["electricity_cost_chf"] - sc["upkeep"]
+            out[key][f"payback_years_{case}"] = round(payback_years(capex, saving, sc["r"]), 1)
+            if case == s["case_for_results"]:
+                per_year = annuity(sc["pv_capex"], sc["r"], sc["pv_life"]) + sc["upkeep"] + (
+                    annuity(sc["battery_capex"], sc["r"], sc["battery_life"]) if key == "pv_battery" else 0)
+                out[key]["solar_capex_chf"] = round(capex)
+                out[key]["solar_chf_per_year"] = round(per_year)
+                out[key]["saving_chf_per_year"] = round(out["none"]["electricity_cost_chf"] - out[key]["electricity_cost_chf"])
+    hw = hardware(cfg)["per_year"]
+    for key in out:
+        out[key]["net_chf_after_hardware_and_solar"] = round(out[key]["net_chf_before_hardware"] - hw - out[key].get("solar_chf_per_year", 0))
+    return out, runs, pv
+
+
+def chart_solar_day(runs, pv, cfg, date="2025-07-15"):
+    h = cfg["server"]["power_kw"]
+    fig, ax = plt.subplots(figsize=(11, 5.6))
+    plain, pref = runs["pv_plain"][0], runs["pv"][0]
+    m = plain["time"].str.startswith(date).to_numpy(); x = np.arange(m.sum())
+    ax.fill_between(x, 0, pv[m], step="mid", color=AMBER, alpha=0.45, lw=0, label="Roof PV (kWh per hour)")
+    ax.step(x, plain.loc[m, "server_hours"] * h, where="mid", color=SLATE, lw=2.2, ls="--", label="Servers, scheduler ignores the sun")
+    ax.step(x, pref.loc[m, "server_hours"] * h, where="mid", color=EMBER, lw=2.6, label="Servers, scheduler prefers the sun")
+
+    def on_sun(df):
+        load = df.loc[m, "server_hours"].to_numpy() * h
+        return 100 * np.minimum(load, pv[m]).sum() / max(1e-9, load.sum())
+    ax.set(xticks=x[::2], xlim=(-0.5, 23.5), xlabel="Hour of day", ylabel="kWh per hour",
+           ylim=(0, max(pv[m].max(), cfg["solar"]["roof_kwp"] * 0.75) * 1.25),
+           title=f"On a July day the servers now run at midday: {on_sun(pref):.0f}% on sunshine, was {on_sun(plain):.0f}%")
+    ax.legend(frameon=False, loc="upper left", fontsize=10.5)
+    save(fig, "08_solar_day", f"{date}, {N} servers, {cfg['solar']['roof_kwp']:.0f} kWp roof. The tank stores the midday heat for the evening shower")
+
+
+def chart_solar_month(runs, pv, res):
+    df, f = runs["pv_battery"]
+    m = f.assign(month=pd.to_datetime(df["time"]).dt.month.to_numpy(), pv=pv).groupby("month").sum()
+    names = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+    fig, ax = plt.subplots(figsize=(11, 5.6))
+    ax.bar(names, m["pv_direct"], color=AMBER, width=0.72, label="From the roof, directly")
+    ax.bar(names, m["from_battery"], bottom=m["pv_direct"], color=MINT, width=0.72, label="From the battery")
+    ax.bar(names, m["from_grid"], bottom=m["pv_direct"] + m["from_battery"], color=SLATE, alpha=0.6, width=0.72, label="Bought from the grid")
+    ax.plot(names, m["pv"], color=INK, lw=2, marker="o", label="Roof PV made")
+    top = max((m["pv_direct"] + m["from_battery"] + m["from_grid"]).max(), m["pv"].max())
+    ax.set(ylabel="kWh per month", ylim=(0, top * 1.18),
+           title=f"Own solar gives the servers {res['own_pv_share_of_server_power_pct']:.0f}% of their power: winter still runs on the grid")
+    ax.legend(frameon=False, loc="upper center", ncol=4, fontsize=10.5)
+    save(fig, "09_solar_month", f"Servers' electricity by source, {N} servers, 10 kWp roof + 10 kWh battery. Sun the servers cannot use is sold at the feed-in price")
+
+
+def chart_solar_bill(by_price, cfg):
+    keys = [k for k, *_ in SETUPS]
+    fig, ax = plt.subplots(figsize=(11, 5.6))
+    w = 0.38; x = np.arange(len(keys)); case = cfg["solar"]["case_for_results"]
+    for i, res in enumerate(by_price.values()):
+        lab = "IWB Basel 2027, 33.42 Rp" if i else "Swiss median 2026, 27.7 Rp"
+        bars = ax.bar(x + (i - 0.5) * w, [res[k]["electricity_cost_chf"] for k in keys], width=w, color=(EMBER if i else GLACIER), label=lab)
+        for b, k in zip(bars, keys, strict=True):
+            r = res[k]; pb = r.get(f"payback_years_{case}")
+            txt = f"{r['electricity_cost_chf']:,.0f}" + (f"\npays back\nin {pb:.0f} y" if pb is not None and pb < 50 else "")
+            ax.text(b.get_x() + w / 2, b.get_height() + 120, txt, ha="center", va="bottom", fontsize=9.5)
+    base = next(iter(by_price.values()))
+    ax.set_xticks(x, [f"{lab.replace(', ', chr(10))}\n({base[k]['own_pv_share_of_server_power_pct']:.0f}% own power)"
+                      for k, lab, *_ in SETUPS], fontsize=10)
+    top = max(r["electricity_cost_chf"] for res in by_price.values() for r in res.values())
+    ax.set(ylabel="Servers' electricity, CHF per year", ylim=(0, top * 1.3), title="Solar cuts the servers' power bill")
+    ax.legend(frameon=False, loc="upper right")
+    save(fig, "10_solar_bill", "Grid power bought minus PV sold at 14 Rp (fixed by IWB for 12 years). Payback: mid prices, after the federal payment, at 3.75%")
+
+
+MAP_DATA = "../../packages/economics/src/buildings.json"
+
+
+def more_buildings(prof, cfg):
+    """Yearly balance for each building in buildings.json at each tariff. Writes the map's data and a CSV."""
+    spec = json.load(open("buildings.json"))
+    hw_server = hardware(cfg)["per_year"] / N
+    out = []
+    for bid, b in spec["buildings"].items():
+        p, c, n, df = B.run_building(prof, cfg, b)
+        sh, demand = float(df["server_hours"].sum()), float(p["demand_kwh"].sum())
+        results = {tid: B.money(df, c, n, t["chf_per_kwh"], hw_server) for tid, t in spec["tariffs"].items()}
+        out.append(dict(id=bid, name=b["name"], kind=b["kind"], place=b["place"], area_m2=b.get("area_m2"),
+                        heat_demand_kwh=round(demand), tank_kwh=round(c["house"]["tank_kwh"], 1), servers=n,
+                        share_of_heat_covered_pct=round(100 * df["served_kwh"].sum() / demand, 1),
+                        utilisation_pct=round(100 * sh / (n * len(df)), 1), server_hours_sold=round(sh),
+                        default_tariff=b["default_tariff"], source=b["source"], results=results))
+    data = {"_note": "Generated by services/scheduler/economics.py from buildings.json and config.json. Do not edit.",
+            "weather": "Open-Meteo archive, Basel 2025", "compute_chf_per_server_hour": cfg["prices"]["compute_chf_per_server_hour"],
+            "hardware_case": cfg["hardware"]["case_for_results"], "tariffs": spec["tariffs"], "buildings": out}
+    open(MAP_DATA, "w").write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    pd.DataFrame([dict({k: v for k, v in b.items() if k not in ("results", "source")}, tariff=tid, **r)
+                  for b in out for tid, r in b["results"].items()]).to_csv(f"{OUT}/data/buildings.csv", index=False)
+    return data
+
+
+def chart_buildings(data):
+    bs = data["buildings"]; median = "swiss_median_2026"
+    fig, ax = plt.subplots(figsize=(11, 5.6))
+    x = np.arange(len(bs)); w = 0.38
+    own = [b["results"][b["default_tariff"]]["net_chf_after_hardware"] / b["servers"] for b in bs]
+    med = [b["results"][median]["net_chf_after_hardware"] / b["servers"] for b in bs]
+    ax.bar(x - w / 2, med, width=w, color=GLACIER, label="Swiss median 2026, 27.7 Rp")
+    ax.bar(x + w / 2, own, width=w, color=EMBER, label="Its own tariff (IWB, or the 2027 median for Bern)")
+    for i, b in enumerate(bs):
+        ax.text(i, max(med[i], own[i]) + 25, f"{b['servers']} servers\n{b['share_of_heat_covered_pct']:.0f}% of the heat\n"
+                f"{b['heat_demand_kwh'] / 1000:,.0f} MWh a year", ha="center", va="bottom", fontsize=10)
+    ax.axhline(0, color=INK, lw=1)
+    ax.set_xticks(x, [b["name"].replace(", ", "\n", 1) for b in bs], fontsize=10.5)
+    ax.set(ylabel="CHF per server and year, after hardware", ylim=(min(0, *own, *med) * 1.2, max(*own, *med) * 1.6),
+           title="The tariff moves each server's result more than the building does")
+    ax.legend(frameon=False, loc="upper right", fontsize=10.5)
+    save(fig, "11_buildings", f"Yearly result after hardware ({data['hardware_case']} case) per server, compute at "
+         f"{data['compute_chf_per_server_hour']:.2f} CHF. Other buildings are the Basel house scaled to their heat demand")
+
+
 def main():
     cfg = json.load(open("config.json"))
     os.makedirs(f"{OUT}/data", exist_ok=True)
@@ -302,9 +464,20 @@ def main():
     pd.DataFrame.from_dict(hw, orient="index").to_csv(f"{OUT}/data/hardware.csv", index_label="case")
     t, base = tornado(prof, cfg, k)
     t.to_csv(f"{OUT}/data/sensitivity.csv", index=False)
+    weather = P.load_weather(f"{OUT}/data/weather_basel_2025.csv")
+    by_price, runs, pv = {}, None, None
+    for price in (cfg["prices"]["electricity_chf_per_kwh"], cfg["solar"]["iwb_2027_chf_per_kwh"]):
+        by_price[price], r, p = solar_setups(prof, weather, cfg, price)
+        runs, pv = runs or r, p
+    sol = by_price[cfg["prices"]["electricity_chf_per_kwh"]]
+    chart_solar_day(runs, pv, cfg)
+    chart_solar_month(runs, pv, sol["pv_battery"])
+    chart_solar_bill(by_price, cfg)
+    pd.DataFrame([r for res in by_price.values() for r in res.values()]).to_csv(f"{OUT}/data/solar.csv", index=False)
     summary = {"base_case": k, "no_backlog_case": k_none, "net_chf_per_house_before_hardware": round(net(k, cfg)),
-               "hardware": hw}
-    json.dump(summary, open(f"{OUT}/data/summary.json", "w"), indent=2)
+               "hardware": hw, "solar": {f"{p:.4f}": res for p, res in by_price.items()}}
+    open(f"{OUT}/data/summary.json", "w").write(json.dumps(summary, indent=2) + "\n")
+    chart_buildings(more_buildings(prof, cfg))
     print(json.dumps(summary, indent=2)); print(t.to_string(index=False))
 
 

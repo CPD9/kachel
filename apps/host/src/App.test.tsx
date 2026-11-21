@@ -1,10 +1,13 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App";
-import { DEMO_HOST, isLocalStack, type HostAuth } from "./auth/session";
-import type { JobFeed } from "@kachel/db";
+import { DEMO_HOST, isLocalStack, type AppAuth, type HouseFeed, type JobFeed } from "@kachel/db";
 
 const quiet: JobFeed = {
+  load: () => new Promise(() => undefined),
+  subscribe: () => () => undefined,
+};
+const quietHouse: HouseFeed = {
   load: () => new Promise(() => undefined),
   subscribe: () => () => undefined,
 };
@@ -13,7 +16,7 @@ const quiet: JobFeed = {
 function fakeAuth(signedIn: string | null = null) {
   const listeners: ((email: string | null) => void)[] = [];
   const tell = (email: string | null) => act(() => listeners.forEach((l) => l(email)));
-  const auth: HostAuth = {
+  const auth: AppAuth = {
     current: () => Promise.resolve(signedIn),
     onChange(listener) {
       listeners.push(listener);
@@ -35,19 +38,20 @@ afterEach(cleanup);
 
 describe("host app", () => {
   it("shows the house heading", () => {
-    render(<App feed={quiet} auth={fakeAuth()} local={false} />);
+    render(<App feed={quiet} house={quietHouse} auth={fakeAuth()} local={false} />);
     expect(screen.getByRole("heading", { name: "Kachel" })).toBeTruthy();
   });
 
   it("asks the host to sign in before showing servers", async () => {
-    render(<App feed={quiet} auth={fakeAuth()} local={false} />);
+    render(<App feed={quiet} house={quietHouse} auth={fakeAuth()} local={false} />);
     expect(await screen.findByRole("heading", { name: /Sign in/ })).toBeTruthy();
     expect(screen.queryByText(/Your servers/)).toBeNull();
+    expect(screen.queryByText(/Reading the house/)).toBeNull();
     expect(screen.queryByText(/kachel-demo/)).toBeNull();
   });
 
   it("names the demo host on the local stack and signs in with it", async () => {
-    render(<App feed={quiet} auth={fakeAuth()} local={true} />);
+    render(<App feed={quiet} house={quietHouse} auth={fakeAuth()} local={true} />);
     expect(await screen.findByText(/Local demo: host@kachel.test/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: DEMO_HOST.password },
@@ -61,15 +65,16 @@ describe("host app", () => {
   });
 
   it("says plainly when the password is wrong", async () => {
-    render(<App feed={quiet} auth={fakeAuth()} local={true} />);
+    render(<App feed={quiet} house={quietHouse} auth={fakeAuth()} local={true} />);
     fireEvent.change(await screen.findByLabelText("Password"), { target: { value: "nope" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect((await screen.findByRole("alert")).textContent).toMatch(/do not match/);
   });
 
-  it("goes straight to the servers when a session is kept", async () => {
-    render(<App feed={quiet} auth={fakeAuth(DEMO_HOST.email)} local={false} />);
+  it("goes straight to the house and the servers when a session is kept", async () => {
+    render(<App feed={quiet} house={quietHouse} auth={fakeAuth(DEMO_HOST.email)} local={false} />);
     expect(await screen.findByText(/Your servers/)).toBeTruthy();
+    expect(screen.getByText(/Reading the house/)).toBeTruthy();
   });
 });
 

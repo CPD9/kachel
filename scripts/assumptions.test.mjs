@@ -16,6 +16,20 @@ test("gives every value in config.json a row with its source", () => {
   }
 });
 
+test("lists the solar cases side by side with their sources", () => {
+  const text = page(config);
+  assert.match(
+    text,
+    /\| Roof PV price +\| `pv_chf_per_kwp` +\| 1659 +\| 1911 +\| 2237 +\| CHF\/kWp +\| \[29\]/,
+  );
+  assert.match(text, /\| Price for PV sold to the grid +\| .* \| 0\.14 +\| CHF\/kWh +\| \[31\]/);
+});
+
+test("refuses a new solar case value that has no source", () => {
+  const cases = { ...config.solar.cases, mid: { ...config.solar.cases.mid, inverter_chf: 900 } };
+  assert.throws(() => page({ ...config, solar: { ...config.solar, cases } }), /inverter_chf/);
+});
+
 test("refuses a new value that has no source", () => {
   const more = { ...config, server: { ...config.server, fan_watts: 40 } };
   assert.throws(() => page(more), /server\.fan_watts/);
@@ -26,6 +40,15 @@ test("skips the notes and keeps a job's arrivals as one value", () => {
   assert.ok(!paths.some((p) => p.endsWith(".source") || p === "_note"));
   assert.ok(paths.includes("jobs.batch.arrivals_server_h"));
   assert.ok(!paths.includes("jobs.batch.arrivals_server_h.6"));
+  assert.ok(paths.includes("fleet.tank_kwh"));
+  assert.ok(!paths.includes("fleet.tank_kwh.0"));
+});
+
+test("prints a fleet range as low to high", () => {
+  assert.match(
+    page(config),
+    /\| Hot-water tank +\| `tank_kwh` +\| 20 to 50 +\| kWh +\| our guess +\|/,
+  );
 });
 
 test("lays tables out as Prettier does", () => {

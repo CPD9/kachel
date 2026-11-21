@@ -37,7 +37,13 @@ make check
 
 `make dev` starts the local Supabase stack (Docker) and serves the host app on http://localhost:5173, the console on http://localhost:5174 and the 3D heat map on http://localhost:5175.
 Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
-Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test` with the password `kachel-demo` (local stack only).
+Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test`, and to the console as the demo buyer, `buyer@kachel.test`, both with the password `kachel-demo` (local stack only).
+
+<p align="center"><img src="docs/media/app-host.png" width="640" alt="The host app signed in as the demo host: six servers, three running a job, one holding a paused job because the house needs no heat, two off"></p>
+
+<p align="center"><img src="docs/media/app-console.png" width="640" alt="The console signed in as the demo buyer: a form to submit a job, and a live table of jobs with their state, the house and server each runs on, and the heat it has delivered"></p>
+
+With both apps running, `pnpm screenshots` retakes these two images with headless Chromium.
 
 ## Repo map
 

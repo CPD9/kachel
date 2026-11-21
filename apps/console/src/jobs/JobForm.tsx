@@ -1,7 +1,7 @@
 import type { JobKind } from "@kachel/db";
 import { useState, type FormEvent } from "react";
 import { KINDS } from "./JobTable";
-import type { NewJob, SubmitJob } from "./submit";
+import { SignedOut, type NewJob, type SubmitJob } from "./submit";
 
 export type Fields = { label: string; kind: JobKind; size: string; deadline: string };
 export type Errors = Partial<Record<keyof Fields, string>>;
@@ -88,10 +88,13 @@ export function JobForm({
       const row = await submit(result.job);
       setStatus({ ok: true, text: `Queued: ${row.label}.` });
       setFields(EMPTY_FIELDS);
-    } catch {
+    } catch (error) {
       setStatus({
         ok: false,
-        text: "The job could not be submitted. Is the local database running?",
+        text:
+          error instanceof SignedOut
+            ? "Your sign-in has ended. Sign out and sign in again to submit the job."
+            : "The job could not be submitted. Is the local database running?",
       });
     } finally {
       setBusy(false);

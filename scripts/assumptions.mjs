@@ -12,6 +12,7 @@ export const PAGE = "docs/assumptions.md";
 
 /** Sources, numbered as in docs/economics/README.md#sources. */
 const BRIEF = "[1] DigitalHeat case brief";
+const WEATHER = "Open-Meteo archive, Basel 2025 (CC BY 4.0)";
 const ELCOM = "[3] ElCom 2026 H4 median, a placeholder for Basel (IWB)";
 const FIELD_COP = "[4] Fraunhofer ISE field test";
 const PCSP = "[9] PCSP server prices 2026";
@@ -26,6 +27,13 @@ const ASR = "[19] Open ASR Leaderboard";
 const MLPERF = "[21] MLPerf Inference v6.0";
 const BATCH_API = "[22] OpenAI Batch API";
 const MEASURED = "[24] our measurement";
+const PVGIS = "[25] PVGIS 5.3";
+const PV_MODEL = "[26] Spencer, [27] Erbs et al., [28] Liu and Jordan";
+const PV_PRICES = "[29] EnergieSchweiz PV prices 2025";
+const KLEIV = "[30] federal one-off payment (CKW)";
+const FEED_IN = "[31] IWB feed-in tariff";
+const SWISSOLAR = "[32] Swissolar factsheet 2025";
+const IWB_2027 = "[3] ElCom, IWB Basel 2027 H4";
 
 /** Job values that have a source; every other job value is our guess (docs/job-types.md). */
 const JOB_SOURCES = {
@@ -44,6 +52,7 @@ const show = {
   pct: (v) => `${Math.round(v * 100)} %`,
   rate: (v) => `${Number((v * 100).toFixed(2))} %`,
   hours: (v) => (v === null ? "none" : `${v} h`),
+  range: (v) => (Array.isArray(v) ? `${v[0]} to ${v[1]}` : String(v)),
   arrivals: (v) =>
     Object.entries(v)
       .map(([h, n]) => `${n} at ${hour(h)}`)
@@ -78,7 +87,47 @@ export const VALUES = {
   "hardware.case_for_results": ["Hardware case the results use", "", show.plain, GUESS],
   "hardware.service_chf_per_hour": ["Service fitter with van", "CHF/h", show.plain, WBAG],
   "hardware.service_callout_chf": ["Service call-out", "CHF", show.plain, WBAG],
+  "solar.roof_kwp": ["Roof PV size", "kWp", show.plain, GUESS],
+  "solar.tilt_deg": ["Roof tilt", "°", show.plain, GUESS],
+  "solar.azimuth_deg": ["Roof facing, 0 = south", "°", show.plain, GUESS],
+  "solar.latitude": ["Latitude, Basel", "°", show.plain, PVGIS],
+  "solar.longitude": ["Longitude, Basel", "°", show.plain, PVGIS],
+  "solar.utc_offset_h": ["Time zone of the weather file", "h", show.plain, PV_MODEL],
+  "solar.ground_albedo": ["Light the ground reflects", "", show.plain, PV_MODEL],
+  "solar.performance_ratio": ["PV performance ratio", "", show.plain, PVGIS],
+  "solar.battery_kwh": ["Battery size", "kWh", show.plain, GUESS],
+  "solar.battery_round_trip": ["Battery round trip", "", show.pct, GUESS],
+  "solar.feed_in_chf_per_kwh": ["Price for PV sold to the grid", "CHF/kWh", show.plain, FEED_IN],
+  "solar.subsidy_chf_per_kwp": ["Federal one-off payment", "CHF/kWp", show.plain, KLEIV],
+  "solar.iwb_2027_chf_per_kwh": ["Electricity price, IWB 2027", "CHF/kWh", show.plain, IWB_2027],
+  "solar.case_for_results": ["Solar case the results use", "", show.plain, GUESS],
 };
+
+/** The synthetic fleet for make fleet (config.json: fleet). A [low, high] pair is one value. */
+const FLEET_VALUES = {
+  houses: ["Houses in the fleet", "", show.plain],
+  seed: ["Random seed that draws the houses and jobs", "", show.plain],
+  city: ["City whose weather every house gets", "", show.plain, WEATHER],
+  latitude: ["Latitude range of the houses", "°N", show.range],
+  longitude: ["Longitude range of the houses", "°E", show.range],
+  servers_per_house: ["Servers per house", "", show.range],
+  tank_kwh: ["Hot-water tank", "kWh", show.range],
+  space_heating_scale: ["Space heating, times the reference house", "", show.range],
+  hot_water_kwh_per_day: ["Hot water a day", "kWh", show.range],
+  interactive_jobs_per_house_per_day: ["Interactive jobs a day, per house", "", show.plain],
+  interactive_hours_of_day: ["Interactive jobs start from, until before", "h", show.range],
+  batch_jobs_per_house_per_day: ["Batch jobs a day, per house", "", show.plain],
+  batch_hours: ["Size of a batch job", "server-hours", show.range],
+  batch_deadline_h: ["Batch deadline after arrival", "h", show.range],
+  backlog_jobs_per_house_per_day: ["Backlog jobs a day, per house", "", show.plain],
+  backlog_hours: ["Size of a backlog job", "server-hours", show.range],
+  backlog_deadline_h: ["Backlog deadline after arrival", "h", show.plain],
+  warmup_days: ["Days run before the shown day", "", show.plain],
+};
+
+for (const [key, [what, unit, print, source]] of Object.entries(FLEET_VALUES)) {
+  VALUES[`fleet.${key}`] = [what, unit, print, source ?? GUESS];
+}
 
 const JOB_VALUES = {
   label: ["What it is", "", show.plain],
@@ -110,7 +159,18 @@ export const HARDWARE = {
   discount_rate: ["Discount rate", "", show.rate, `${WACC}; high case ${GUESS}`],
 };
 
+/** Each solar case's values (config.json: solar.cases), shown side by side. */
+export const SOLAR = {
+  pv_chf_per_kwp: ["Roof PV price", "CHF/kWp", show.plain, PV_PRICES],
+  battery_chf: ["Battery, 10 kWh", "CHF", show.plain, `${PV_PRICES}, ${SWISSOLAR}`],
+  pv_upkeep_share_per_year: ["PV upkeep a year, share of its price", "", show.rate, GUESS],
+  pv_lifetime_years: ["PV lifetime", "years", show.plain, `${SWISSOLAR}; mid, high ${GUESS}`],
+  battery_lifetime_years: ["Battery lifetime", "years", show.plain, GUESS],
+  discount_rate: ["Discount rate", "", show.rate, "[17] pv magazine"],
+};
+
 const CASES = "hardware.cases.";
+const SOLAR_CASES = "solar.cases.";
 
 /** Keys that describe the file rather than hold a value. */
 const NOT_VALUES = new Set(["_note", "source"]);
@@ -120,14 +180,43 @@ export function valuePaths(node, prefix = "") {
   return Object.entries(node).flatMap(([key, value]) => {
     if (NOT_VALUES.has(key)) return [];
     const path = prefix ? `${prefix}.${key}` : key;
-    const leaf = value === null || typeof value !== "object" || key === "arrivals_server_h";
+    const leaf =
+      value === null ||
+      typeof value !== "object" ||
+      Array.isArray(value) ||
+      key === "arrivals_server_h";
     return leaf ? [path] : valuePaths(value, path);
   });
 }
 
 const at = (config, path) => path.split(".").reduce((node, key) => node?.[key], config);
-const known = (path) =>
-  path.startsWith(CASES) ? path.split(".").pop() in HARDWARE : path in VALUES;
+const known = (path) => {
+  if (path.startsWith(CASES)) return path.split(".").pop() in HARDWARE;
+  if (path.startsWith(SOLAR_CASES)) return path.split(".").pop() in SOLAR;
+  return path in VALUES;
+};
+
+/** One table with a column per case, then the notes from config.json. */
+function casesTable(config, prefix, title, spec) {
+  const cases = at(config, `${prefix}.cases`);
+  if (!cases) return [];
+  const names = Object.keys(cases);
+  const rows = Object.entries(spec).map(([key, [what, unit, print, source]]) => [
+    what,
+    `\`${key}\``,
+    ...names.map((n) => (cases[n][key] === undefined ? "" : print(cases[n][key]))),
+    unit,
+    source,
+  ]);
+  const head = ["What", "Key", ...names.map((n) => n[0].toUpperCase() + n.slice(1)), "Unit"];
+  const out = ["", `### ${title}`, "", ...table([...head, "Source"], rows)];
+  const notes = at(config, `${prefix}.source`) ?? {};
+  if (typeof notes === "object" && Object.keys(notes).length) {
+    out.push("", "Notes in config.json:", "");
+    for (const [key, note] of Object.entries(notes)) out.push(`- \`${key}\`: ${note}`);
+  }
+  return out;
+}
 
 /** A Markdown table laid out as Prettier lays it out, so the page passes format:check. */
 export function table(head, rows) {
@@ -146,6 +235,7 @@ const SECTIONS = [
   ["Interactive jobs", "jobs.interactive"],
   ["Batch jobs", "jobs.batch"],
   ["Backlog jobs", "jobs.opportunistic"],
+  ["Fleet (synthetic, make fleet)", "fleet"],
   ["Hardware", "hardware"],
 ];
 
@@ -165,11 +255,13 @@ export function page(config) {
     "",
     "This page is generated: change `config.json`, then run `node scripts/assumptions.mjs`.",
   ];
-  for (const [title, prefix] of SECTIONS) {
+  const section = (title, prefix) => {
     const mine = paths.filter((p) =>
-      prefix ? p.startsWith(`${prefix}.`) && !p.startsWith(CASES) : !p.includes("."),
+      prefix
+        ? p.startsWith(`${prefix}.`) && !p.startsWith(CASES) && !p.startsWith(SOLAR_CASES)
+        : !p.includes("."),
     );
-    if (mine.length === 0) continue;
+    if (mine.length === 0) return;
     const rows = mine.map((p) => {
       const [what, unit, print, source] = VALUES[p];
       return [what, `\`${p.split(".").pop()}\``, print(at(config, p)), unit, source];
@@ -177,25 +269,11 @@ export function page(config) {
     out.push("", `## ${title}`, "", ...table(["What", "Key", "Value", "Unit", "Source"], rows));
     const note = prefix ? at(config, prefix).source : undefined;
     if (typeof note === "string") out.push("", `Note in config.json: ${note}`);
-  }
-  const cases = at(config, "hardware.cases");
-  if (cases) {
-    const names = Object.keys(cases);
-    const rows = Object.entries(HARDWARE).map(([key, [what, unit, print, source]]) => [
-      what,
-      `\`${key}\``,
-      ...names.map((n) => (cases[n][key] === undefined ? "" : print(cases[n][key]))),
-      unit,
-      source,
-    ]);
-    const head = ["What", "Key", ...names.map((n) => n[0].toUpperCase() + n.slice(1)), "Unit"];
-    out.push("", "### Hardware cases", "", ...table([...head, "Source"], rows));
-    const notes = at(config, "hardware.source") ?? {};
-    if (Object.keys(notes).length) {
-      out.push("", "Notes in config.json:", "");
-      for (const [key, note] of Object.entries(notes)) out.push(`- \`${key}\`: ${note}`);
-    }
-  }
+  };
+  for (const [title, prefix] of SECTIONS) section(title, prefix);
+  out.push(...casesTable(config, "hardware", "Hardware cases", HARDWARE));
+  section("Solar and battery", "solar");
+  out.push(...casesTable(config, "solar", "Solar cases", SOLAR));
   return out.join("\n") + "\n";
 }
 

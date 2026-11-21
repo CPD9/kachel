@@ -87,6 +87,15 @@ jobs:
           SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" \
             SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
             pnpm --filter @kachel/db test:realtime
+      # The fleet writer (#81): one hour of `make fleet` fits the schema and its constraints.
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+      - name: Fleet writer puts one hour into the database
+        run: |
+          eval "$(pnpm exec supabase status -o env)"
+          : "${API_URL:?}" "${SERVICE_ROLE_KEY:?}"
+          cd services/scheduler
+          SUPABASE_URL="$API_URL" SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+            uv run python fleet_write.py --day july --hour 20
       - if: always()
         run: pnpm exec supabase stop --no-backup
 

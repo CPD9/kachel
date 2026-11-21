@@ -21,6 +21,7 @@ export type LiveJob = Pick<
   | "server_hours"
   | "deadline_at"
   | "active_cpu_s"
+  | "moved_offsite"
   | "created_at"
   | "updated_at"
 >;
@@ -35,7 +36,7 @@ export interface JobFeed {
 const SITE_COLUMNS = "id, name, city";
 const SERVER_COLUMNS = "id, site_id, slot, name, state, power_kw, heat_recovery, updated_at";
 const JOB_COLUMNS =
-  "id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, created_at, updated_at";
+  "id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, moved_offsite, created_at, updated_at";
 
 let channels = 0;
 

@@ -19,5 +19,7 @@ out/*
 !**/out/kpis.json
 !**/out/day_january.csv
 !**/out/day_july.csv
+!**/out/fleet_*.csv
+!**/out/fleet_kpis.json
 
 .DS_Store

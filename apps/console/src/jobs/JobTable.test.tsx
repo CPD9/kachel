@@ -24,6 +24,7 @@ const job: LiveJob = {
   server_hours: null,
   deadline_at: null,
   active_cpu_s: 1800,
+  moved_offsite: false,
   created_at: "2026-11-21T09:00:00+00:00",
   updated_at: "2026-11-21T10:00:00+00:00",
 };
@@ -37,6 +38,15 @@ const queued: LiveJob = {
   server_id: null,
   active_cpu_s: 0,
   created_at: "2026-11-21T09:30:00+00:00",
+};
+const moved: LiveJob = {
+  ...queued,
+  id: "j306",
+  label: "Transcription batch",
+  kind: "batch",
+  state: "GONE",
+  moved_offsite: true,
+  created_at: "2026-11-21T08:00:00+00:00",
 };
 
 function fakeFeed(jobs: LiveJob[]) {
@@ -57,18 +67,33 @@ const row = (label: string) => screen.getByText(label).closest("tr") as HTMLElem
 afterEach(cleanup);
 
 describe("JobTable", () => {
-  it("shows each job's state, home and heat delivered", async () => {
-    const { feed } = fakeFeed([job, queued]);
+  it("shows each job's state, house, server and heat delivered", async () => {
+    const { feed } = fakeFeed([job, queued, moved]);
     render(<JobTable feed={feed} />);
     await screen.findByText("Embeddings backlog, part 3");
     const running = row("Embeddings backlog, part 3");
     expect(within(running).getByText("Running").dataset["state"]).toBe("RUNNING");
-    expect(within(running).getByText("Reference house, Basel · Server 4")).toBeTruthy();
+    expect(within(running).getByText("Reference house, Basel")).toBeTruthy();
+    expect(within(running).getByText("Server 4")).toBeTruthy();
     expect(within(running).getByText("0.40 kWh")).toBeTruthy();
 
     const waiting = row("Evening chat session");
     expect(within(waiting).getByText("Queued")).toBeTruthy();
     expect(within(waiting).getByText("Not placed yet")).toBeTruthy();
+
+    const away = row("Transcription batch");
+    expect(within(away).getByText(/^Data centre/)).toBeTruthy();
+    expect(within(away).getByText("No house could use its heat in time")).toBeTruthy();
+    expect(within(away).queryByText("Not placed yet")).toBeNull();
+  });
+
+  it("names the House and Server columns", async () => {
+    const { feed } = fakeFeed([job]);
+    render(<JobTable feed={feed} />);
+    await screen.findByText("Embeddings backlog, part 3");
+    const head = screen.getAllByRole("columnheader").map((th) => th.textContent);
+    expect(head).toContain("House");
+    expect(head).toContain("Server");
   });
 
   it("lists the newest job first", async () => {
