@@ -2,6 +2,7 @@
 
   python run_months.py                     # offsets -6 to +6 degrees, every city of fleet_basel_bern
   python run_months.py --offsets -2 0 2    # fewer what-ifs (faster)
+  python run_months.py --jobs 2            # two processes; the default leaves one core free
 
 Every house of the fleet run (config.json: fleet.runs.fleet_basel_bern; all synthetic) runs the
 year through the scheduler on its city's real 2025 weather, once as it was and once for each
@@ -24,6 +25,8 @@ ap.add_argument("--run", default="fleet_basel_bern", help="a name from config.js
 ap.add_argument("--offsets", type=int, nargs="+", default=list(range(-6, 7)), help="degrees C")
 ap.add_argument("--config", default="config.json")
 ap.add_argument("--out", default="out")
+ap.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 1),
+                help="processes to run at once (default: every core but one)")
 a = ap.parse_args()
 cfg = json.load(open(a.config))
 f = cfg["fleet"]
@@ -38,7 +41,7 @@ def one(job):
 
 if __name__ == "__main__":
     os.makedirs(a.out, exist_ok=True)
-    with ProcessPoolExecutor() as pool:
+    with ProcessPoolExecutor(max_workers=a.jobs) as pool:
         results = {(c, o): r for c, o, r in pool.map(one, [(c, o) for c in cities for o in offsets])}
 
     r1 = lambda x: round(float(x), 1)  # noqa: E731

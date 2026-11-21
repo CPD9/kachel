@@ -67,9 +67,10 @@ fleet:
 
 # The Basel and Bern fleet month by month on the saved 2025 weather, and what-ifs from 6 degrees
 # colder to 6 degrees warmer: every house through the scheduler for the year (out/fleet_months.json,
-# read by the operator view). About three minutes on eight cores.
+# read by the operator view). About three minutes on seven of eight cores; MONTHS_JOBS=2 for fewer.
+MONTHS_JOBS ?=
 months:
-	cd $(SCHED) && uv run python run_months.py
+	cd $(SCHED) && uv run python run_months.py $(if $(MONTHS_JOBS),--jobs $(MONTHS_JOBS))
 
 check-readme:
 	python3 scripts/pitch/voiceover.py --check
