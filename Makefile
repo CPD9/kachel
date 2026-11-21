@@ -2,15 +2,24 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev check check-js check-py check-readme heat-loop year
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-readme heat-loop year
 
 bootstrap:
 	pnpm install --frozen-lockfile
 	uv sync --project $(AGENT)
 	uv sync --project $(SCHED)
 
+# Local Supabase runs in Docker (supabase/config.toml); the apps then read it from their .env.
 dev:
+	pnpm exec supabase start
 	pnpm dev
+
+db-stop:
+	pnpm exec supabase stop
+
+# Rebuild the local database from supabase/migrations and supabase/seed.sql.
+db-reset:
+	pnpm exec supabase db reset
 
 check: check-js check-py check-readme
 
