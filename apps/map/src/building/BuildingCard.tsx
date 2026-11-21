@@ -1,5 +1,6 @@
 import { formatEnergy, heatEstimate } from "./estimate";
 import type { BuildingFacts } from "./geoadmin";
+import { ASSUMPTIONS_URL, formatChf, kachelEstimate } from "./kachel";
 import { MonthSlider } from "./MonthSlider";
 
 const NETWORK_THRESHOLD_MWH = 700;
@@ -102,6 +103,8 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
         </section>
       )}
 
+      {estimate !== null && <WithKachel heatKwh={estimate.heatKwh} />}
+
       {register !== null && (
         <section className="mt-3">
           <h3 className="font-medium">The building</h3>
@@ -147,5 +150,40 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
         </section>
       )}
     </>
+  );
+}
+
+/** What Kachel home servers could do here, scaled from the scheduler's reference house. */
+function WithKachel({ heatKwh }: { heatKwh: number }) {
+  const k = kachelEstimate(heatKwh);
+  return (
+    <section className="mt-3 rounded-md border border-heat/50 p-3">
+      <h3 className="font-medium text-heat">With Kachel, estimated</h3>
+      {k === null ? (
+        <p>Too little heat for one 1 kW server.</p>
+      ) : (
+        <dl className="mt-1 space-y-0.5">
+          <Row label="Home servers, 1 kW each" value={`about ${k.servers}`} />
+          <Row
+            label="Server heat used"
+            value={`${formatEnergy(k.heatFromServersKwh)} (${Math.round(k.sharePct)}%)`}
+          />
+          <Row label="Electricity the servers draw" value={formatEnergy(k.electricityKwh)} />
+          <Row label="A year, before hardware" value={formatChf(k.beforeHardwareChf)} />
+          <Row label="A year, after hardware (mid)" value={formatChf(k.afterHardwareChf.mid)} />
+          <Row label="… cheap hardware (low)" value={formatChf(k.afterHardwareChf.low)} />
+          <Row label="… dear hardware (high)" value={formatChf(k.afterHardwareChf.high)} />
+          <Row label="Payback (mid)" value={`${k.paybackYearsMid} years`} />
+        </dl>
+      )}
+      <p className="mt-1 text-xs text-paper/60">
+        {
+          "Estimate, scaled from Kachel's Basel reference house (6 servers, 31,231 kWh, Basel 2025 weather) in proportion to this building's heat. It assumes interruptible AI work is always waiting and 0.50 CHF a server-hour. "
+        }
+        <a href={ASSUMPTIONS_URL} target="_blank" rel="noreferrer" className="underline">
+          Assumptions and sources
+        </a>
+      </p>
+    </section>
   );
 }
