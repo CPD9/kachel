@@ -23,7 +23,7 @@ row, as in segment 3. Nothing is keyframed.
 
 Options after "--": --part outside|inside, --day CSV, --out DIR,
 --width/--height of one half (960x1080), --samples, --steps (stills per hour),
---hours 0,6,9 to render only those hours (previews).
+--times 07:30,13:00 to render only those times (previews).
 """
 
 import argparse
@@ -43,6 +43,22 @@ import kachel_scene as ks
 
 HEAT_ATLAS = Path.home() / "Projects/heat-atlas"
 LAT, LON, TZ = 47.56, 7.59, ZoneInfo("Europe/Zurich")
+INSIDE_EYE = (3.4, -2.4, 2.0)
+INSIDE_AIM = (0.7, 0.7, 1.05)
+# Pipe runs in the plant room, in the direction the water flows: hot from the servers to the
+# heat exchanger and on to the tank, cooled water back the other way.
+FLOW = {
+    "hot": [
+        [(-0.3, 0.55, 2.2), (-0.3, 0.55, 2.5), (-0.3, 1.28, 2.5), (1.08, 1.28, 2.5),
+         (1.08, 1.28, 0.8), (1.23, 1.28, 0.8)],
+        [(1.88, 1.12, 0.8), (2.2, 1.12, 0.8), (2.2, 1.12, 1.55), (2.58, 0.75, 1.55)],
+    ],
+    "cold": [
+        [(2.58, 0.75, 0.35), (2.36, 0.99, 0.35), (2.36, 1.28, 0.26), (1.82, 1.28, 0.26)],
+        [(1.23, 1.12, 0.2), (0.95, 1.42, 0.2), (0.95, 1.42, 2.32), (-0.4, 1.42, 2.32),
+         (-0.4, 0.55, 2.32), (-0.4, 0.55, 2.2)],
+    ],
+}  # fmt: skip
 
 
 def args():
@@ -55,7 +71,10 @@ def args():
     ap.add_argument("--height", type=int, default=1080)
     ap.add_argument("--samples", type=int, default=48)
     ap.add_argument("--steps", type=int, default=1, help="stills per hour (outside)")
-    ap.add_argument("--hours", default="")
+    ap.add_argument(
+        "--times", default="", help="HH:MM list to render only those (previews)"
+    )
+    ap.add_argument("--lens", type=float, default=21.0)
     return ap.parse_args(argv)
 
 
@@ -125,7 +144,7 @@ def heat_overlay(SK, cam, col):
     pal = [(0.984, 0.788, 0.627), (0.957, 0.635, 0.400), (0.882, 0.459, 0.192),
            (0.85, 0.35, 0.12), (0.8, 0.25, 0.06), (0.75, 0.15, 0.03)]  # fmt: skip
     mats = [
-        SK.hud_material(f"DN_Heat{k}", tuple(x**2.2 for x in c), 1.0, alpha=0.12)
+        SK.hud_material(f"DN_Heat{k}", tuple(x**2.2 for x in c), 1.0, alpha=0.08)
         for k, c in enumerate(pal)
     ]
     vs, fs, mi = [], [], []
@@ -136,6 +155,8 @@ def heat_overlay(SK, cam, col):
         if not (t[0] <= x0 and x0 + 100 <= t[2] and t[1] <= y0 and y0 + 100 <= t[3]):
             continue
         v = f["properties"]["needtotal"] or 0.0
+        if v < 700:
+            continue  # only the hot cells (>= 700 MWh per hectare and year) glow
         k = next(i for i in range(6) if breaks[i] <= v < breaks[i + 1])
         ax, ay = x0 - SK.E0, y0 - SK.N0
         bx, by = ax + 100, ay + 100
@@ -209,59 +230,60 @@ def outside(a, rows):
     heat_max = max(float(r["heat_produced"]) for r in rows) or 1.0
     date = datetime.strptime(rows[0]["time"][:10], "%Y-%m-%d")
     log = []
-    for r in rows:
-        for s in range(a.steps):
-            minute = 60 * s // a.steps
-            local = date + timedelta(hours=int(r["hour"]), minutes=minute)
-            elev, az = sun_position(local)
-            rot = 90 - az
-            SK.set_sun(sky, max(elev, -18.0), rot)
-            bg.inputs["Strength"].default_value = (
-                lerp(0.9, 0.06, (-elev - 4) / 12)
-                if elev < 0
-                else lerp(0.9, 0.15, elev / 12)
+    if a.times:
+        by_hour = {int(r["hour"]): r for r in rows}
+        plan = [(by_hour[int(t[:2])], int(t[3:5])) for t in a.times.split(",")]
+    else:
+        plan = [(r, 60 * s // a.steps) for r in rows for s in range(a.steps)]
+    for r, minute in plan:
+        local = date + timedelta(hours=int(r["hour"]), minutes=minute)
+        elev, az = sun_position(local)
+        rot = 90 - az
+        # Twilight: from about -12 deg the sky brightens into the dusk colours of the
+        # heat-atlas still; below the horizon the sky model is held just under it.
+        SK.set_sun(sky, max(elev, -2.0) if elev > -12 else max(elev, -18.0), rot)
+        if elev >= 0:
+            bg.inputs["Strength"].default_value = lerp(0.9, 0.15, elev / 12)
+        else:
+            t = max(0.0, min(1.0, (elev + 12) / 9))
+            bg.inputs["Strength"].default_value = 0.03 + 0.9 * t * t * (3 - 2 * t)
+        day = max(0.0, min(1.0, elev / 12))
+        night = max(0.0, min(1.0, (-elev - 4) / 8))
+        sun.hide_render = elev <= 0
+        sun.data.energy = 1.2 * day + 0.4 * min(1.0, max(0.0, elev) / 3) * (1 - day)
+        sun.data.color = lerp((1.0, 0.6, 0.35), (1.0, 0.97, 0.93), elev / 15)
+        sun.rotation_euler = (
+            math.radians(90 - max(elev, 0.5)),
+            0,
+            math.radians(rot + 90),
+        )
+        fog = lerp(
+            lerp((0.06, 0.14, 0.29), (0.55, 0.6, 0.68), day),
+            (0.012, 0.025, 0.06),
+            night,
+        )
+        SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
+        sc.view_settings.exposure = -0.3
+        dark = max(0.0, min(1.0, (3 - elev) / 9))
+        for n, g in gains.items():
+            bpy.data.materials[n].node_tree.nodes["WindowGain"].outputs[
+                0
+            ].default_value = g * (0.05 + 0.95 * dark)
+        dk = float(r["demand_kwh"]) / demand_max
+        for m in heat_mats:
+            m.node_tree.nodes["Emission"].inputs["Strength"].default_value = (
+                0.05 + 0.5 * dk
             )
-            day = max(0.0, min(1.0, elev / 12))
-            night = max(0.0, min(1.0, -elev / 12))
-            sun.hide_render = elev <= 0
-            sun.data.energy = 1.2 * day + 0.4 * min(1.0, max(0.0, elev) / 3) * (1 - day)
-            sun.data.color = lerp((1.0, 0.6, 0.35), (1.0, 0.97, 0.93), elev / 15)
-            sun.rotation_euler = (
-                math.radians(90 - max(elev, 0.5)),
-                0,
-                math.radians(rot + 90),
+        hk = float(r["heat_produced"]) / heat_max
+        for m in lines:
+            m.node_tree.nodes["Emission"].inputs["Strength"].default_value = (
+                0.3 + 2.4 * hk
             )
-            fog = lerp(
-                lerp((0.06, 0.14, 0.29), (0.55, 0.6, 0.68), day),
-                (0.012, 0.025, 0.06),
-                night,
-            )
-            SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
-            sc.view_settings.exposure = -0.3
-            dark = max(0.0, min(1.0, (3 - elev) / 9))
-            for n, g in gains.items():
-                bpy.data.materials[n].node_tree.nodes["WindowGain"].outputs[
-                    0
-                ].default_value = g * (0.05 + 0.95 * dark)
-            dk = float(r["demand_kwh"]) / demand_max
-            for m in heat_mats:
-                m.node_tree.nodes["Emission"].inputs["Strength"].default_value = (
-                    0.1 + 0.9 * dk
-                )
-            hk = float(r["heat_produced"]) / heat_max
-            for m in lines:
-                m.node_tree.nodes["Emission"].inputs["Strength"].default_value = (
-                    0.3 + 2.4 * hk
-                )
-            key = f"{int(r['hour']):02d}{minute:02d}"
-            if a.hours and str(int(r["hour"])) not in a.hours.split(","):
-                continue
-            if a.hours and s:
-                continue
-            sc.render.filepath = str(Path(a.out) / "outside" / f"{key}.png")
-            bpy.ops.render.render(write_still=True)
-            log.append({"key": key, "elev": round(elev, 2), "az": round(az, 1)})
-            print("outside", key, round(elev, 1), round(az, 1), flush=True)
+        key = f"{int(r['hour']):02d}{minute:02d}"
+        sc.render.filepath = str(Path(a.out) / "outside" / f"{key}.png")
+        bpy.ops.render.render(write_still=True)
+        log.append({"key": key, "elev": round(elev, 2), "az": round(az, 1)})
+        print("outside", key, round(elev, 1), round(az, 1), flush=True)
     (Path(a.out) / "sun.json").write_text(json.dumps(log, indent=1))
 
 
@@ -272,17 +294,33 @@ def inside(a, rows, cfg, kpis):
     h = ks.prepare()
     sc = h["scene"]
     ks.setup_render(sc, a.width, a.height, a.samples)
-    cam = sc.camera
-    cam.data.sensor_fit = "HORIZONTAL"
-    cam.data.lens = 13.5
+    # Portrait half: a raised view down into the room, so rack and tank stack up the frame
+    # instead of leaving bare floor and ceiling. Ceiling and front wall stay out of the shot
+    # but still light the room.
+    cd = bpy.data.cameras.new("DN_Inside")
+    cd.sensor_fit = "HORIZONTAL"
+    cd.lens = a.lens
+    cam = bpy.data.objects.new("DN_Inside", cd)
+    sc.collection.objects.link(cam)
+    cam.location = INSIDE_EYE
+    d = Vector(INSIDE_AIM) - Vector(INSIDE_EYE)
+    cam.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
+    sc.camera = cam
+    for o in sc.objects:
+        if o.name == "Wall_Front" or o.name.startswith("Batten"):
+            o.visible_camera = False
     tank = float(cfg["house"]["tank_kwh"])
     n = int(kpis["servers_per_house"])
     per = float(cfg["server"]["power_kw"]) * float(cfg["server"]["heat_recovery"])
     backup_max = max(float(r["backup_kwh"]) for r in rows) or 1.0
-    anchors = {k: ks.project(sc, v) for k, v in ks.anchors(h).items()}
-    (Path(a.out) / "inside_anchors.json").write_text(json.dumps(anchors, indent=1))
+    bpy.context.view_layer.update()  # camera matrix before projecting
+    flow = {
+        k: [[ks.project(sc, p) for p in path] for path in paths]
+        for k, paths in FLOW.items()
+    }
+    (Path(a.out) / "flow.json").write_text(json.dumps(flow, indent=1))
     for r in rows:
-        if a.hours and str(int(r["hour"])) not in a.hours.split(","):
+        if a.times and int(r["hour"]) not in {int(t[:2]) for t in a.times.split(",")}:
             continue
         ks.apply_state(
             h,

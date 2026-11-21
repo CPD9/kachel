@@ -106,6 +106,7 @@ video-scheduler:
 # plant room, one still per hour of a day file. DAYNIGHT_DAY picks the day.
 DAYNIGHT_DAY ?= january
 DAYNIGHT_SAMPLES ?= 48
+DAYNIGHT_STEPS ?= 4
 DAYNIGHT_WORK = $(VIDEO_OUT)/work/daynight-$(DAYNIGHT_DAY)
 
 video-daynight:
@@ -114,7 +115,7 @@ video-daynight:
 	scripts/video/gpu_wait.sh
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(HOME)/Projects/heat-atlas/renders/skyline.blend \
 		--python scripts/video/daynight.py -- --part outside --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
-		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES)
+		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS)
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
 		--day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv --out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES)
