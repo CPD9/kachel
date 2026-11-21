@@ -7,6 +7,10 @@ Your AI heats your home.
 Small servers in a home's basement run AI jobs, and their heat goes into space heating and hot water.
 A job runs only when its heat is useful.
 
+<p align="center"><img src="docs/media/scheduler.gif" width="640" alt="The plant room through a January day and a July day: servers run when the house needs heat and pause when the tank is full"></p>
+
+More renders, the videos and the charts are in [docs/media](docs/media/README.md).
+
 ## Run it
 
 ```sh
@@ -37,7 +41,7 @@ Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase
 - Peter Dike ([@CPD9](https://github.com/CPD9))
 - Duc ([@bila9630](https://github.com/bila9630))
 - Loyola ([@Loyola-sk](https://github.com/Loyola-sk))
-- Nikolas
+- Nikolas ([@Ni93c42l](https://github.com/Ni93c42l))
 
 ## Licence
 
