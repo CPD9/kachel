@@ -51,7 +51,7 @@ lines.
 
 - 0:10 "Basel-Stadt voted to reach net zero by 2037."
 - 0:17 "Data centres used 415 terawatt-hours in 2024, about one and a half percent of the
-  world's electricity. Almost all of it ends up as heat, and they pay to cool it away."
+  world's electricity. Their heat is cooled away."
 - 0:30 "Meanwhile homes here still burn oil and gas for space heating and hot water."
 - 0:37 "So we put the servers in the basement, and run their AI jobs only when the house can
   use the heat."
