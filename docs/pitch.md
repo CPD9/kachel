@@ -15,6 +15,7 @@ goal. Two slides, one Blender film we talk over, one live moment, then the ask.
   `make video-film-2min` rebuilds it from the rendered parts.
 - Film segments: [docs/media](media/README.md) and the
   [media-v1 release](https://github.com/CPD9/kachel/releases/tag/media-v1).
+- Sunday morning, step by step: [the demo checklist](demo-checklist.md).
 - How the parts fit: [docs/architecture.md](architecture.md).
 - Charts, sources and open questions: [the numbers behind Kachel](economics/README.md).
 
@@ -96,7 +97,7 @@ lines.
 ### 2:32–3:32, live (60 s)
 
 Before the talk, Duc has run `make dev`, started the embedding job, and started the agent on
-Server 4 with `--tick 0.2` (command in `services/agent/.env.example`), signal file
+Server 4 with `--tick 0.2` (commands in [the demo checklist](demo-checklist.md)), signal file
 `/tmp/heat` holding `run`. The host app is open full screen, Server 4 shows Running.
 
 - 2:32 Duc switches the projector to the host app. Peter: "This is the host app, live on
