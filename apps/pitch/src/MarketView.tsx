@@ -51,7 +51,7 @@ export type MarketPin = {
 /** The buyer's side: what they want to run, and which house it runs in. Kept in App for the map. */
 export function useMarket() {
   const [page, setPage] = useState<"setup" | "houses" | null>(null);
-  const [needs, setNeeds] = useState<Needs>(() => needsFor("render", true));
+  const [needs, setNeeds] = useState<Needs>(() => needsFor("render", true, true));
   const [sort, setSort] = useState<Sort>("match");
   const [picked, setPicked] = useState<string | null>(null);
   const list = useMemo(() => quotes(needs, sort), [needs, sort]);

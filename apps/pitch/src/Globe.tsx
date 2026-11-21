@@ -54,6 +54,8 @@ const OVERVIEW_CAMERA = {
 /** Degrees per frame while orbiting. */
 const ORBIT_SPEED = 0.03;
 const NEIGHBOUR_FLY_MS = 3000;
+/** Leaving the house for the first neighbour (the "Finding who could use your rack…" step). */
+const GAMER_FLY_MS = 1800;
 const SWITCH_FLY_MS = 1800;
 const NEIGHBOUR_BUILDINGS = "neighbour-buildings";
 const LINK = "rack-link";
@@ -841,14 +843,13 @@ export function Globe({
     if (!map || !away) return;
     add3dBuildings(map);
     const first = NEIGHBOURS[neighbourRef.current ?? 0] ?? NEIGHBOURS[0];
-    if (first)
-      map.flyTo({ ...neighbourCamera(first.at), duration: NEIGHBOUR_FLY_MS, essential: true });
+    if (first) map.flyTo({ ...neighbourCamera(first.at), duration: GAMER_FLY_MS, essential: true });
     // Further neighbours' tiles load as the camera moves: look for them on every idle
     const onLater = () => {
       if (raisedRef.current?.resolve())
         setRoofs({ map, heights: { ...raisedRef.current.heights }, home: raisedRef.current.home });
     };
-    // Building tiles may still be loading: try on the next few idles, then show the cards anyway
+    // Building tiles may still be loading: try on the next few idles; the buildings rise when ready
     let tries = 0;
     const onIdle = () => {
       const raised = raiseNeighbours(map, neighbourRef.current ?? 0);
@@ -856,10 +857,13 @@ export function Globe({
         raisedRef.current = raised;
         setRoofs({ map, heights: { ...raised.heights }, home: raised.home });
         map.on("idle", onLater);
-      } else if (++tries < 3) return void map.once("idle", onIdle);
-      onArriveRef.current?.();
+      } else if (++tries < 3) map.once("idle", onIdle);
     };
-    const onLand = () => map.once("idle", onIdle);
+    // Show the cards as soon as the camera lands, without waiting for every tile
+    const onLand = () => {
+      onArriveRef.current?.();
+      map.once("idle", onIdle);
+    };
     map.once("moveend", onLand);
     return () => {
       map.off("moveend", onLand);
