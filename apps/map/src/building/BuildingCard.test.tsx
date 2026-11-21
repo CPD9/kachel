@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BuildingCard } from "./BuildingCard";
 import type { BuildingFacts } from "./geoadmin";
@@ -37,6 +37,18 @@ describe("building card", () => {
     expect(screen.getByText(/SFOE Sonnendach, computed from GWR data/)).toBeTruthy();
     expect(screen.getByText("Source: BFS GWR, as of 19.11.2026.")).toBeTruthy();
     expect(screen.getByText(/Dense enough for a heating network/)).toBeTruthy();
+  });
+
+  it("shows the chosen month's heat on the slider", () => {
+    render(<BuildingCard facts={FACTS} onClose={() => undefined} />);
+    const slider = screen.getByRole("slider");
+    fireEvent.change(slider, { target: { value: "6" } });
+    // July: no heating degree days, so only a month of hot water: 71,408 × 31 ÷ 365.
+    expect(screen.getByLabelText("July")).toBeTruthy();
+    expect(slider.getAttribute("aria-valuetext")).toBe("July: 6,060 kWh");
+    // January: 314,659 × 545 ÷ 2,820 degree days, plus 71,408 × 31 ÷ 365 of hot water.
+    fireEvent.change(slider, { target: { value: "0" } });
+    expect(slider.getAttribute("aria-valuetext")).toBe("January: 66.9 MWh");
   });
 
   it("says so when nothing is published", () => {

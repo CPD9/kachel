@@ -1,5 +1,6 @@
 import { formatEnergy, heatEstimate } from "./estimate";
 import type { BuildingFacts } from "./geoadmin";
+import { MonthSlider } from "./MonthSlider";
 
 const NETWORK_THRESHOLD_MWH = 700;
 
@@ -79,8 +80,16 @@ function Facts({ facts }: { facts: BuildingFacts }) {
               }
             />
           </dl>
+          {roof !== null && (
+            <MonthSlider
+              key={register?.egid ?? "building"}
+              heatingKwh={roof.heatingKwh}
+              hotWaterKwh={roof.hotWaterKwh}
+              degreeDays={roof.degreeDays}
+            />
+          )}
           <Source>
-            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023). Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
+            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023); months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
           </Source>
         </section>
       )}
