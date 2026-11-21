@@ -55,10 +55,10 @@ def frame(i):
         img,
         (W / 2, 780),
         "  ·  ".join(TEAM).replace("  ", "\u2002"),
-        44,
+        48,
         seg(u, 1.4, 2.4),
         "medium",
-        SLATE,
+        mix(INK, PAPER, 0.85),  # PAPER at 85 % on INK, bright enough for a projector
         anchor="ms",
         stagger=0.04,
     )
