@@ -6,9 +6,12 @@ Rule set (in priority order):
      If it reaches its last possible hour without a heat sink -> policy: move / dump / miss.
   3. Opportunistic backlog fills whatever useful heat room is left, after keeping
      head-room in the tank for the interactive heat forecast to arrive soon.
+     With roof PV, it also keeps tank room for the hours the sun is forecast to power the
+     servers, so the tank fills on sunshine and not on bought power. That room never cuts
+     into this hour's heat demand: the house is never left colder to wait for the sun.
   4. Nothing else runs. A server whose heat is not needed is off.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 @dataclass
 class Signal:                 # what the scheduler sees each hour
@@ -24,6 +27,7 @@ class Signal:                 # what the scheduler sees each hour
     batch_policy: str = "move"
     opp_unlimited: bool = True
     opp_queue: float = 0.0
+    forecast_pv: list = field(default_factory=list)  # next hours' servers own PV could power (0 without PV)
 
 @dataclass
 class Decision:
@@ -53,8 +57,18 @@ def decide(s: Signal) -> Decision:
     for dem, inter in zip(s.forecast_demand, s.forecast_interactive):
         need += inter * h - dem
         worst = max(worst, need)
-    d.reserve_kwh = worst
-    usable = room - worst
+    # with PV: also keep room for the heat that sun-powered servers will make (never more than the tank has free)
+    pv_need = pv_worst = 0.0
+    for dem, inter, sun in zip(s.forecast_demand, s.forecast_interactive, s.forecast_pv):
+        pv_need += max(inter, sun) * h - dem
+        pv_worst = max(pv_worst, pv_need)
+    must_make = max(0.0, s.demand_kwh - s.soc_kwh - d.interactive * h)   # heat the tank cannot cover this hour
+    keep = -(-must_make // h) * h                                        # ... in whole server-hours
+    pv_extra = min(max(0.0, pv_worst - worst), max(0.0, room - worst - keep))
+    if any(dem > s.n_servers * h for dem in s.forecast_demand):
+        pv_extra = 0.0                    # a cold hour is coming that needs a full tank: do not wait for the sun
+    d.reserve_kwh = worst + pv_extra
+    usable = room - d.reserve_kwh
 
     # 2. batch, earliest deadline first, while its heat is useful
     total_batch = sum(w for _, w in s.batch_queue)

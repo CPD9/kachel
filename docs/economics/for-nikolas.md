@@ -39,32 +39,30 @@ These are our assumptions. Change a value here and every result and chart change
 [Open kpis.json](https://github.com/CPD9/kachel/blob/main/services/scheduler/out/kpis.json).
 These are the results for one house over one year.
 
-One caveat: the numbers in this file come from synthetic preview weather, so the model can
-run offline. The results with real Basel weather for 2025 are on the
-[economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md). The two
-agree within about 1.5 points (heat covered: 78.1% here, 79.6% with real weather).
+The numbers in this file come from real Basel weather for 2025 (Open-Meteo), the same run
+as on the [economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md).
 
 | Output                               | Value      | What it means                                                                                                               |
 | ------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `servers_per_house`                  | 6          | How many servers the model puts in the house. It stops adding once the last one would run under 40% of the year (our rule). |
-| `heat_demand_kwh`                    | 31,296 kWh | Heat the house needs in the year: space heating plus hot water.                                                             |
-| `share_of_heat_covered_pct`          | 78.1%      | Share of that demand met by server heat.                                                                                    |
-| `heat_dumped_kwh`                    | 11.3 kWh   | Server heat the house could not use and had to get rid of (from evening sessions that cannot wait).                         |
-| `backup_heat_kwh`                    | 6,864 kWh  | Heat the backup heater still has to make.                                                                                   |
-| `utilisation_pct`                    | 58.1%      | Share of all hours in the year that the servers run.                                                                        |
-| `server_hours_sold`                  | 30,554     | Server-hours of work done and sold in the year.                                                                             |
+| `heat_demand_kwh`                    | 31,231 kWh | Heat the house needs in the year: space heating plus hot water.                                                             |
+| `share_of_heat_covered_pct`          | 79.6%      | Share of that demand met by server heat.                                                                                    |
+| `heat_dumped_kwh`                    | 9.1 kWh    | Server heat the house could not use and had to get rid of (from evening sessions that cannot wait).                         |
+| `backup_heat_kwh`                    | 6,380 kWh  | Heat the backup heater still has to make.                                                                                   |
+| `utilisation_pct`                    | 59.1%      | Share of all hours in the year that the servers run.                                                                        |
+| `server_hours_sold`                  | 31,075     | Server-hours of work done and sold in the year.                                                                             |
 | `missed_deadlines_pct_of_jobs`       | 0%         | Share of jobs that finished late.                                                                                           |
 | `moved_offsite_pct_of_deadline_jobs` | 0%         | Share of jobs sent to an ordinary data centre because the house had no use for the heat in time.                            |
-| `electricity_cost_chf`               | 8,463 CHF  | Electricity bought for the servers.                                                                                         |
-| `value_of_heat_used_chf`             | 2,707 CHF  | Heat credit: what the heat pump would have spent on electricity to make the same heat.                                      |
-| `computing_income_chf`               | 15,277 CHF | Server-hours sold times the compute price.                                                                                  |
+| `electricity_cost_chf`               | 8,608 CHF  | Electricity bought for the servers.                                                                                         |
+| `value_of_heat_used_chf`             | 2,753 CHF  | Heat credit: what the heat pump would have spent on electricity to make the same heat.                                      |
+| `computing_income_chf`               | 15,538 CHF | Server-hours sold times the compute price.                                                                                  |
 | `break_even_chf_per_server_hour`     | 0.188 CHF  | Lowest price per server-hour at which income covers electricity minus the heat credit. Hardware not included.               |
 | `pays_off_at_assumed_compute_price`  | true       | Whether the assumed 0.50 CHF is above that break-even.                                                                      |
-| `profile_source`                     | synthetic  | Which weather the run used.                                                                                                 |
-| `heating_days`                       | 202        | Days in the year with a mean temperature below 12 °C, when space heating is on.                                             |
+| `profile_source`                     | Basel 2025 | Which weather the run used.                                                                                                 |
+| `heating_days`                       | 206        | Days in the year with a mean temperature below 12 °C, when space heating is on.                                             |
 
-Income minus electricity plus the heat credit leaves about 9,700 CHF per house and year
-with real weather, before anyone pays for the servers themselves.
+Income minus electricity plus the heat credit leaves 9,683 CHF per house and year,
+before anyone pays for the servers themselves.
 
 ## Hardware: three cases
 
@@ -96,10 +94,45 @@ In short: at 0.50 CHF a server-hour the mid case only just pays, and the high ca
 pay back within its four-year life. These figures are also in
 [hardware.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/hardware.csv).
 
+## Solar and a battery
+
+The `solar` block in `config.json` puts a 10 kWp roof on the house (south, 30°) and, as an
+option, a 10 kWh battery. The roof and the battery power only the servers. The scheduler gets
+one new rule: in summer it lets the tank carry the house until the sun is up, then runs the
+backlog on sunshine. It never waits if that would leave the house short of heat. Each source
+is on the
+[economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md#10-solar-the-bill-and-the-payback).
+The roof makes 1,167 kWh per kWp in 2025 in our model; the EU's PVGIS tool gives 1,160 for
+Basel. Lifetimes, upkeep and battery losses are our guesses, except the 33-year PV life
+(Swissolar).
+
+| Input                            | Low       | Mid       | High       | Where it comes from                                         |
+| -------------------------------- | --------- | --------- | ---------- | ----------------------------------------------------------- |
+| Roof PV, CHF per kWp (no VAT)    | 1,659     | 1,911     | 2,237      | Quartiles of 2025 Swiss offers, 10–30 kW (EnergieSchweiz)   |
+| Federal one-off payment, per kWp | 360 CHF   | 360 CHF   | 360 CHF    | KLEIV rate for attached systems under 30 kWp (CKW, 2025)    |
+| 10 kWh battery                   | 6,000 CHF | 6,442 CHF | 10,000 CHF | Swissolar range (2025); mid from the EnergieSchweiz formula |
+| PV sold to IWB                   | 14 Rp/kWh | 14 Rp/kWh | 14 Rp/kWh  | IWB feed-in tariff, fixed for 12 years                      |
+
+| Result, mid prices, one year         | No solar   | Roof PV    | Roof PV + battery |
+| ------------------------------------ | ---------- | ---------- | ----------------- |
+| Server power from own PV             | 0%         | 18.6%      | 21.4%             |
+| Servers' electricity, 27.7 Rp        | 8,608 CHF  | 6,174 CHF  | 6,069 CHF         |
+| Servers' electricity, IWB 33.42 Rp   | 10,385 CHF | 7,619 CHF  | 7,464 CHF         |
+| Paid up front, after federal payment | –          | 15,510 CHF | 21,952 CHF        |
+| Payback, 27.7 Rp                     | –          | 8.2 years  | 11.7 years        |
+| Payback, IWB 33.42 Rp                | –          | 7.0 years  | 9.7 years         |
+| Left per year after servers and PV   | 1,415 CHF  | 2,772 CHF  | 2,200 CHF         |
+
+In short: the roof pays for itself in about 8 years and adds about 1,350 CHF a year. The
+battery does not pay at these prices. The servers use nearly three times what the roof makes,
+mostly in winter, so solar trims the bill rather than removing it. These figures are also in
+[solar.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/solar.csv).
+
 ## The charts
 
-These are the same seven charts as on the economics page. Chart 6 now shows the result after
-hardware (mid case), so its numbers are lower than the 9,700 CHF above.
+These are the same ten charts as on the economics page. Chart 6 now shows the result after
+hardware (mid case), so its numbers are lower than the 9,683 CHF above. Charts 8 to 10 are
+the solar ones.
 
 ![When the house needs heat](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/01_weather_and_demand.png)
 
@@ -114,6 +147,12 @@ hardware (mid case), so its numbers are lower than the 9,700 CHF above.
 ![What moves the result](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/06_what_moves_the_result.png)
 
 ![Paying back the hardware](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/07_payback.png)
+
+![Solar: the scheduler waits for the sun](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/08_solar_day.png)
+
+![Solar: month by month](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/09_solar_month.png)
+
+![Solar: the bill and the payback](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/10_solar_bill.png)
 
 ## The tables behind the charts
 
@@ -131,6 +170,8 @@ Each opens in Excel or Google Sheets (use Download, then open the file).
   up-front cost, payback, NPV and break-even for each hardware case
 - [payback.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/payback.csv):
   payback years against the compute price, for each hardware case
+- [solar.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/solar.csv): own
+  PV share, electricity cost and payback for each solar setup, at 27.7 and 33.42 Rp
 - [weather_basel_2025.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/weather_basel_2025.csv):
   hourly Basel temperature and sunshine for 2025
 
@@ -153,3 +194,6 @@ These are the questions we are least sure of, and where your background counts m
    buyer of compute, and what heat price would a homeowner accept?
 5. **Carbon factor.** Swiss consumer-mix factors range from about 59 to 128 g CO₂e per kWh
    depending on method. Which one should we use, and why?
+6. **Solar payback.** Is it fair to count the 14 Rp feed-in for the whole PV life when IWB
+   fixes it for 12 years? And would a battery pay with a time-of-use tariff, or should we
+   drop it?

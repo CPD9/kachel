@@ -27,6 +27,13 @@ const ASR = "[19] Open ASR Leaderboard";
 const MLPERF = "[21] MLPerf Inference v6.0";
 const BATCH_API = "[22] OpenAI Batch API";
 const MEASURED = "[24] our measurement";
+const PVGIS = "[25] PVGIS 5.3";
+const PV_MODEL = "[26] Spencer, [27] Erbs et al., [28] Liu and Jordan";
+const PV_PRICES = "[29] EnergieSchweiz PV prices 2025";
+const KLEIV = "[30] federal one-off payment (CKW)";
+const FEED_IN = "[31] IWB feed-in tariff";
+const SWISSOLAR = "[32] Swissolar factsheet 2025";
+const IWB_2027 = "[3] ElCom, IWB Basel 2027 H4";
 
 /** Job values that have a source; every other job value is our guess (docs/job-types.md). */
 const JOB_SOURCES = {
@@ -80,6 +87,20 @@ export const VALUES = {
   "hardware.case_for_results": ["Hardware case the results use", "", show.plain, GUESS],
   "hardware.service_chf_per_hour": ["Service fitter with van", "CHF/h", show.plain, WBAG],
   "hardware.service_callout_chf": ["Service call-out", "CHF", show.plain, WBAG],
+  "solar.roof_kwp": ["Roof PV size", "kWp", show.plain, GUESS],
+  "solar.tilt_deg": ["Roof tilt", "°", show.plain, GUESS],
+  "solar.azimuth_deg": ["Roof facing, 0 = south", "°", show.plain, GUESS],
+  "solar.latitude": ["Latitude, Basel", "°", show.plain, PVGIS],
+  "solar.longitude": ["Longitude, Basel", "°", show.plain, PVGIS],
+  "solar.utc_offset_h": ["Time zone of the weather file", "h", show.plain, PV_MODEL],
+  "solar.ground_albedo": ["Light the ground reflects", "", show.plain, PV_MODEL],
+  "solar.performance_ratio": ["PV performance ratio", "", show.plain, PVGIS],
+  "solar.battery_kwh": ["Battery size", "kWh", show.plain, GUESS],
+  "solar.battery_round_trip": ["Battery round trip", "", show.pct, GUESS],
+  "solar.feed_in_chf_per_kwh": ["Price for PV sold to the grid", "CHF/kWh", show.plain, FEED_IN],
+  "solar.subsidy_chf_per_kwp": ["Federal one-off payment", "CHF/kWp", show.plain, KLEIV],
+  "solar.iwb_2027_chf_per_kwh": ["Electricity price, IWB 2027", "CHF/kWh", show.plain, IWB_2027],
+  "solar.case_for_results": ["Solar case the results use", "", show.plain, GUESS],
 };
 
 /** The synthetic fleet for make fleet (config.json: fleet). A [low, high] pair is one value. */
@@ -138,7 +159,18 @@ export const HARDWARE = {
   discount_rate: ["Discount rate", "", show.rate, `${WACC}; high case ${GUESS}`],
 };
 
+/** Each solar case's values (config.json: solar.cases), shown side by side. */
+export const SOLAR = {
+  pv_chf_per_kwp: ["Roof PV price", "CHF/kWp", show.plain, PV_PRICES],
+  battery_chf: ["Battery, 10 kWh", "CHF", show.plain, `${PV_PRICES}, ${SWISSOLAR}`],
+  pv_upkeep_share_per_year: ["PV upkeep a year, share of its price", "", show.rate, GUESS],
+  pv_lifetime_years: ["PV lifetime", "years", show.plain, `${SWISSOLAR}; mid, high ${GUESS}`],
+  battery_lifetime_years: ["Battery lifetime", "years", show.plain, GUESS],
+  discount_rate: ["Discount rate", "", show.rate, "[17] pv magazine"],
+};
+
 const CASES = "hardware.cases.";
+const SOLAR_CASES = "solar.cases.";
 
 /** Keys that describe the file rather than hold a value. */
 const NOT_VALUES = new Set(["_note", "source"]);
@@ -158,8 +190,33 @@ export function valuePaths(node, prefix = "") {
 }
 
 const at = (config, path) => path.split(".").reduce((node, key) => node?.[key], config);
-const known = (path) =>
-  path.startsWith(CASES) ? path.split(".").pop() in HARDWARE : path in VALUES;
+const known = (path) => {
+  if (path.startsWith(CASES)) return path.split(".").pop() in HARDWARE;
+  if (path.startsWith(SOLAR_CASES)) return path.split(".").pop() in SOLAR;
+  return path in VALUES;
+};
+
+/** One table with a column per case, then the notes from config.json. */
+function casesTable(config, prefix, title, spec) {
+  const cases = at(config, `${prefix}.cases`);
+  if (!cases) return [];
+  const names = Object.keys(cases);
+  const rows = Object.entries(spec).map(([key, [what, unit, print, source]]) => [
+    what,
+    `\`${key}\``,
+    ...names.map((n) => (cases[n][key] === undefined ? "" : print(cases[n][key]))),
+    unit,
+    source,
+  ]);
+  const head = ["What", "Key", ...names.map((n) => n[0].toUpperCase() + n.slice(1)), "Unit"];
+  const out = ["", `### ${title}`, "", ...table([...head, "Source"], rows)];
+  const notes = at(config, `${prefix}.source`) ?? {};
+  if (typeof notes === "object" && Object.keys(notes).length) {
+    out.push("", "Notes in config.json:", "");
+    for (const [key, note] of Object.entries(notes)) out.push(`- \`${key}\`: ${note}`);
+  }
+  return out;
+}
 
 /** A Markdown table laid out as Prettier lays it out, so the page passes format:check. */
 export function table(head, rows) {
@@ -198,11 +255,13 @@ export function page(config) {
     "",
     "This page is generated: change `config.json`, then run `node scripts/assumptions.mjs`.",
   ];
-  for (const [title, prefix] of SECTIONS) {
+  const section = (title, prefix) => {
     const mine = paths.filter((p) =>
-      prefix ? p.startsWith(`${prefix}.`) && !p.startsWith(CASES) : !p.includes("."),
+      prefix
+        ? p.startsWith(`${prefix}.`) && !p.startsWith(CASES) && !p.startsWith(SOLAR_CASES)
+        : !p.includes("."),
     );
-    if (mine.length === 0) continue;
+    if (mine.length === 0) return;
     const rows = mine.map((p) => {
       const [what, unit, print, source] = VALUES[p];
       return [what, `\`${p.split(".").pop()}\``, print(at(config, p)), unit, source];
@@ -210,25 +269,11 @@ export function page(config) {
     out.push("", `## ${title}`, "", ...table(["What", "Key", "Value", "Unit", "Source"], rows));
     const note = prefix ? at(config, prefix).source : undefined;
     if (typeof note === "string") out.push("", `Note in config.json: ${note}`);
-  }
-  const cases = at(config, "hardware.cases");
-  if (cases) {
-    const names = Object.keys(cases);
-    const rows = Object.entries(HARDWARE).map(([key, [what, unit, print, source]]) => [
-      what,
-      `\`${key}\``,
-      ...names.map((n) => (cases[n][key] === undefined ? "" : print(cases[n][key]))),
-      unit,
-      source,
-    ]);
-    const head = ["What", "Key", ...names.map((n) => n[0].toUpperCase() + n.slice(1)), "Unit"];
-    out.push("", "### Hardware cases", "", ...table([...head, "Source"], rows));
-    const notes = at(config, "hardware.source") ?? {};
-    if (Object.keys(notes).length) {
-      out.push("", "Notes in config.json:", "");
-      for (const [key, note] of Object.entries(notes)) out.push(`- \`${key}\`: ${note}`);
-    }
-  }
+  };
+  for (const [title, prefix] of SECTIONS) section(title, prefix);
+  out.push(...casesTable(config, "hardware", "Hardware cases", HARDWARE));
+  section("Solar and battery", "solar");
+  out.push(...casesTable(config, "solar", "Solar cases", SOLAR));
   return out.join("\n") + "\n";
 }
 
