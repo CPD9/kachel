@@ -1,6 +1,8 @@
 import {
   Cartesian3,
+  Cesium3DTileFeature,
   Cesium3DTileset,
+  Color,
   CesiumTerrainProvider,
   ClockRange,
   Credit,
@@ -9,11 +11,14 @@ import {
   Math as CesiumMath,
   OpenStreetMapImageryProvider,
   Rectangle,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
   UrlTemplateImageryProvider,
   Viewer,
   WebMercatorTilingScheme,
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
+import type { Picked } from "../building/geoadmin";
 import { beforeSunset, swissHour } from "../clock";
 import { BASEL, ORIGIN, type View } from "../places";
 import { OSM_TILES, SWISS_BUILDINGS, SWISS_IMAGE, SWISS_TERRAIN, SWITZERLAND } from "../sources";
@@ -30,7 +35,20 @@ export interface Scene {
   playing(): boolean;
   setPlaying(on: boolean): void;
   flyTo(view: View, seconds?: number): void;
+  /** Calls back with the building clicked (null for empty ground); returns an unsubscribe. */
+  onPick(callback: (picked: Picked | null) => void): () => void;
   destroy(): void;
+}
+
+const HIGHLIGHT = Color.fromCssColorString("#ff8a3d");
+
+/** EGID and position of a clicked swissBUILDINGS3D feature, from the tile's own attributes. */
+function readFeature(feature: Cesium3DTileFeature): Picked | null {
+  const lon = Number(feature.getProperty("Longitude"));
+  const lat = Number(feature.getProperty("Latitude"));
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+  const egid = Number(feature.getProperty("EGID"));
+  return { egid: Number.isFinite(egid) && egid > 0 ? egid : null, lon, lat };
 }
 
 /** Puts the camera at a view at once, or flies there. */
@@ -140,6 +158,18 @@ export async function createScene(
   };
   const removeTick = scene.preRender.addEventListener(onTick);
 
+  const clicks = new ScreenSpaceEventHandler(scene.canvas);
+  const listeners = new Set<(picked: Picked | null) => void>();
+  let highlighted: Cesium3DTileFeature | null = null;
+  clicks.setInputAction((event: ScreenSpaceEventHandler.PositionedEvent) => {
+    const hit: unknown = scene.pick(event.position);
+    if (highlighted !== null) highlighted.color = Color.WHITE;
+    highlighted = hit instanceof Cesium3DTileFeature ? hit : null;
+    if (highlighted !== null) highlighted.color = HIGHLIGHT;
+    const picked = highlighted === null ? null : readFeature(highlighted);
+    for (const l of listeners) l(picked);
+  }, ScreenSpaceEventType.LEFT_CLICK);
+
   return {
     time: () => JulianDate.toDate(clock.currentTime),
     playing: () => clock.shouldAnimate,
@@ -147,8 +177,13 @@ export async function createScene(
       clock.shouldAnimate = on;
     },
     flyTo: (view, seconds = 3) => goTo(viewer, view, seconds),
+    onPick: (callback) => {
+      listeners.add(callback);
+      return () => listeners.delete(callback);
+    },
     destroy: () => {
       removeTick();
+      clicks.destroy();
       if (!viewer.isDestroyed()) viewer.destroy();
     },
   };
