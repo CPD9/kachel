@@ -74,6 +74,15 @@ jobs:
           name: database-types
           path: packages/db/src/database.types.ts
       - run: git diff --exit-code -- packages/db/src/database.types.ts
+      # Realtime (#6): a change written with the agent's key reaches an app subscribed with the
+      # anon key within two seconds.
+      - name: Realtime reaches a subscribed client
+        run: |
+          eval "$(pnpm exec supabase status -o env)"
+          : "${API_URL:?}" "${ANON_KEY:?}" "${SERVICE_ROLE_KEY:?}"
+          SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" \
+            SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+            pnpm --filter @kachel/db test:realtime
       - if: always()
         run: pnpm exec supabase stop --no-backup
 
