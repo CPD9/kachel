@@ -63,14 +63,14 @@ scheduler and economics data, so they always match the screen. Weather: {src}.
 | 0:24–0:32 | Split screen: winter to summer | "On a snowy January day all {servers} servers run. By July the tank is full, so the scheduler pauses the work until the house wants heat again." |
 | 0:32–0:40 | Basel out to Switzerland, the fleet | "One house is a heater. {houses} houses are a small data centre, spread across the city, running only where heat is wanted. The rest of the work moves." |
 | 0:40–0:43 | Title: Bern | "Same model, another city." |
-| 0:43–1:05 | Bern map, a house near the Insel area, district heating and demand | "Bern is colder: {b_days} heating days. So a Bern house takes {b_servers} servers and covers {b_share} percent of its heat. This house is near the Insel area, shown with Bern's district heating and its heat demand, hectare by hectare." |
+| 0:43–1:05 | Bern map, a house near ARTORG, district heating and demand | "Bern is colder: {b_days} heating days. So a Bern house takes {b_servers} servers and covers {b_share} percent of its heat. This is near ARTORG, where I work, with Bern's district heating and its heat demand, hectare by hectare." |
 | 1:05–1:20 | Numbers | "Back in Basel, on a full year of real 2025 weather, the reference house gets {share} percent of its heat from AI jobs, over {days} heating days, and dumps only {dumped} kilowatt-hours." |
 | 1:20–1:35 | Break-even and payback charts | "Compute breaks even at {be} francs per server-hour, or {be_hw} with the hardware paid for. We assume {price}. In the mid case the hardware pays back in {payback} years and leaves {net_hw} francs a year." |
-| 1:35–1:50 | What moves the result, the economics page | "And here's when it doesn't pay off: if the backlog of flexible work dries up, the house {no_backlog_verb} {no_backlog} francs a year. That's the number we watch. Every formula and source is on our economics page." |
+| 1:35–1:50 | What moves the result, the paper | "And here's when it doesn't pay off: if the backlog of flexible work dries up, the house {no_backlog_verb} {no_backlog} francs a year. That's the number we watch. Every formula and source is in our paper." |
 | 1:50–2:10 | The farm: servers in the barn, solar on the field, winter | "Add the sun. With roof solar and a battery, {pv_share} percent of the servers' power comes from the panels and the house saves {pv_saving} francs a year. A farm has room for far more panels." |
 | 2:10–2:22 | X-ray: heat pump, then the ORC turbine (concept) | "Next, for hotter sites: turning heat back into electricity with an ORC turbine. That's a concept. It isn't in our numbers yet." |
 | 2:22–2:35 | The tallest building in Switzerland | "And the tallest building in Switzerland? Its plant floors could hold racks like these." |
-| 2:35–2:50 | The app, the live pause, the economics page | "Everything you've seen runs today: the scheduler, an agent that pauses a real job, the apps, and the model behind the numbers. Buyers pay per server-hour and the home gets the heat." |
+| 2:35–2:50 | The app, the live pause, the paper | "Everything you've seen runs today: the scheduler, an agent that pauses a real job, the apps, and the model behind the numbers. Buyers pay per server-hour and the home gets the heat." |
 | 2:50–3:00 | The ask | "Our ask: {ask}. Kachel. Your AI heats your home." |
 """
 
