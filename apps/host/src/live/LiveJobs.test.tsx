@@ -1,25 +1,35 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { JobFeed, LiveJob, LiveServer } from "./feed";
+import type { JobFeed, LiveJob, LiveServer } from "@kachel/db";
 import { LiveJobs } from "./LiveJobs";
 
 const server: LiveServer = {
   id: "s4",
+  site_id: "h1",
   slot: 4,
   name: "Server 4",
   state: "RUNNING",
+  power_kw: 1.0,
+  heat_recovery: 0.8,
   updated_at: "2026-11-21T10:00:00+00:00",
 };
 const job: LiveJob = {
   id: "j304",
   label: "Embeddings backlog, part 3",
+  kind: "opportunistic",
   state: "RUNNING",
+  site_id: "h1",
   server_id: "s4",
+  server_hours: null,
+  deadline_at: null,
+  active_cpu_s: 0,
+  created_at: "2026-11-21T09:00:00+00:00",
   updated_at: "2026-11-21T10:00:00+00:00",
 };
 
 /** A feed the test drives by hand, as the agent would through Supabase. */
-function fakeFeed(first: { servers: LiveServer[]; jobs: LiveJob[] }) {
+function fakeFeed(rows: { servers: LiveServer[]; jobs: LiveJob[] }) {
+  const first = { sites: [], ...rows };
   const listeners: Parameters<JobFeed["subscribe"]>[0][] = [];
   const feed: JobFeed = {
     load: () => Promise.resolve(first),

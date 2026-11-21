@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { App } from "./App";
-import type { JobFeed } from "./live/feed";
+import type { JobFeed } from "@kachel/db";
 
 const quiet: JobFeed = {
   load: () => new Promise(() => undefined),
