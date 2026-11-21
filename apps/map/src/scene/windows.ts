@@ -8,7 +8,7 @@ import {
   UniformType,
   type Camera,
 } from "cesium";
-import { ORIGIN } from "../places";
+import { ORIGIN } from "../views";
 
 /** Storey height and window bay, in metres: a typical Basel block. */
 const STOREY = 3.2;

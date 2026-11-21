@@ -1,5 +1,5 @@
 import type { Scene } from "./scene/viewer";
-import { STEPS } from "./places";
+import { STEPS } from "./views";
 
 /** Buttons that fly from Basel out to Bern, Switzerland, its neighbours and the globe. */
 export function Places({ scene }: { scene: Scene }) {

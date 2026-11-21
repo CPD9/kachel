@@ -29,7 +29,7 @@ import "cesium/Build/Cesium/Widgets/widgets.css";
 import type { Picked } from "../building/geoadmin";
 import type { Area, Network } from "../networks/thermal";
 import { beforeSunset, swissHour } from "../clock";
-import { BASEL, CANTONS_FROM_M, ORIGIN, type View } from "../places";
+import { BASEL, CANTONS_FROM_M, ORIGIN, type View } from "../views";
 import { OSM_TILES, SWISS_BUILDINGS, SWISS_IMAGE, SWISS_TERRAIN, SWITZERLAND } from "../sources";
 import { duskSky } from "../sky";
 import { nightFactor, sunElevationDeg, windowsLitShare } from "../sun";
