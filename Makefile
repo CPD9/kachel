@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet video-charts paper
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -32,6 +32,8 @@ check-py:
 	uv run --project $(AGENT) ruff check $(AGENT)
 	uv run --project $(AGENT) pytest -q $(AGENT)
 	cd $(SCHED) && uv run ruff format --check && uv run ruff check && uv run pytest -q
+	uv run --project $(AGENT) ruff format --check scripts/paper
+	uv run --project $(AGENT) ruff check scripts/paper
 
 # The yearly balance on the saved Basel 2025 weather: out/kpis.json, hourly.csv and the
 # January and July day CSVs (the animation reads those two), plus the plots.
@@ -63,6 +65,15 @@ fleet:
 check-readme:
 	node --test scripts/*.test.mjs
 	pnpm readme:check
+	uv run --project $(AGENT) pytest -q -p no:cacheprovider scripts/paper
+
+# The model paper (docs/paper): fill the template from the model's output files, then print the
+# PDF and one PNG per page with headless Chromium (pages to $$PAPER_PAGES, default
+# ~/.cache/kachel/pitch/paper-pages). Run make year, make bern-days, make fleet and economics.py first
+# when the model has changed; check-readme fails while the paper is stale.
+paper:
+	python3 scripts/paper/build.py
+	uv run --no-project --offline --with playwright python scripts/paper/render.py
 
 # Rebuild the heat-loop animations with Blender 5.2 and ffmpeg (see scripts/heat-loop/heat_loop.py):
 # the whole house for the README, and a wide crop on the basement for the app header.
