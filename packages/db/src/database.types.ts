@@ -45,6 +45,31 @@ export type Database = {
         };
         Relationships: [];
       };
+      buyers: {
+        Row: {
+          buys: string;
+          created_at: string;
+          id: string;
+          name: string;
+          synthetic: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          buys: string;
+          created_at?: string;
+          id: string;
+          name: string;
+          synthetic?: boolean;
+        };
+        Update: {
+          buys?: string;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          synthetic?: boolean;
+        };
+        Relationships: [];
+      };
       heat_state: {
         Row: {
           arr_batch: number;

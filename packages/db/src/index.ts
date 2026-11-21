@@ -1,4 +1,12 @@
-export { DEMO_BUYER, DEMO_HOST, isLocalStack, supabaseAuth, type AppAuth } from "./auth";
+export {
+  DEMO_BUYER,
+  DEMO_HOST,
+  DEMO_OPERATOR,
+  isLocalStack,
+  supabaseAuth,
+  type AppAuth,
+} from "./auth";
+export { supabaseBuyers, type LiveBuyer } from "./buyers";
 export { createKachelClient, type KachelClient } from "./client";
 export {
   EMPTY,

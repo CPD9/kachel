@@ -24,7 +24,9 @@ export type LiveJob = Pick<
   | "moved_offsite"
   | "created_at"
   | "updated_at"
->;
+> &
+  // Read by the operator view to group jobs by buyer; a buyer's own app does not need it.
+  Partial<Pick<Job, "buyer_id">>;
 
 /** Where both apps get their houses, servers and jobs: Supabase in the app, a fake in tests. */
 export interface JobFeed {
@@ -36,7 +38,7 @@ export interface JobFeed {
 const SITE_COLUMNS = "id, name, city";
 const SERVER_COLUMNS = "id, site_id, slot, name, state, power_kw, heat_recovery, updated_at";
 const JOB_COLUMNS =
-  "id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, moved_offsite, created_at, updated_at";
+  "id, buyer_id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, moved_offsite, created_at, updated_at";
 
 let channels = 0;
 
