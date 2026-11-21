@@ -211,8 +211,8 @@ server. Inputs and sources are in
 | Office building, Basel           | 5,737 CHF                   | 1,149 CHF (IWB C3 2027, 32.6 Rp) | 0.49 CHF                              |
 | FHNW Campus Dreispitz, HGK tower | 17,346 CHF                  | 9,750 CHF (IWB C3 2027, 32.6 Rp) | 0.46 CHF                              |
 
-Servers grow with heat demand, about one per 5.2 MWh a year. Per server the result barely
-depends on the building, but it does on the tariff: at IWB's 2027 prices [37] the Basel house
+Servers grow with heat demand, about one per 5.2 MWh a year. Per server the tariff matters
+more than the building: at IWB's 2027 prices [37] the Basel house
 keeps 207 CHF a year after hardware instead of 1,415. The campus does best per server because
 its hot water keeps servers busy in summer. The often quoted 20,000 m² for the FHNW campus is
 the tower and the Zollfreilager together (about 28,800 m² gross [33]); we use the tower alone,
