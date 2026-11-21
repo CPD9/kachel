@@ -32,6 +32,41 @@ def net(k, cfg):
     return k["computing_income_chf"] - k["electricity_cost_chf"] + k["value_of_heat_used_chf"]
 
 
+CASE_COLORS = {"low": GLACIER, "mid": EMBER, "high": SLATE}
+
+
+def hardware(cfg, case=None, n=N):
+    """Hardware costs per house for one case in config.json: what is paid up front, upkeep, and the yearly annuity."""
+    hw = cfg["hardware"]; h = hw["cases"][case or hw["case_for_results"]]
+    capex = (n * (h["server_chf"] + h["cooling_kit_chf"]) + h["fitter_hours_per_house"] * h["fitter_chf_per_hour"]
+             + h["electrician_hours_per_house"] * h["electrician_chf_per_hour"])
+    upkeep = h["service_visits_per_year"] * (h["service_hours_per_visit"] * hw["service_chf_per_hour"] + hw["service_callout_chf"])
+    r, life = h["discount_rate"], h["lifetime_years"]
+    annuity = r / (1 - (1 + r) ** -life)
+    return dict(capex=capex, upkeep=upkeep, r=r, life=life, annuity=annuity, per_year=capex * annuity + upkeep)
+
+
+def payback_years(capex, cash, r):
+    """Discounted payback: years until the yearly cash, discounted at r, has repaid capex. inf if never."""
+    if cash <= 0 or r * capex >= cash:
+        return float("inf")
+    return -np.log(1 - r * capex / cash) / np.log(1 + r)
+
+
+def after_hardware(k, cfg, case=None):
+    """The yearly result once the servers, their fitting and upkeep are paid for, for one hardware case."""
+    h = hardware(cfg, case)
+    before = net(k, cfg); cash = before - h["upkeep"]
+    return dict(capex_chf=round(h["capex"]), upkeep_chf_per_year=round(h["upkeep"]),
+                hardware_chf_per_year=round(h["per_year"]), net_chf_before_hardware=round(before),
+                net_chf_after_hardware=round(before - h["per_year"]),
+                payback_years=round(payback_years(h["capex"], cash, h["r"]), 1),
+                lifetime_years=h["life"], discount_rate=h["r"],
+                npv_chf=round(-h["capex"] + cash * (1 - (1 + h["r"]) ** -h["life"]) / h["r"]),
+                break_even_chf_per_server_hour_incl_hardware=round(
+                    (k["electricity_cost_chf"] - k["value_of_heat_used_chf"] + h["per_year"]) / k["server_hours_sold"], 3))
+
+
 def run(prof, cfg, n=N):
     df = House(prof, cfg, n).run()
     return df, kpis(df, cfg, n)
@@ -145,6 +180,10 @@ def chart_hardware_budget(k_base, k_none, cfg):
         cost_per_h = (k["electricity_cost_chf"] - k["value_of_heat_used_chf"]) / k["server_hours_sold"]
         ax.plot(c, (c - cost_per_h) * hours, color=col, lw=2.6, label=lab)
     ax.axhline(0, color=INK, lw=1)
+    for case in ("low", "mid", "high"):
+        y = hardware(cfg, case)["per_year"] / N
+        ax.axhline(y, color=CASE_COLORS[case], lw=1.2, ls="--")
+        ax.text(0.98 if case == "low" else 1.19, y + 60, f"hardware, {case} case: {y:,.0f} per year", ha="right", fontsize=10, color=CASE_COLORS[case])
     ax.axvline(cfg["prices"]["compute_chf_per_server_hour"], color=INK, lw=0.9, ls=":")
     ax.text(cfg["prices"]["compute_chf_per_server_hour"] + 0.01, -800, "our assumed price, 0.50", fontsize=10)
     hours = k_base["server_hours_sold"] / N
@@ -156,12 +195,46 @@ def chart_hardware_budget(k_base, k_none, cfg):
     ax.set(xlim=(0, 1.2), xlabel="Price a server-hour fetches (CHF)", ylabel="CHF per server and year",
            title="What is left each year to pay for the server itself")
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(0.0, 0.9))
-    save(fig, "05_hardware_budget", "Income minus electricity plus heat credit, per 1 kW server. Compare with the hardware's yearly cost (price ÷ lifetime + upkeep)")
+    save(fig, "05_hardware_budget", "Income minus electricity plus heat credit, per 1 kW server. Dashed: hardware's yearly cost (annuity + upkeep), three cases")
+
+
+def chart_payback(k, cfg):
+    c = np.linspace(0.2, 1.2, 501); top = 10
+    own = cfg["prices"]["compute_chf_per_server_hour"]
+    fig, ax = plt.subplots(figsize=(11, 5.6))
+    rows = []
+    for case in ("low", "mid", "high"):
+        h = hardware(cfg, case); col = CASE_COLORS[case]
+        cash = c * k["server_hours_sold"] - k["electricity_cost_chf"] + k["value_of_heat_used_chf"] - h["upkeep"]
+        pb = np.array([payback_years(h["capex"], x, h["r"]) for x in cash])
+        ax.plot(c, np.where(pb <= top, pb, np.nan), color=col, lw=2.6,
+                label=f"{case.capitalize()}: {cfg['hardware']['cases'][case]['label']} ({h['capex']:,.0f} CHF up front)")
+        ax.plot([0.2, 1.2], [h["life"], h["life"]], color=col, lw=1, ls=":")
+        a = after_hardware(k, cfg, case)
+        be = a["break_even_chf_per_server_hour_incl_hardware"]
+        ax.scatter([be], [h["life"]], s=60, color=col, edgecolor=INK, zorder=4)
+        ax.annotate(f"{be:.2f}", (be, h["life"]), xytext=(8, 4), textcoords="offset points", fontsize=10, color=col)
+        y = a["payback_years"]
+        if y <= top:
+            ax.scatter([own], [y], s=90, color=col, edgecolor=INK, zorder=5)
+            ax.annotate(f"{y:.1f} years", (own, y), xytext=(10, -4), textcoords="offset points", fontsize=11.5, fontweight="bold")
+        rows += [dict(case=case, compute_chf_per_server_hour=round(x, 3), payback_years=round(p, 2) if p <= 50 else None)
+                 for x, p in zip(c[::20], pb[::20])]
+    ax.axvline(own, color=INK, lw=0.9, ls=":")
+    ax.text(own + 0.01, 0.2, f"our assumed price, {own:.2f}", fontsize=10)
+    ax.set(xlim=(0.2, 1.2), ylim=(0, top), xlabel="Price a server-hour fetches (CHF)",
+           ylabel="Years to pay back the hardware", title="At 0.50 CHF the dearest hardware does not pay back within its life")
+    ax.legend(frameon=False, loc="upper right", fontsize=10.5)
+    save(fig, "07_payback", "Discounted payback per house, six servers. Dotted: each case's lifetime; the dot on it is the break-even price incl. hardware")
+    return pd.DataFrame(rows)
 
 
 def tornado(prof, cfg, k_base):
-    base = net(k_base, cfg)
-    p = cfg["prices"]["electricity_chf_per_kwh"]
+    """Yearly result after hardware (the case in config.json) as one input moves at a time."""
+    def result(c, k=None):
+        return after_hardware(k or run(prof, c)[1], c)["net_chf_after_hardware"]
+    base = result(cfg, k_base)
+    hw = cfg["hardware"]["cases"]; mid = cfg["hardware"]["case_for_results"]
     cases = [
         ("Compute price, 0.25 to 0.75 CHF per server-hour\n(our assumption ±50%)",
          with_(cfg, prices__compute_chf_per_server_hour=0.25), with_(cfg, prices__compute_chf_per_server_hour=0.75), "0.25", "0.75"),
@@ -172,15 +245,24 @@ def tornado(prof, cfg, k_base):
          with_(cfg, server__heat_recovery=0.6), with_(cfg, server__heat_recovery=0.95), "60%", "95%"),
         ("Heat pump COP, 4.9 to 2.5\n(field-test best to case brief)",
          with_(cfg, prices__heat_pump_cop=4.9), cfg, "4.9", "2.5"),
+        (f"Server price, {hw['high']['server_chf']:,} to {hw['low']['server_chf']:,} CHF each\n(refurbished GPU host, dear to cheap)",
+         with_(cfg, **{f"hardware__cases__{mid}__server_chf": hw["high"]["server_chf"]}),
+         with_(cfg, **{f"hardware__cases__{mid}__server_chf": hw["low"]["server_chf"]}),
+         f"{hw['high']['server_chf']:,}", f"{hw['low']['server_chf']:,}"),
+        (f"Server lifetime, {hw['high']['lifetime_years']} to {hw['low']['lifetime_years']} years\n(cloud providers' write-off periods)",
+         with_(cfg, **{f"hardware__cases__{mid}__lifetime_years": hw["high"]["lifetime_years"]}),
+         with_(cfg, **{f"hardware__cases__{mid}__lifetime_years": hw["low"]["lifetime_years"]}),
+         f"{hw['high']['lifetime_years']} years", f"{hw['low']['lifetime_years']} years"),
     ]
     rows = []
     for label, lo_cfg, hi_cfg, lo_lab, hi_lab in cases:
-        lo = net(run(prof, lo_cfg)[1], lo_cfg); hi = net(run(prof, hi_cfg)[1], hi_cfg)
+        hardware_only = label.startswith("Server")      # the weather run does not change, so reuse it
+        lo = result(lo_cfg, k_base if hardware_only else None); hi = result(hi_cfg, k_base if hardware_only else None)
         rows.append(dict(input=label.split("\n")[0], low_case=lo_lab, low_chf=round(lo), high_case=hi_lab, high_chf=round(hi)))
     t = pd.DataFrame(rows)
     t["swing"] = (t["high_chf"] - t["low_chf"]).abs()
     order = t.sort_values("swing").index
-    fig, ax = plt.subplots(figsize=(11, 6.2))
+    fig, ax = plt.subplots(figsize=(11, 7.4))
     labels = [cases[i][0] for i in order]
     for y, i in enumerate(order):
         pts = sorted([(t.loc[i, "low_chf"], t.loc[i, "low_case"]), (t.loc[i, "high_chf"], t.loc[i, "high_case"])])
@@ -191,12 +273,14 @@ def tornado(prof, cfg, k_base):
         ax.annotate(f"{la}: {a:,.0f}", (a, y), xytext=(-12, 0), textcoords="offset points", ha="right", va="center", fontsize=10.5)
         ax.annotate(f"{lb}: {b:,.0f}", (b, y), xytext=(12, 0), textcoords="offset points", ha="left", va="center", fontsize=10.5)
     ax.axvline(base, color=INK, lw=1.4)
-    ax.set(yticks=range(len(order)), xlabel="CHF per house and year, before hardware")
+    ax.axvline(0, color=MUTED, lw=0.8, ls=":")
+    ax.set(yticks=range(len(order)), xlabel=f"CHF per house and year, after hardware ({mid} case)")
     ax.set_yticklabels(labels, fontsize=10)
-    ax.set_xlim(-2500, 22000); ax.set_ylim(-0.6, len(order) - 0.4); ax.grid(axis="y", visible=False)
+    lo_x, hi_x = t[["low_chf", "high_chf"]].min().min(), t[["low_chf", "high_chf"]].max().max()
+    ax.set_xlim(lo_x - 5000, hi_x + 5000); ax.set_ylim(-0.6, len(order) - 0.4); ax.grid(axis="y", visible=False)
     ax.text(base, -0.55, f"  as in config.json: {base:,.0f}", fontsize=10, color=MUTED, va="bottom")
     ax.set_title("The price of compute matters most, then whether there is work to run")
-    save(fig, "06_what_moves_the_result", f"One input changed at a time, {N} servers. Orange dot: the better of the two cases. Hardware not included")
+    save(fig, "06_what_moves_the_result", f"One input changed at a time, {N} servers, {mid} hardware case. Orange dot: the better of the two cases")
     return t.drop(columns="swing"), base
 
 
@@ -213,9 +297,13 @@ def main():
     chart_servers(sw).to_csv(f"{OUT}/data/servers_per_house.csv", index=False)
     chart_break_even(cfg)
     chart_hardware_budget(k, k_none, cfg)
+    chart_payback(k, cfg).to_csv(f"{OUT}/data/payback.csv", index=False)
+    hw = {case: after_hardware(k, cfg, case) for case in cfg["hardware"]["cases"]}
+    pd.DataFrame.from_dict(hw, orient="index").to_csv(f"{OUT}/data/hardware.csv", index_label="case")
     t, base = tornado(prof, cfg, k)
     t.to_csv(f"{OUT}/data/sensitivity.csv", index=False)
-    summary = {"base_case": k, "no_backlog_case": k_none, "net_chf_per_house_before_hardware": round(base)}
+    summary = {"base_case": k, "no_backlog_case": k_none, "net_chf_per_house_before_hardware": round(net(k, cfg)),
+               "hardware": hw}
     json.dump(summary, open(f"{OUT}/data/summary.json", "w"), indent=2)
     print(json.dumps(summary, indent=2)); print(t.to_string(index=False))
 

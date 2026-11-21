@@ -15,7 +15,8 @@ make dev
 make check
 ```
 
-`make dev` serves the host app on http://localhost:5173 and the console on http://localhost:5174.
+`make dev` starts the local Supabase stack (Docker) and serves the host app on http://localhost:5173 and the console on http://localhost:5174.
+Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
 
 ## Repo map
 
@@ -27,6 +28,7 @@ make check
 | `packages/config`    | Shared ESLint and TypeScript settings                           |
 | `services/agent`     | Python agent on the server box: pauses and resumes the real job |
 | `services/scheduler` | Python scheduler: hourly decisions, yearly balance, live demo   |
+| `supabase`           | Local Supabase config                                           |
 | `scripts`            | Repository checks                                               |
 
 ## Team
@@ -39,5 +41,3 @@ make check
 ## Licence
 
 MIT. Copyright (c) 2026 the Kachel team.
-
-test commit

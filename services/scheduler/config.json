@@ -44,5 +44,62 @@
       "when_heat_not_needed": "pause",
       "source": "ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model."
     }
+  },
+  "hardware": {
+    "_note": "Per 1 kW server unless a name says per house. CHF without VAT. Dollar and pound prices converted at the ECB reference rates of 20 Nov 2026 (1 USD = 0.8392 CHF, 1 GBP = 1.1015 CHF). Each source is below; anything marked OUR GUESS has none yet. Charts and links: docs/economics/README.md",
+    "case_for_results": "mid",
+    "service_chf_per_hour": 125,
+    "service_callout_chf": 65,
+    "cases": {
+      "low": {
+        "label": "Refurbished GPU host, 6-year life",
+        "server_chf": 2518,
+        "cooling_kit_chf": 496,
+        "fitter_hours_per_house": 6,
+        "fitter_chf_per_hour": 103,
+        "electrician_hours_per_house": 2,
+        "electrician_chf_per_hour": 151,
+        "service_visits_per_year": 1,
+        "service_hours_per_visit": 1,
+        "lifetime_years": 6,
+        "discount_rate": 0.0328
+      },
+      "mid": {
+        "label": "New GPU workstation, 5-year life",
+        "server_chf": 5034,
+        "cooling_kit_chf": 633,
+        "fitter_hours_per_house": 10,
+        "fitter_chf_per_hour": 120,
+        "electrician_hours_per_house": 3,
+        "electrician_chf_per_hour": 151,
+        "service_visits_per_year": 1,
+        "service_hours_per_visit": 2,
+        "lifetime_years": 5,
+        "discount_rate": 0.0375
+      },
+      "high": {
+        "label": "Dear GPU host, 4-year life",
+        "server_chf": 6714,
+        "cooling_kit_chf": 771,
+        "fitter_hours_per_house": 16,
+        "fitter_chf_per_hour": 148,
+        "electrician_hours_per_house": 4,
+        "electrician_chf_per_hour": 151,
+        "service_visits_per_year": 2,
+        "service_hours_per_visit": 2,
+        "lifetime_years": 4,
+        "discount_rate": 0.06
+      }
+    },
+    "source": {
+      "server_chf": "low and high: the range USD 3,000 to 8,000 for a refurbished single-GPU inference host (PCSP, 'How much does a server cost in 2026?', 21 Aug 2026). mid: a new single-GPU AI workstation with an RTX PRO 6000 Blackwell (up to 600 W), from USD 5,999 (VRLA Tech, 30 Jun 2026). That each draws about 1 kW in use is OUR GUESS.",
+      "cooling_kit_chf": "A custom water loop for CPU and GPU costs GBP 450 to 700 (Watercooling UK, 29 Jul 2026); mid is the midpoint. That a plate heat exchanger to the tank costs about what the loop's radiator does is OUR GUESS.",
+      "fitter_chf_per_hour": "Heating and plumbing rates without VAT, 2025: B-Monteur 103, A-Monteur 120, Chefmonteur 148 CHF an hour (WBAG, Regietarif 2025).",
+      "electrician_chf_per_hour": "Elektroinstallateur EFZ, 151 CHF an hour without VAT (EIT.nordwest, Basel, recommended rates 2026).",
+      "hours_per_house": "Fitter and electrician hours to fit six servers to the tank: OUR GUESS.",
+      "service": "Service fitter with van 125 CHF an hour, call-out 65 CHF (WBAG, Regietarif 2025). Visits and hours a year: OUR GUESS.",
+      "lifetime_years": "6: the large cloud providers' server life by 2023 (SiliconANGLE, 22 Nov 2025). 5: Amazon, for part of its servers from 1 Jan 2025 (Amazon 10-K 2025). 4: Amazon from 2020 (SiliconANGLE).",
+      "discount_rate": "3.28%: WACC for Swiss power grids, tariff year 2027 (UVEK, 2 Mar 2026). 3.75%: WACC for PV investment contributions 2026 (pv magazine, 2 Mar 2026). 6%: OUR GUESS for a young, riskier business."
+    }
   }
 }
