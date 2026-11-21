@@ -29,14 +29,18 @@ Every value the model assumes, with its unit and source, is in [docs/assumptions
 
 ## Run it
 
+You need Node 22.12 or newer with pnpm 11, [uv](https://docs.astral.sh/uv/) for Python 3.12, Docker, and Linux or macOS.
+
 ```sh
-make bootstrap
-pnpm exec supabase start
-make dev
-make check
+git clone https://github.com/CPD9/kachel.git && cd kachel
+make bootstrap                    # JavaScript and Python dependencies
+pnpm exec supabase start          # the local Supabase stack, in Docker
+pnpm exec supabase status -o env  # the keys for the three .env files
+make dev                          # all four apps
+make check                        # every check CI runs
 ```
 
-`pnpm exec supabase start` starts the local Supabase stack (Docker). Before `make dev`, copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
+Before `make dev`, copy `.env.example` to `.env` in `apps/host`, `apps/console` and `services/agent`, and fill in the keys from `pnpm exec supabase status -o env`. Only the agent takes the service role key.
 `make dev` serves the host app on http://localhost:5173, the console on http://localhost:5174, the 3D heat map on http://localhost:5175 and the operator view on http://localhost:5177; the map needs internet.
 Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test`, and to the console as the demo buyer, `buyer@kachel.test`, both with the password `kachel-demo` (local stack only).
 
@@ -45,6 +49,8 @@ Row level security shows each person only their own rows, so sign in to the host
 <p align="center"><img src="docs/media/app-console.png" width="640" alt="The console signed in as the demo buyer: a form to submit a job, and a live table of jobs with their state, the house and server each runs on, and the heat it has delivered"></p>
 
 With both apps running, `pnpm screenshots` retakes these two images with headless Chromium.
+
+To pause and resume a real job from the heat signal, as on stage, follow [the demo checklist](docs/demo-checklist.md). Everything else, the model commands included, is in [Run it yourself](docs/wiki/Run-it-yourself.md). What we hand in for the hackathon is in [docs/submission.md](docs/submission.md).
 
 ## Repo map
 
