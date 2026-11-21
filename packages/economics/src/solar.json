@@ -21,7 +21,7 @@
         "share_of_heat_covered_pct": 79.6,
         "server_hours_sold": 31075,
         "net_chf_before_hardware": 9683,
-        "net_chf_after_hardware_and_solar": 1415
+        "net_chf_after_hardware_and_solar": 2965
       },
       "pv_plain": {
         "setup": "Roof PV, scheduler ignores the sun",
@@ -42,7 +42,7 @@
         "solar_chf_per_year": 1061,
         "saving_chf_per_year": 2386,
         "payback_years_high": 11.4,
-        "net_chf_after_hardware_and_solar": 2740
+        "net_chf_after_hardware_and_solar": 4290
       },
       "pv": {
         "setup": "Roof PV, scheduler prefers the sun",
@@ -63,7 +63,7 @@
         "solar_chf_per_year": 1061,
         "saving_chf_per_year": 2434,
         "payback_years_high": 11.1,
-        "net_chf_after_hardware_and_solar": 2772
+        "net_chf_after_hardware_and_solar": 4322
       },
       "pv_battery": {
         "setup": "Roof PV + battery, prefers the sun",
@@ -84,7 +84,7 @@
         "solar_chf_per_year": 1738,
         "saving_chf_per_year": 2539,
         "payback_years_high": 18.3,
-        "net_chf_after_hardware_and_solar": 2200
+        "net_chf_after_hardware_and_solar": 3750
       }
     },
     "0.3342": {
@@ -101,7 +101,7 @@
         "share_of_heat_covered_pct": 79.6,
         "server_hours_sold": 31075,
         "net_chf_before_hardware": 8475,
-        "net_chf_after_hardware_and_solar": 207
+        "net_chf_after_hardware_and_solar": 1757
       },
       "pv_plain": {
         "setup": "Roof PV, scheduler ignores the sun",
@@ -122,7 +122,7 @@
         "solar_chf_per_year": 1061,
         "saving_chf_per_year": 2699,
         "payback_years_high": 9.6,
-        "net_chf_after_hardware_and_solar": 1845
+        "net_chf_after_hardware_and_solar": 3395
       },
       "pv": {
         "setup": "Roof PV, scheduler prefers the sun",
@@ -143,7 +143,7 @@
         "solar_chf_per_year": 1061,
         "saving_chf_per_year": 2766,
         "payback_years_high": 9.3,
-        "net_chf_after_hardware_and_solar": 1895
+        "net_chf_after_hardware_and_solar": 3445
       },
       "pv_battery": {
         "setup": "Roof PV + battery, prefers the sun",
@@ -164,7 +164,7 @@
         "solar_chf_per_year": 1738,
         "saving_chf_per_year": 2921,
         "payback_years_high": 14.7,
-        "net_chf_after_hardware_and_solar": 1373
+        "net_chf_after_hardware_and_solar": 2923
       }
     }
   }

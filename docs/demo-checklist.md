@@ -18,14 +18,14 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
 
 ## 30 minutes before
 
-1. [ ] Nothing else on ports 5173 to 5176: `ss -ltnp | grep 517`. One old Vite on any of them
-       stops `make dev` and all four apps with it.
+1. [ ] Nothing else on ports 5173 to 5177: `ss -ltnp | grep 517`. One old Vite on any of them
+       stops `make dev` and all five apps with it.
 2. [ ] Start the database, then the keys, then the apps:
 
    ```sh
    pnpm exec supabase start
    make db-reset                    # back to the seed: Server 4 paused, no test jobs
-   pnpm exec supabase status -o env # API_URL, ANON_KEY, SERVICE_ROLE_KEY into the three .env files
+   pnpm exec supabase status -o env # API_URL, ANON_KEY, SERVICE_ROLE_KEY into the four .env files
    make dev
    ```
 
@@ -67,7 +67,10 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
    Esc to come back, `m` for the map. The map alone:
    http://localhost:5175/?egid=442141&card=1.
 5. Map, http://localhost:5175. Click Basel, then a building, for its energy card.
-6. The two films, open in the video player.
+6. Operator, http://localhost:5177, signed in as `operator@kachel.test` / `kachel-demo`: the
+   whole fleet, the buyers and the revenue. Click July, then slide the temperature up: heat
+   demand, servers running and revenue fall.
+7. The two films, open in the video player.
 
 If a tab is blank, reload it once.
 

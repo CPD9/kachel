@@ -3,7 +3,7 @@
 -- Database CI job runs it on every push. Everything is rolled back at the end.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(45);
+select plan(61);
 
 -- Seed: host 01 owns site 100 with servers 201-206; buyer 02 owns jobs 301-305
 -- (301-304 on servers 201-204, 305 still queued). Here: host 03 with site 101 and server 211,
@@ -65,6 +65,7 @@ select is((select count(*) from public.heat_state), 48::bigint, 'host reads thei
 select is((select count(*) from public.heat_state where site_id = '00000000-0000-4000-8000-000000000101'),
   0::bigint, 'host cannot read another site''s heat state');
 select is((select count(*) from public.kpis), 1::bigint, 'host reads their own yearly balance only');
+select is((select count(*) from public.buyers), 0::bigint, 'host reads no buyers');
 
 update public.sites set name = 'Renamed by host' where id = '00000000-0000-4000-8000-000000000100';
 update public.sites set name = 'Hijacked' where id = '00000000-0000-4000-8000-000000000101';
@@ -101,16 +102,22 @@ select is((select state::text from public.jobs where id = '00000000-0000-4000-80
 select pg_temp.sign_in('00000000-0000-4000-8000-000000000002');
 set local role authenticated;
 
-select is((select count(*) from public.jobs), 5::bigint, 'buyer reads their own five jobs');
+-- Five on the reference house and two on fleet houses (#159).
+select is((select count(*) from public.jobs), 7::bigint, 'buyer reads their own seven jobs');
 select is((select count(*) from public.jobs where id = '00000000-0000-4000-8000-000000000311'),
   0::bigint, 'buyer cannot read another buyer''s job');
 select is((select count(*) from public.job_runs), 3::bigint, 'buyer reads the runs of their jobs');
-select results_eq('select id::text from public.sites',
-  array['00000000-0000-4000-8000-000000000100'], 'buyer reads the house their jobs ran in only');
+select set_eq('select id::text from public.sites',
+  array['00000000-0000-4000-8000-000000000100', '00000000-0000-4000-8000-000000001003',
+        '00000000-0000-4000-8000-000000001009'],
+  'buyer reads the houses their jobs ran in only');
 select set_eq('select id::text from public.servers',
   array['00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000202',
-        '00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000204'],
+        '00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000204',
+        '00000000-0000-4000-8000-000000020301', '00000000-0000-4000-8000-000000020901'],
   'buyer reads only the servers their jobs ran on');
+select results_eq('select id::text from public.buyers',
+  array['00000000-0000-4000-8000-000000000002'], 'buyer reads their own buyer row only');
 select is((select count(*) from public.heat_state), 0::bigint, 'buyer cannot read heat state');
 select is((select count(*) from public.kpis), 0::bigint, 'buyer cannot read a site''s balance');
 
@@ -168,6 +175,46 @@ select is((select count(*) from public.sites where id = '00000000-0000-4000-8000
   0::bigint, 'the second host cannot read the first host''s site');
 reset role;
 
+-- ---------------------------------------------------------------- operator
+-- The seed's operator (#159): app_metadata says kachel_role operator, as in their token.
+select set_config('request.jwt.claims',
+  json_build_object('sub', '00000000-0000-4000-8000-000000000009', 'role', 'authenticated',
+                    'app_metadata', json_build_object('kachel_role', 'operator'))::text, true);
+set local role authenticated;
+select is((select count(*) from public.sites), 14::bigint, 'operator reads every site');
+-- 6 in the reference house, 60 in the twelve fleet houses, and server 211.
+select is((select count(*) from public.servers), 67::bigint, 'operator reads every server');
+-- 25 from the seed, job 311 and the one the buyer submitted above.
+select is((select count(*) from public.jobs), 27::bigint, 'operator reads every buyer''s jobs');
+select is((select count(distinct buyer_id) from public.jobs), 8::bigint,
+  'operator sees the jobs of all eight buyers');
+select is((select count(*) from public.buyers), 7::bigint, 'operator reads every buyer');
+select is((select count(*) from public.heat_state), 49::bigint, 'operator reads the heat in every site');
+select is((select count(*) from public.kpis), 2::bigint, 'operator reads every yearly balance');
+select is((select count(*) from public.job_runs), 4::bigint, 'operator reads every job run');
+update public.sites set name = 'Renamed by operator' where id = '00000000-0000-4000-8000-000000000101';
+update public.jobs set state = 'GONE' where id = '00000000-0000-4000-8000-000000000311';
+select throws_ok(
+  $$insert into public.jobs (buyer_id, kind, label, interruptible)
+    values ('00000000-0000-4000-8000-000000000002', 'batch', 'x', true)$$,
+  '42501', null, 'operator cannot submit a job for a buyer');
+select throws_ok(
+  $$insert into public.buyers (id, name, buys) values ('00000000-0000-4000-8000-000000000009', 'x', 'x')$$,
+  '42501', null, 'operator cannot add a buyer');
+reset role;
+select is((select name from public.sites where id = '00000000-0000-4000-8000-000000000101'),
+  'Other house', 'operator could not rename a site');
+select is((select state::text from public.jobs where id = '00000000-0000-4000-8000-000000000311'),
+  'RUNNING', 'operator could not change a job');
+
+-- A host with kachel_role in user_metadata, which anyone can set, is not an operator.
+select set_config('request.jwt.claims',
+  json_build_object('sub', '00000000-0000-4000-8000-000000000001', 'role', 'authenticated',
+                    'user_metadata', json_build_object('kachel_role', 'operator'))::text, true);
+set local role authenticated;
+select is((select count(*) from public.sites), 1::bigint, 'user_metadata does not make an operator');
+reset role;
+
 -- ---------------------------------------------------------------- anon
 select set_config('request.jwt.claims', '{"role": "anon"}', true);
 set local role anon;
@@ -175,6 +222,7 @@ select is((select count(*) from public.sites), 0::bigint, 'anon reads no sites')
 select is((select count(*) from public.servers), 0::bigint, 'anon reads no servers');
 select is((select count(*) from public.jobs), 0::bigint, 'anon reads no jobs');
 select is((select count(*) from public.heat_state), 0::bigint, 'anon reads no heat state');
+select is((select count(*) from public.buyers), 0::bigint, 'anon reads no buyers');
 select ok((select count(*) from public.assumptions) > 0, 'anon reads the public assumptions');
 select throws_ok(
   $$insert into public.jobs (buyer_id, kind, label, interruptible)

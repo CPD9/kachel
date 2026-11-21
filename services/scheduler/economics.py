@@ -37,15 +37,25 @@ def net(k, cfg):
 CASE_COLORS = {"low": GLACIER, "mid": EMBER, "high": SLATE}
 
 
-def hardware(cfg, case=None, n=N):
-    """Hardware costs per house for one case in config.json: what is paid up front, upkeep, and the yearly annuity."""
+def hardware(cfg, case=None, n=N, kw=1.0, gpu=False):
+    """Hardware costs per house for one case in config.json: what is paid up front, upkeep, and the yearly annuity.
+
+    n servers of kw each (#159): a server costs server_chf per kW, or its full server_chf for the GPU
+    workstation (gpu=True); each needs its own water loop; fitting and upkeep follow the kW installed,
+    against the reference house's N kW."""
     hw = cfg["hardware"]; h = hw["cases"][case or hw["case_for_results"]]
-    capex = (n * (h["server_chf"] + h["cooling_kit_chf"]) + h["fitter_hours_per_house"] * h["fitter_chf_per_hour"]
-             + h["electrician_hours_per_house"] * h["electrician_chf_per_hour"])
-    upkeep = h["service_visits_per_year"] * (h["service_hours_per_visit"] * hw["service_chf_per_hour"] + hw["service_callout_chf"])
+    unit = h["server_chf"] if gpu else h["server_chf"] * kw
+    per_kw = n * kw / N
+    capex = (n * (unit + h["cooling_kit_chf"]) + per_kw * (h["fitter_hours_per_house"] * h["fitter_chf_per_hour"]
+             + h["electrician_hours_per_house"] * h["electrician_chf_per_hour"]))
+    upkeep = per_kw * h["service_visits_per_year"] * (h["service_hours_per_visit"] * hw["service_chf_per_hour"] + hw["service_callout_chf"])
     r, life = h["discount_rate"], h["lifetime_years"]
     annuity = r / (1 - (1 + r) ** -life)
-    return dict(capex=capex, upkeep=upkeep, r=r, life=life, annuity=annuity, per_year=capex * annuity + upkeep)
+    # The servers are sold at the end of their life (#159); that sale, discounted to today, comes off the capex.
+    resale = n * unit * h["resale_share"]
+    net_capex = capex - resale * (1 + r) ** -life
+    return dict(capex=capex, upkeep=upkeep, r=r, life=life, annuity=annuity, resale=resale, net_capex=net_capex,
+                per_year=net_capex * annuity + upkeep)
 
 
 def payback_years(capex, cash, r):
@@ -56,15 +66,19 @@ def payback_years(capex, cash, r):
 
 
 def after_hardware(k, cfg, case=None):
-    """The yearly result once the servers, their fitting and upkeep are paid for, for one hardware case."""
+    """The yearly result once the servers, their fitting and upkeep are paid for, for one hardware case.
+
+    Payback and NPV count the servers' resale at the end of their life: payback is the time the yearly cash
+    takes to repay the capex less the discounted resale."""
     h = hardware(cfg, case)
     before = net(k, cfg); cash = before - h["upkeep"]
     return dict(capex_chf=round(h["capex"]), upkeep_chf_per_year=round(h["upkeep"]),
+                resale_chf=round(h["resale"]),
                 hardware_chf_per_year=round(h["per_year"]), net_chf_before_hardware=round(before),
                 net_chf_after_hardware=round(before - h["per_year"]),
-                payback_years=round(payback_years(h["capex"], cash, h["r"]), 1),
+                payback_years=round(payback_years(h["net_capex"], cash, h["r"]), 1),
                 lifetime_years=h["life"], discount_rate=h["r"],
-                npv_chf=round(-h["capex"] + cash * (1 - (1 + h["r"]) ** -h["life"]) / h["r"]),
+                npv_chf=round(-h["net_capex"] + cash * (1 - (1 + h["r"]) ** -h["life"]) / h["r"]),
                 break_even_chf_per_server_hour_incl_hardware=round(
                     (k["electricity_cost_chf"] - k["value_of_heat_used_chf"] + h["per_year"]) / k["server_hours_sold"], 3))
 
@@ -208,7 +222,7 @@ def chart_payback(k, cfg):
     for case in ("low", "mid", "high"):
         h = hardware(cfg, case); col = CASE_COLORS[case]
         cash = c * k["server_hours_sold"] - k["electricity_cost_chf"] + k["value_of_heat_used_chf"] - h["upkeep"]
-        pb = np.array([payback_years(h["capex"], x, h["r"]) for x in cash])
+        pb = np.array([payback_years(h["net_capex"], x, h["r"]) for x in cash])
         ax.plot(c, np.where(pb <= top, pb, np.nan), color=col, lw=2.6,
                 label=f"{case.capitalize()}: {cfg['hardware']['cases'][case]['label']} ({h['capex']:,.0f} CHF up front)")
         ax.plot([0.2, 1.2], [h["life"], h["life"]], color=col, lw=1, ls=":")
@@ -219,7 +233,9 @@ def chart_payback(k, cfg):
         y = a["payback_years"]
         if y <= top:
             ax.scatter([own], [y], s=90, color=col, edgecolor=INK, zorder=5)
-            ax.annotate(f"{y:.1f} years", (own, y), xytext=(10, -4), textcoords="offset points", fontsize=11.5, fontweight="bold")
+            left = case == "mid"   # keeps the mid label clear of the high case's line
+            ax.annotate(f"{y:.1f} years", (own, y), xytext=(-12 if left else 10, -4), textcoords="offset points",
+                        ha="right" if left else "left", fontsize=11.5, fontweight="bold")
         rows += [dict(case=case, compute_chf_per_server_hour=round(x, 3), payback_years=round(p, 2) if p <= 50 else None)
                  for x, p in zip(c[::20], pb[::20])]
     ax.axvline(own, color=INK, lw=0.9, ls=":")
@@ -227,7 +243,7 @@ def chart_payback(k, cfg):
     ax.set(xlim=(0.2, 1.2), ylim=(0, top), xlabel="Price a server-hour fetches (CHF)",
            ylabel="Years to pay back the hardware", title="At 0.50 CHF the dearest hardware does not pay back within its life")
     ax.legend(frameon=False, loc="upper right", fontsize=10.5)
-    save(fig, "07_payback", "Discounted payback per house, six servers. Dotted: each case's lifetime; the dot on it is the break-even price incl. hardware")
+    save(fig, "07_payback", "Discounted payback per house, six servers sold at the end. Dotted: each lifetime (low and mid share 6 years); on it, break-even incl. hardware")
     return pd.DataFrame(rows)
 
 

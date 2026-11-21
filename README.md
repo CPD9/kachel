@@ -29,15 +29,19 @@ Every value the model assumes, with its unit and source, is in [docs/assumptions
 
 ## Run it
 
+You need Node 22.12 or newer with pnpm 11, [uv](https://docs.astral.sh/uv/) for Python 3.12, Docker, and Linux or macOS.
+
 ```sh
-make bootstrap
-pnpm exec supabase start
-make dev
-make check
+git clone https://github.com/CPD9/kachel.git && cd kachel
+make bootstrap                    # JavaScript and Python dependencies
+pnpm exec supabase start          # the local Supabase stack, in Docker
+pnpm exec supabase status -o env  # the keys for the three .env files
+make dev                          # all five apps
+make check                        # every check CI runs
 ```
 
-`pnpm exec supabase start` starts the local Supabase stack (Docker). Before `make dev`, copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
-`make dev` serves the host app on http://localhost:5173, the console on http://localhost:5174, the 3D heat map on http://localhost:5175 and the pitch intro on http://localhost:5176; the map needs internet.
+Before `make dev`, copy `.env.example` to `.env` in `apps/host`, `apps/console` and `services/agent`, and fill in the keys from `pnpm exec supabase status -o env`. Only the agent takes the service role key.
+`make dev` serves the host app on http://localhost:5173, the console on http://localhost:5174, the 3D heat map on http://localhost:5175, the pitch intro on http://localhost:5176 and the operator view on http://localhost:5177; the map needs internet.
 The pitch intro (`apps/pitch`, by Duc) plays a scripted voice prompt, then opens the map at Byfangweg 18 with its card (`?egid=442141&card=1`); with `VITE_MAPBOX_TOKEN` in `apps/pitch/.env` a Mapbox globe flies there first, `a` dives into the house and its questions, and `m` opens the map.
 Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test`, and to the console as the demo buyer, `buyer@kachel.test`, both with the password `kachel-demo` (local stack only).
 
@@ -47,6 +51,8 @@ Row level security shows each person only their own rows, so sign in to the host
 
 With both apps running, `pnpm screenshots` retakes these two images with headless Chromium.
 
+To pause and resume a real job from the heat signal, as on stage, follow [the demo checklist](docs/demo-checklist.md). Everything else, the model commands included, is in [Run it yourself](docs/wiki/Run-it-yourself.md). What we hand in for the hackathon is in [docs/submission.md](docs/submission.md).
+
 ## Repo map
 
 | Path                 | What it is                                                      |
@@ -54,6 +60,7 @@ With both apps running, `pnpm screenshots` retakes these two images with headles
 | `apps/host`          | React app for hosts: their house, their heat, their servers     |
 | `apps/console`       | React app for compute buyers: jobs and their state              |
 | `apps/map`           | 3D map of Basel and Switzerland: buildings, heat, day and night |
+| `apps/operator`      | The business view: every house, the servers, heat and revenue   |
 | `packages/ui`        | Shared components and design tokens                             |
 | `packages/db`        | Typed Supabase client and the generated database types          |
 | `packages/config`    | Shared ESLint and TypeScript settings                           |

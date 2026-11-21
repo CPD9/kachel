@@ -82,6 +82,12 @@ turns back.
 The console, where a buyer submits jobs and sees where each one runs and the heat it has
 given. Both app screenshots come from `pnpm screenshots` (scripts/screenshots.mjs).
 
+![The operator view in November: the year's revenue, the month's figures, Basel and Bern with every fleet home and the buyers between them, and the year month by month](app-operator.webp)
+
+The operator view at 1920 × 1080, signed in as the seed's operator: the fleet from `make months`
+on the left, at the top and on the map, the synthetic buyers and their jobs live from Supabase.
+Map © swisstopo.
+
 ![The host screen: the house at 14:00 on the replayed January day, today's heat hour by hour, the money for the day and the year, and the six servers](host-house.webp)
 
 The host screen with the house, its day and its money, live from `heat_state`, `kpis` and `assumptions`. Until the scheduler writes today's hours it replays a stored day at the clock's hour and says so; hover any number for its source.

@@ -208,3 +208,97 @@ select
   slot, 'Server ' || slot, 1.0, 0.8, 0.0, 'OFF'
 from generate_series(1, 12) as house
 cross join lateral generate_series(1, 2 + house % 7) as slot;
+
+-- The operator and more buyers (#159), all SYNTHETIC. operator@kachel.test reads everything
+-- (app_metadata kachel_role, migration 20261121160000_operator.sql). Six made-up buyers, each a
+-- kind of compute the fleet sells, run jobs on the synthetic fleet houses above; the demo buyer
+-- gets a game session and a render batch there too. No buyer, job or label is a real customer.
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+select
+  '00000000-0000-0000-0000-000000000000', id::uuid, 'authenticated', 'authenticated', email,
+  extensions.crypt('kachel-demo', extensions.gen_salt('bf')), now(),
+  meta::jsonb, json_build_object('name', name)::jsonb, now(), now(), '', '', '', ''
+from (values
+  ('00000000-0000-4000-8000-000000000009', 'operator@kachel.test', 'Demo operator',
+   '{"provider": "email", "providers": ["email"], "kachel_role": "operator"}'),
+  ('00000000-0000-4000-8000-000000000021', 'play@kachel.test', 'Synthetic buyer: game streaming',
+   '{"provider": "email", "providers": ["email"]}'),
+  ('00000000-0000-4000-8000-000000000022', 'render@kachel.test', 'Synthetic buyer: 3D rendering studio',
+   '{"provider": "email", "providers": ["email"]}'),
+  ('00000000-0000-4000-8000-000000000023', 'lab@kachel.test', 'Synthetic buyer: AI research lab',
+   '{"provider": "email", "providers": ["email"]}'),
+  ('00000000-0000-4000-8000-000000000024', 'studio@kachel.test', 'Synthetic buyer: video studio',
+   '{"provider": "email", "providers": ["email"]}'),
+  ('00000000-0000-4000-8000-000000000025', 'embed@kachel.test', 'Synthetic buyer: embeddings start-up',
+   '{"provider": "email", "providers": ["email"]}'),
+  ('00000000-0000-4000-8000-000000000026', 'speech@kachel.test', 'Synthetic buyer: speech to text',
+   '{"provider": "email", "providers": ["email"]}')
+) as u (id, email, name, meta);
+
+insert into auth.identities (
+  id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+)
+select u.id, u.id::text, u.id, json_build_object('sub', u.id, 'email', u.email, 'email_verified', true)::jsonb,
+       'email', now(), now(), now()
+from auth.users u
+where u.email in ('operator@kachel.test', 'play@kachel.test', 'render@kachel.test', 'lab@kachel.test',
+                  'studio@kachel.test', 'embed@kachel.test', 'speech@kachel.test');
+
+insert into public.buyers (id, name, buys)
+values
+  ('00000000-0000-4000-8000-000000000002', 'Demo buyer', 'AI batch, embeddings and chat sessions'),
+  ('00000000-0000-4000-8000-000000000021', 'Game streaming', 'Gaming sessions on the house''s GPU'),
+  ('00000000-0000-4000-8000-000000000022', '3D rendering studio', 'Overnight renders and animations'),
+  ('00000000-0000-4000-8000-000000000023', 'AI research lab', 'Model training and batch inference'),
+  ('00000000-0000-4000-8000-000000000024', 'Video studio', 'Editing exports and transcodes'),
+  ('00000000-0000-4000-8000-000000000025', 'Embeddings start-up', 'An embeddings backlog with no deadline'),
+  ('00000000-0000-4000-8000-000000000026', 'Speech to text', 'Transcription batches with a deadline');
+
+-- Their jobs on the fleet houses (house HH, slot S: server id ending 2HH0S, as above). Running and
+-- paused jobs hold a server; queued ones have none yet; GONE is done, or moved to a data centre.
+insert into public.jobs (
+  id, buyer_id, site_id, server_id, kind, label, interruptible, server_hours, deadline_at,
+  state, moved_offsite, active_cpu_s, created_at
+)
+select
+  ('00000000-0000-4000-8000-000000000' || j.id)::uuid,
+  ('00000000-0000-4000-8000-0000000000' || j.buyer)::uuid,
+  case when j.house is null then null else ('00000000-0000-4000-8000-0000000010' || j.house)::uuid end,
+  case when j.house is null or j.state in ('QUEUED', 'GONE') then null
+       else ('00000000-0000-4000-8000-00000002' || j.house || '0' || j.slot)::uuid end,
+  j.kind::public.job_kind, j.label, j.kind <> 'interactive', j.hours,
+  case when j.due_h is null then null else now() + make_interval(hours => j.due_h) end,
+  j.state::public.job_state, j.house is null and j.state = 'GONE', j.ran_h * 3600.0,
+  now() - make_interval(mins => j.age_min)
+from (values
+  ('306', '02', '03', 1, 'interactive', 'Game session, evening', 4.0, null, 'RUNNING', 1.5, 90),
+  ('307', '02', '09', 1, 'batch', 'Render batch, 30 frames', 6.0, 16, 'PAUSED', 2.0, 150),
+  ('401', '21', '01', 1, 'interactive', 'Evening match, 4K (synthetic)', 3.0, null, 'RUNNING', 1.0, 60),
+  ('402', '21', '02', 1, 'interactive', 'Stream session (synthetic)', 4.0, null, 'RUNNING', 2.0, 120),
+  ('403', '21', '10', 1, 'interactive', 'Ranked match (synthetic)', 2.0, null, 'RUNNING', 0.5, 30),
+  ('404', '21', null, null, 'interactive', 'Late session (synthetic)', 2.0, null, 'QUEUED', 0.0, 5),
+  ('411', '22', '04', 1, 'batch', 'Facade renders, 40 frames (synthetic)', 6.0, 10, 'RUNNING', 3.0, 200),
+  ('412', '22', '04', 2, 'batch', 'Walkthrough animation (synthetic)', 12.0, 30, 'PAUSED', 4.0, 300),
+  ('413', '22', '05', 1, 'batch', 'Product stills (synthetic)', 2.0, null, 'GONE', 2.0, 400),
+  ('421', '23', '06', 1, 'batch', 'Fine-tune run, 7B (synthetic)', 16.0, 24, 'RUNNING', 5.0, 330),
+  ('422', '23', '06', 2, 'batch', 'Evaluation of the fine-tune (synthetic)', 4.0, 26, 'RUNNING', 1.0, 70),
+  ('423', '23', null, null, 'batch', 'Hyperparameter sweep (synthetic)', 24.0, 48, 'QUEUED', 0.0, 20),
+  ('424', '23', null, null, 'batch', 'Overnight batch inference (synthetic)', 8.0, null, 'GONE', 0.0, 600),
+  ('431', '24', '11', 1, 'batch', 'Export: client film in 4K (synthetic)', 3.0, 8, 'RUNNING', 1.0, 65),
+  ('432', '24', '12', 1, 'batch', 'Proxy transcode (synthetic)', 1.0, null, 'GONE', 1.0, 240),
+  ('441', '25', '05', 2, 'opportunistic', 'Embeddings backlog, shard 1 (synthetic)', null, null, 'RUNNING', 6.0, 500),
+  ('442', '25', '08', 1, 'opportunistic', 'Embeddings backlog, shard 2 (synthetic)', null, null, 'RUNNING', 4.0, 500),
+  ('443', '25', '07', 1, 'opportunistic', 'Embeddings backlog, shard 3 (synthetic)', null, null, 'PAUSED', 2.5, 500),
+  ('451', '26', '12', 2, 'batch', 'Podcast archive transcription (synthetic)', 8.0, 20, 'RUNNING', 2.0, 140),
+  ('452', '26', null, null, 'batch', 'Council meetings transcription (synthetic)', 5.0, 24, 'QUEUED', 0.0, 10)
+) as j (id, buyer, house, slot, kind, label, hours, due_h, state, ran_h, age_min);
+
+-- A server with a running or paused job shows it.
+update public.servers v
+set state = case when j.state = 'RUNNING' then 'RUNNING'::public.server_state else 'PAUSED'::public.server_state end
+from public.jobs j
+where j.server_id = v.id and j.state in ('RUNNING', 'PAUSED') and v.site_id <> '00000000-0000-4000-8000-000000000100';

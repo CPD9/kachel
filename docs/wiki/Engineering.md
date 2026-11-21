@@ -11,6 +11,7 @@ The rules in full are in
 | `apps/host`          | React app for hosts: their house, their heat, their servers                          |
 | `apps/console`       | React app for compute buyers: submit jobs, follow their state                        |
 | `apps/map`           | 3D map of Basel: buildings, heat, day and night                                      |
+| `apps/operator`      | The business view: every fleet house, its servers and heat, the revenue              |
 | `packages/ui`        | Shared components (sign-in, state pill, sourced number, heat loop) and design tokens |
 | `packages/db`        | Typed Supabase client, the live feeds and the generated types                        |
 | `packages/economics` | The yearly result for each building and tariff, for the apps                         |

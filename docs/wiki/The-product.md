@@ -1,8 +1,9 @@
 # The product
 
-Three apps, one for each person who meets Kachel: the **host app** for the homeowner, the
-**console** for the buyer of compute, and the **heat map** for anyone asking where home servers
-could heat homes. All three run on your laptop today; none is deployed.
+Four apps, one for each person who meets Kachel: the **host app** for the homeowner, the
+**console** for the buyer of compute, the **operator view** for the business that runs the fleet,
+and the **heat map** for anyone asking where home servers could heat homes. All four run on your
+laptop today; none is deployed.
 
 ## The host app: your house, your heat, your servers
 
@@ -56,6 +57,33 @@ host app yet: that is issue [#26](https://github.com/CPD9/kachel/issues/26).
 What is not built yet: nothing places a newly submitted job on a house live. It waits as Queued.
 The jobs that show a house come from the seed or from one hour of a fleet run
 (`fleet_write.py`).
+
+## The operator view: the whole fleet and its revenue
+
+`apps/operator`, on http://localhost:5177 in development.
+
+![The operator view in November, signed in as the operator: the year's revenue top right, the month's figures, Basel and Bern with every home and the buyers between them, and the year month by month](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/app-operator.webp)
+
+One screen, laid out for 1920 × 1080 in the dark look of the pitch app.
+
+- **The headline.** Revenue this year, top right, and the margin before hardware.
+- **A month bar and a temperature slider.** Pick a month of 2025, or make every hour warmer or
+  colder by up to 6 °C. Heat demand, the servers it can use and the revenue follow.
+- **The month in figures.** Revenue a day and an hour, servers running, heat delivered, backup
+  heat and the month's margin.
+- **The map.** Basel and Bern on swisstopo's grey map, darkened. Every home of the fleet is an
+  orange dot that glows with the heat its servers give that month; the homes in the database
+  are racks.
+- **Compute buyers, live.** Signed in as `operator@kachel.test`, every buyer with what they buy
+  and their jobs: running, paused, queued, done. A cyan line runs from each buyer to every rack
+  holding one of their jobs now (dashed: paused).
+- **The year and every home.** The fleet's heat each month, and each home's servers, size, tank,
+  demand, server heat and backup in kW.
+
+The home figures come from `make months` (`services/scheduler/out/fleet_months.json`): the 100
+synthetic Basel and Bern homes of the fleet, each run through the scheduler for the year on its
+city's real 2025 weather. The view says it is a model; hover a number for its source. The buyers
+and jobs come from Supabase and are synthetic too (`supabase/seed.sql`). The map needs internet.
 
 ## The heat map: Basel in 3D through the day
 
