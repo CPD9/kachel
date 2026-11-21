@@ -13,7 +13,7 @@
   "computing_income_chf": 19007,
   "break_even_chf_per_server_hour": 0.1884,
   "pays_off_at_assumed_compute_price": true,
-  "profile_source": "Open-Meteo archive, Basel 2025",
+  "profile_source": "Open-Meteo archive, Bern 2025",
   "heating_days": 225,
   "does_not_pay_off_when": "compute earns less than CHF 0.19 per server-hour"
 }
