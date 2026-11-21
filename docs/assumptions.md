@@ -16,15 +16,54 @@ This page is generated: change `config.json`, then run `node scripts/assumptions
 
 Note in config.json: DigitalHeat case brief (reference house). hot_water_shape=flat is OUR assumption; overridden when the case CSV is passed with --profile.
 
+## House quality (the map's card)
+
+| What                                                   | Key                | Value | Unit   | Source                                                                   |
+| ------------------------------------------------------ | ------------------ | ----- | ------ | ------------------------------------------------------------------------ |
+| Space heating, stock mean, single-family house         | `single`           | 156   | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, flats and hotels            | `multi`            | 94    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, offices                     | `office`           | 70    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, shops                       | `shop`             | 50    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, restaurants                 | `restaurant`       | 121   | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, industry                    | `industry`         | 86    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, halls and churches          | `assembly`         | 101   | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, schools, museums, libraries | `school`           | 105   | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, hospitals                   | `hospital`         | 75    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, sports halls                | `sport`            | 87    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, single-family house                         | `single`           | 12    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, flats and hotels                            | `multi`            | 16    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, offices                                     | `office`           | 2     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, shops                                       | `shop`             | 1     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, restaurants                                 | `restaurant`       | 59    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, industry                                    | `industry`         | 2     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, halls and churches                          | `assembly`         | 4     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, schools, museums, libraries                 | `school`           | 3     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, hospitals                                   | `hospital`         | 31    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, sports halls                                | `sport`            | 33    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built before 1919, times the mean       | `before_1919`      | 0.89  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1919 to 1945, times the mean      | `1919_1945`        | 1.17  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1946 to 1960, times the mean      | `1946_1960`        | 1.17  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1961 to 1970, times the mean      | `1961_1970`        | 1.15  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1971 to 1980, times the mean      | `1971_1980`        | 1.15  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1981 to 1990, times the mean      | `1981_1990`        | 0.81  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1991 to 2000, times the mean      | `1991_2000`        | 0.53  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 2001 to 2005, times the mean      | `2001_2005`        | 0.42  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 2006 to 2010, times the mean      | `2006_2010`        | 0.42  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 2011 to 2015, times the mean      | `2011_2015`        | 0.33  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built after 2015, times the mean        | `after_2015`       | 0.31  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating after a renovation, times before         | `renovated_factor` | 0.5   |        | [39] EnergieSchweiz and EnFK 2019; never below a new building: our guess |
+
 ## Server
 
-| What                                    | Key             | Value | Unit | Source                     |
-| --------------------------------------- | --------------- | ----- | ---- | -------------------------- |
-| Server power                            | `power_kw`      | 1     | kW   | [1] DigitalHeat case brief |
-| Share of server power recovered as heat | `heat_recovery` | 80 %  |      | [1] DigitalHeat case brief |
-| Power a paused server draws             | `idle_power_kw` | 0     | kW   | our guess                  |
+| What                                                             | Key                  | Value     | Unit | Source                                                                        |
+| ---------------------------------------------------------------- | -------------------- | --------- | ---- | ----------------------------------------------------------------------------- |
+| Server power                                                     | `power_kw`           | 1         | kW   | [1] DigitalHeat case brief                                                    |
+| Share of server power recovered as heat                          | `heat_recovery`      | 80 %      |      | [1] DigitalHeat case brief                                                    |
+| Power a paused server draws                                      | `idle_power_kw`      | 0         | kW   | our guess                                                                     |
+| Server sizes the map's card offers; price, flows and heat per kW | `sizes_kw`           | 0.5, 1, 2 | kW   | our guess                                                                     |
+| GPU workstation's power, at its case's full price                | `gpu_workstation_kw` | 0.7       | kW   | [10] VRLA Tech workstation 2026: 600 W GPU; the rest of the machine our guess |
 
-Note in config.json: Case brief. idle_power_kw=0 is OUR simplification: a paused server is assumed to draw nothing.
+Note in config.json: Case brief. idle_power_kw=0 is OUR simplification: a paused server is assumed to draw nothing. sizes_kw: the server sizes the map's card offers (issue #159); a server costs its case's server_chf per kW and draws, earns and heats in proportion to its kW, while each server needs its own water loop: OUR GUESS. gpu_workstation_kw: the mid case's workstation, an RTX PRO 6000 Blackwell at up to 600 W (VRLA Tech, 30 Jun 2026) plus about 100 W for the rest of the machine (OUR GUESS), at its case's full server_chf.
 
 ## Prices
 
@@ -125,19 +164,20 @@ Note in config.json: OUR synthetic scenario for make fleet (heatsched/fleet_scen
 
 ### Hardware cases
 
-| What                        | Key                           | Low                               | Mid                              | High                       | Unit  | Source                                                                          |
-| --------------------------- | ----------------------------- | --------------------------------- | -------------------------------- | -------------------------- | ----- | ------------------------------------------------------------------------------- |
-| What it is                  | `label`                       | Refurbished GPU host, 6-year life | New GPU workstation, 5-year life | Dear GPU host, 4-year life |       | [9] PCSP server prices 2026, [10] VRLA Tech workstation 2026                    |
-| Server, about 1 kW          | `server_chf`                  | 2518                              | 5034                             | 6714                       | CHF   | [9] PCSP server prices 2026, [10] VRLA Tech workstation 2026; 1 kW is our guess |
-| Water loop to the tank      | `cooling_kit_chf`             | 496                               | 633                              | 771                        | CHF   | [11] Watercooling UK, our guess                                                 |
-| Fitter hours per house      | `fitter_hours_per_house`      | 6                                 | 10                               | 16                         | h     | our guess                                                                       |
-| Fitter rate                 | `fitter_chf_per_hour`         | 103                               | 120                              | 148                        | CHF/h | [12] WBAG Regietarif 2025                                                       |
-| Electrician hours per house | `electrician_hours_per_house` | 2                                 | 3                                | 4                          | h     | our guess                                                                       |
-| Electrician rate            | `electrician_chf_per_hour`    | 151                               | 151                              | 151                        | CHF/h | [13] EIT.nordwest rates 2026                                                    |
-| Service visits a year       | `service_visits_per_year`     | 1                                 | 1                                | 2                          |       | our guess                                                                       |
-| Hours per service visit     | `service_hours_per_visit`     | 1                                 | 2                                | 2                          | h     | our guess                                                                       |
-| Lifetime                    | `lifetime_years`              | 6                                 | 5                                | 4                          | years | [14] SiliconANGLE, [15] Amazon 10-K 2025                                        |
-| Discount rate               | `discount_rate`               | 3.28 %                            | 3.75 %                           | 6 %                        |       | [16] UVEK grid WACC, [17] pv magazine; high case our guess                      |
+| What                                                 | Key                           | Low                               | Mid                              | High                       | Unit  | Source                                                                          |
+| ---------------------------------------------------- | ----------------------------- | --------------------------------- | -------------------------------- | -------------------------- | ----- | ------------------------------------------------------------------------------- |
+| What it is                                           | `label`                       | Refurbished GPU host, 6-year life | New GPU workstation, 6-year life | Dear GPU host, 4-year life |       | [9] PCSP server prices 2026, [10] VRLA Tech workstation 2026                    |
+| Server, about 1 kW                                   | `server_chf`                  | 2518                              | 5034                             | 6714                       | CHF   | [9] PCSP server prices 2026, [10] VRLA Tech workstation 2026; 1 kW is our guess |
+| Water loop to the tank                               | `cooling_kit_chf`             | 496                               | 633                              | 771                        | CHF   | [11] Watercooling UK, our guess                                                 |
+| Fitter hours per house                               | `fitter_hours_per_house`      | 6                                 | 10                               | 16                         | h     | our guess                                                                       |
+| Fitter rate                                          | `fitter_chf_per_hour`         | 103                               | 120                              | 148                        | CHF/h | [12] WBAG Regietarif 2025                                                       |
+| Electrician hours per house                          | `electrician_hours_per_house` | 2                                 | 3                                | 4                          | h     | our guess                                                                       |
+| Electrician rate                                     | `electrician_chf_per_hour`    | 151                               | 151                              | 151                        | CHF/h | [13] EIT.nordwest rates 2026                                                    |
+| Service visits a year                                | `service_visits_per_year`     | 1                                 | 1                                | 2                          |       | our guess                                                                       |
+| Hours per service visit                              | `service_hours_per_visit`     | 1                                 | 2                                | 2                          | h     | our guess                                                                       |
+| Lifetime                                             | `lifetime_years`              | 6                                 | 6                                | 4                          | years | [14] SiliconANGLE, [15] Amazon 10-K 2025; 6 also the case owner (21 Nov 2026)   |
+| Resale at the end of life, share of the server price | `resale_share`                | 10 %                              | 7.5 %                            | 15 %                       |       | [41] Servnet ITAD value study 2026                                              |
+| Discount rate                                        | `discount_rate`               | 3.28 %                            | 3.75 %                           | 6 %                        |       | [16] UVEK grid WACC, [17] pv magazine; high case our guess                      |
 
 Notes in config.json:
 
@@ -147,7 +187,8 @@ Notes in config.json:
 - `electrician_chf_per_hour`: Elektroinstallateur EFZ, 151 CHF an hour without VAT (EIT.nordwest, Basel, recommended rates 2026).
 - `hours_per_house`: Fitter and electrician hours to fit six servers to the tank: OUR GUESS.
 - `service`: Service fitter with van 125 CHF an hour, call-out 65 CHF (WBAG, Regietarif 2025). Visits and hours a year: OUR GUESS.
-- `lifetime_years`: 6: the large cloud providers' server life by 2023 (SiliconANGLE, 22 Nov 2025). 5: Amazon, for part of its servers from 1 Jan 2025 (Amazon 10-K 2025). 4: Amazon from 2020 (SiliconANGLE).
+- `lifetime_years`: 6 (low and mid): the large cloud providers' server life by 2023 (SiliconANGLE, 22 Nov 2025), and the case owner's view that 6 years or more is realistic (feedback, 21 Nov 2026). Amazon cut part of its servers to 5 years from 1 Jan 2025 (Amazon 10-K 2025). 4 (high): Amazon from 2020 (SiliconANGLE).
+- `resale_share`: What the server fetches at the end of its life, as a share of its price: enterprise servers 5-10% of their original value at 5 years and more, 15-25% at 4 years, when sold within six months of retirement (Servnet, 'ITAD Value Recovery 2026', 13 Aug 2026). low 10% and mid 7.5% at 6 years; high 15% at 4 years. Only the server, not its water loop or the fitting. Resale in 2025 ran at about 2.5 times its seven-year average (Resource Recycling, 22 Jan 2026), so these may be low.
 - `discount_rate`: 3.28%: WACC for Swiss power grids, tariff year 2027 (UVEK, 2 Mar 2026). 3.75%: WACC for PV investment contributions 2026 (pv magazine, 2 Mar 2026). 6%: OUR GUESS for a young, riskier business.
 
 ## Solar and battery

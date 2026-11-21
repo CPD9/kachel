@@ -1,12 +1,30 @@
+import { useEffect, useState } from "react";
+import { REFERENCE_SIZE, SERVER_SIZES } from "@kachel/economics/model";
+import { electricityPrice, savedPrice, type Post, type Price } from "@kachel/economics/prices";
+import {
+  HOUSE_SOURCE,
+  heatDemand,
+  periodFactor,
+  periodLabel,
+  RENOVATED_FACTOR,
+  USE_LABEL,
+  type PeriodId,
+} from "@kachel/economics/house";
 import { formatEnergy, heatEstimate } from "./estimate";
 import { FLEET, type FleetHouse } from "../fleet/fleet";
 import type { BuildingFacts } from "./geoadmin";
 import { shareOf } from "./group";
-import { ASSUMPTIONS_URL, formatChf, kachelEstimate } from "./kachel";
+import { ASSUMPTIONS_URL, formatChf, formatYears, kachelEstimate } from "./kachel";
 import { MonthSlider } from "./MonthSlider";
 import { describeSolar, SOLAR_RADIUS_M } from "./solar";
 
 const NETWORK_THRESHOLD_MWH = 700;
+/**
+ * ElCom's API does not allow calls from other sites, so the map asks it through its own server
+ * (vite.config.ts: /elcom). Without that server the card keeps the saved tariff or the median.
+ */
+export const ELCOM_PROXY = "/elcom/api/graphql";
+const post: Post = (url, init) => fetch(url, init);
 /**
  * Above this, heat per m² of heated floor is unusual even for an old, unrenovated building
  * (our rule of thumb), so the card flags the SFOE estimate for a second look.
@@ -61,14 +79,25 @@ export function BuildingCard({
       {facts === "loading" ? (
         <p>Looking the building up…</p>
       ) : (
-        <Facts facts={facts} month={month} />
+        <Facts key={facts.register?.egid ?? "building"} facts={facts} month={month} />
       )}
     </aside>
   );
 }
 
+/**
+ * What a renovation does to SFOE's space heating: Sonnendach's figure is the average for the
+ * building's period, unrenovated, so the box applies our period's renovated factor to it. With
+ * no period in the register, the plain factor.
+ */
+function renovationScale(period: PeriodId | null, renovated: boolean): number {
+  if (!renovated) return 1;
+  return period === null ? RENOVATED_FACTOR : periodFactor(period, true) / periodFactor(period);
+}
+
 function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
   const { register, roof, hectare, osmSolar, group } = facts;
+  const [renovated, setRenovated] = useState(false);
   if (register === null && roof === null && hectare === null && osmSolar === null) {
     return <p>No published data found for this building.</p>;
   }
@@ -78,6 +107,14 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
   const share = group !== null && group.egids.length > 1 ? shareOf(group, area) : null;
   const scale = share ?? 1;
   const groupHeatKwh = roof === null ? 0 : roof.heatingKwh + roof.hotWaterKwh;
+  const period = register?.period ?? null;
+  const kind = register?.kind ?? null;
+  // Our own estimate from the register, for homes: floor area and construction period (#159).
+  const ours =
+    area !== null && area > 0 && period !== null && kind !== null
+      ? heatDemand(area, period, renovated, kind)
+      : null;
+  const renovation = renovationScale(period, renovated);
   const estimate =
     roof === null
       ? null
@@ -135,7 +172,27 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
                 estimate.energyKwh === null ? "heating not known" : formatEnergy(estimate.energyKwh)
               }
             />
+            {period !== null && (
+              <Row
+                label={`Our estimate, built ${periodLabel(period)}${renovated ? ", renovated" : ""}`}
+                value={
+                  ours !== null
+                    ? formatEnergy(ours.totalKwh)
+                    : kind === null
+                      ? "no heat for this use"
+                      : "no floor area"
+                }
+              />
+            )}
           </dl>
+          <label className="mt-1 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={renovated}
+              onChange={(e) => setRenovated(e.target.checked)}
+            />
+            <span>Renovated (walls, roof, windows)?</span>
+          </label>
           {roof !== null && (
             <MonthSlider
               key={register?.egid ?? "building"}
@@ -148,10 +205,19 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
           <Source>
             {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023), for a whole swissBUILDINGS3D building${share !== null ? `, here split among its ${group?.egids.length ?? 0} GWR buildings by floor area (our split)` : groupFigure ? `; it may cover neighbouring buildings too, so the per-m² figure shows only when plausible` : ""}. Months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
           </Source>
+          <Source>
+            {`Our estimate: heated floor area × space heating for its construction period and use${kind === null ? "" : ` (${USE_LABEL[kind]})`} + hot water. ${HOUSE_SOURCE}. Renovated also halves SFOE's space heating in the Kachel figures below, never under a new building's; SFOE's figure above stays as published.`}
+          </Source>
         </section>
       )}
 
-      {estimate !== null && <WithKachel heatKwh={estimate.heatKwh} />}
+      {estimate !== null && roof !== null && (
+        <WithKachel
+          heatKwh={roof.heatingKwh * scale * renovation + roof.hotWaterKwh * scale}
+          renovated={renovated}
+          municipality={register?.municipality ?? null}
+        />
+      )}
 
       {register !== null && (
         <section className="mt-3">
@@ -214,32 +280,77 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
 }
 
 /** What Kachel home servers could do here, scaled from the scheduler's reference house. */
-function WithKachel({ heatKwh }: { heatKwh: number }) {
-  const k = kachelEstimate(heatKwh);
+function WithKachel({
+  heatKwh,
+  renovated,
+  municipality,
+}: {
+  heatKwh: number;
+  renovated: boolean;
+  municipality: { bfs: number; name: string } | null;
+}) {
+  const bfs = municipality?.bfs ?? null;
+  // The saved tariff (or the Swiss median) at once, then ElCom's live answer.
+  const [price, setPrice] = useState<Price>(() => savedPrice(bfs));
+  useEffect(() => {
+    let current = true;
+    void electricityPrice(bfs, post, ELCOM_PROXY).then((p) => {
+      if (current) setPrice(p);
+    });
+    return () => {
+      current = false;
+    };
+  }, [bfs]);
+  const [sizeId, setSizeId] = useState(REFERENCE_SIZE.id);
+  const size = SERVER_SIZES.find((s) => s.id === sizeId) ?? REFERENCE_SIZE;
+  const k = kachelEstimate(heatKwh, price.chfPerKwh, size);
   return (
     <section className="mt-3 rounded-md border border-heat/50 p-3">
-      <h3 className="font-medium text-heat">If Kachel heated the whole building, estimated</h3>
+      <h3 className="font-medium text-heat">
+        {renovated
+          ? "If Kachel heated the whole building, renovated, estimated"
+          : "If Kachel heated the whole building, estimated"}
+      </h3>
+      <label className="mt-1 flex items-center justify-between gap-2">
+        <span className="text-paper/70">Server size</span>
+        <select
+          value={size.id}
+          onChange={(e) => setSizeId(e.target.value)}
+          className="rounded bg-ink px-1 text-paper"
+        >
+          {SERVER_SIZES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </label>
       {k === null ? (
-        <p>Too little heat for one 1 kW server.</p>
+        <p>{`Too little heat for one ${size.label} server.`}</p>
       ) : (
         <dl className="mt-1 space-y-0.5">
-          <Row label="Servers needed, 1 kW each" value={`about ${k.servers}`} />
+          <Row label={`Servers needed, ${size.label} each`} value={`about ${k.servers}`} />
           <Row
             label="Server heat used"
             value={`${formatEnergy(k.heatFromServersKwh)} (${Math.round(k.sharePct)}%)`}
           />
           <Row label="Electricity the servers draw" value={formatEnergy(k.electricityKwh)} />
+          <Row
+            label={`Electricity price, ${price.municipality ?? "Swiss median"}`}
+            value={`${(price.chfPerKwh * 100).toFixed(2)} Rp/kWh`}
+          />
           <Row label="A year, before hardware" value={formatChf(k.beforeHardwareChf)} />
           <Row label="A year, after hardware (mid)" value={formatChf(k.afterHardwareChf.mid)} />
           <Row label="… cheap hardware (low)" value={formatChf(k.afterHardwareChf.low)} />
           <Row label="… dear hardware (high)" value={formatChf(k.afterHardwareChf.high)} />
-          <Row label="Payback (mid)" value={`${k.paybackYearsMid} years`} />
+          <Row label="Payback (mid)" value={formatYears(k.paybackYears.mid)} />
         </dl>
       )}
       <p className="mt-1 text-xs text-paper/60">
         {
-          "Estimate, scaled from Kachel's Basel reference house (6 servers, 31,231 kWh, Basel 2025 weather) in proportion to this building's heat. It assumes interruptible AI work is always waiting and 0.50 CHF a server-hour. "
+          "Estimate, scaled from Kachel's Basel reference house (6 servers, 31,231 kWh, Basel 2025 weather) in proportion to this building's heat. It assumes interruptible AI work is always waiting and 0.50 CHF per kW of server an hour; any size draws, earns and heats per kW, a server costs its case's price per kW (the GPU workstation its full price) and each needs its own water loop. "
         }
+        {`Electricity: ${price.source}. `}
         <a href={ASSUMPTIONS_URL} target="_blank" rel="noreferrer" className="underline">
           Assumptions and sources
         </a>

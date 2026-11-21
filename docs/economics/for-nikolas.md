@@ -78,17 +78,18 @@ prices are converted at the ECB rates of 20 Nov 2026. Each source is listed on t
 | Fitter, per house                  | 6 h × 103 CHF | 10 h × 120 CHF | 16 h × 148 CHF | Rates from a Swiss heating firm's 2025 price list. Hours are our guess                                                                       |
 | Electrician, per house             | 2 h × 151 CHF | 3 h × 151 CHF  | 4 h × 151 CHF  | Rate from EIT.nordwest (Basel) 2026. Hours are our guess                                                                                     |
 | Upkeep, per house and year         | 190 CHF       | 315 CHF        | 630 CHF        | Service rate and call-out from the same firm. Number of visits is our guess                                                                  |
-| Lifetime                           | 6 years       | 5 years        | 4 years        | Write-off periods used by large cloud providers (Amazon 10-K, SiliconANGLE)                                                                  |
+| Lifetime                           | 6 years       | 6 years        | 4 years        | Write-off periods used by large cloud providers (Amazon 10-K, SiliconANGLE); 6+ years is also the case owner's view (21 Nov)                 |
+| Resale at the end, share of server | 10%           | 7.5%           | 15%            | Used enterprise servers: 5-10% of their price after 5+ years, 15-25% after 4 (Servnet, Aug 2026)                                             |
 | Discount rate                      | 3.28%         | 3.75%          | 6%             | Swiss grid WACC 2027 (UVEK); PV WACC 2026; 6% is our guess                                                                                   |
 
-| Result, per house                         | Low        | Mid        | High        | What it means                                                                              |
-| ----------------------------------------- | ---------- | ---------- | ----------- | ------------------------------------------------------------------------------------------ |
-| Paid up front                             | 19,004 CHF | 35,655 CHF | 47,882 CHF  | Six servers, six water loops, fitter and electrician.                                      |
-| Hardware per year                         | 3,731 CHF  | 8,268 CHF  | 14,448 CHF  | The up-front cost spread over the lifetime at the discount rate (an annuity), plus upkeep. |
-| Left per year after hardware              | 5,952 CHF  | 1,415 CHF  | −4,765 CHF  | The 9,683 CHF above, minus hardware per year.                                              |
-| Payback                                   | 2.1 years  | 4.2 years  | 6.6 years   | Years until the discounted yearly cash has repaid the up-front cost.                       |
-| Net present value                         | 31,948 CHF | 6,344 CHF  | −16,512 CHF | Over the lifetime, at the discount rate.                                                   |
-| Break-even per server-hour, with hardware | 0.308 CHF  | 0.454 CHF  | 0.653 CHF   | Lowest price per server-hour that also pays for the hardware.                              |
+| Result, per house                         | Low        | Mid        | High        | What it means                                                                                     |
+| ----------------------------------------- | ---------- | ---------- | ----------- | ------------------------------------------------------------------------------------------------- |
+| Paid up front                             | 19,004 CHF | 35,655 CHF | 47,882 CHF  | Six servers, six water loops, fitter and electrician.                                             |
+| Hardware per year                         | 3,499 CHF  | 6,718 CHF  | 13,067 CHF  | The up-front cost less the discounted resale, spread over the lifetime (an annuity), plus upkeep. |
+| Left per year after hardware              | 6,184 CHF  | 2,965 CHF  | −3,384 CHF  | The 9,683 CHF above, minus hardware per year.                                                     |
+| Payback                                   | 2.0 years  | 4.0 years  | 5.8 years   | Years until the discounted yearly cash has repaid the up-front cost.                              |
+| Net present value                         | 33,192 CHF | 15,672 CHF | −11,726 CHF | Over the lifetime, at the discount rate.                                                          |
+| Break-even per server-hour, with hardware | 0.301 CHF  | 0.405 CHF  | 0.609 CHF   | Lowest price per server-hour that also pays for the hardware.                                     |
 
 In short: at 0.50 CHF a server-hour the mid case only just pays, and the high case does not
 pay back within its four-year life. These figures are also in
@@ -121,7 +122,7 @@ Basel. Lifetimes, upkeep and battery losses are our guesses, except the 33-year 
 | Paid up front, after federal payment | –          | 15,510 CHF | 21,952 CHF        |
 | Payback, 27.7 Rp                     | –          | 8.2 years  | 11.7 years        |
 | Payback, IWB 33.42 Rp                | –          | 7.0 years  | 9.7 years         |
-| Left per year after servers and PV   | 1,415 CHF  | 2,772 CHF  | 2,200 CHF         |
+| Left per year after servers and PV   | 2,965 CHF  | 4,322 CHF  | 3,750 CHF         |
 
 In short: the roof pays for itself in about 8 years and adds about 1,350 CHF a year. The
 battery does not pay at these prices. The servers use nearly three times what the roof makes,
@@ -136,16 +137,16 @@ own heat demand: area × heat per m², plus hot water per m². The number of ser
 same 40% rule. Sources are on the
 [economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md#11-more-buildings-and-tariffs).
 
-| Building                         | Heat a year | Servers | Heat covered | After hardware, 27.7 Rp | After hardware, own tariff  |
-| -------------------------------- | ----------- | ------- | ------------ | ----------------------- | --------------------------- |
-| Reference house, Basel           | 31 MWh      | 6       | 79.6%        | 1,415 CHF               | 207 CHF (IWB, 33.42 Rp)     |
-| Flat block, Bern (1970s)         | 140 MWh     | 26      | 78.2%        | 6,822 CHF               | 7,938 CHF (median, 26.5 Rp) |
-| Office building, Basel           | 144 MWh     | 27      | 76.6%        | 5,737 CHF               | 1,149 CHF (IWB, 32.6 Rp)    |
-| FHNW Campus Dreispitz, HGK tower | 221 MWh     | 39      | 82.6%        | 17,346 CHF              | 9,750 CHF (IWB, 32.6 Rp)    |
+| Building                         | Heat a year | Servers | Heat covered | After hardware, 27.7 Rp | After hardware, own tariff   |
+| -------------------------------- | ----------- | ------- | ------------ | ----------------------- | ---------------------------- |
+| Reference house, Basel           | 31 MWh      | 6       | 79.6%        | 2,965 CHF               | 1,757 CHF (IWB, 33.42 Rp)    |
+| Flat block, Bern (1970s)         | 140 MWh     | 26      | 78.2%        | 13,540 CHF              | 14,656 CHF (median, 26.5 Rp) |
+| Office building, Basel           | 144 MWh     | 27      | 76.6%        | 12,713 CHF              | 8,125 CHF (IWB, 32.6 Rp)     |
+| FHNW Campus Dreispitz, HGK tower | 221 MWh     | 39      | 82.6%        | 27,422 CHF              | 19,826 CHF (IWB, 32.6 Rp)    |
 
 In short: servers grow with heat demand, about one per 5.2 MWh a year, and three of the four
 earn about the same per server. The electricity price matters more than the building: at IWB's 2027 tariff the Basel
-house keeps 207 CHF a year after hardware instead of 1,415. The Bern area and heat per m², and
+house keeps 1,757 CHF a year after hardware instead of 2,965. The Bern area and heat per m², and
 the office's, are our guesses; the FHNW tower's are published. All results are in
 [buildings.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/buildings.csv).
 

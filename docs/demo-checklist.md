@@ -25,7 +25,7 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
    ```sh
    pnpm exec supabase start
    make db-reset                    # back to the seed: Server 4 paused, no test jobs
-   pnpm exec supabase status -o env # API_URL, ANON_KEY, SERVICE_ROLE_KEY into the three .env files
+   pnpm exec supabase status -o env # API_URL, ANON_KEY, SERVICE_ROLE_KEY into the four .env files
    make dev
    ```
 
@@ -61,8 +61,9 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
 3. Console, http://localhost:5174, signed in as `buyer@kachel.test` / `kachel-demo`. A Batch
    job needs a deadline; Backlog does not.
 4. Map, http://localhost:5175. Click Basel, then a building, for its energy card.
-5. Operator, http://localhost:5177: the whole fleet and its revenue. Slide the month to July,
-   then the temperature up: heat demand, servers running and revenue fall.
+5. Operator, http://localhost:5177, signed in as `operator@kachel.test` / `kachel-demo`: the
+   whole fleet, the buyers and the revenue. Click July, then slide the temperature up: heat
+   demand, servers running and revenue fall.
 6. The two films, open in the video player.
 
 If a tab is blank, reload it once.

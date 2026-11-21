@@ -10,7 +10,7 @@
 
 <section class="abstract">
 
-**Abstract.** Kachel places small servers in the basements of homes, runs AI jobs on them and feeds their heat into space heating and hot water. A scheduler runs a job only when its heat is useful. This paper documents the model we run, step by step, so that each figure can be checked against the code and the data it comes from. A reference house in Basel is driven hour by hour by real weather (Open-Meteo archive, Basel 2025) through the heating formula of the case brief; the house needs 31,231 kWh of heat on 206 heating days. The scheduler is one pure function with four rules in priority order: interactive sessions run at once, deadline batch runs as early as its heat is useful, a deadline-free backlog fills the remaining useful heat room after a head-room reserve taken from a persistence forecast, and nothing else runs. Keeping each added server only while it still runs at least 40 % of the year gives 6 servers. They cover 79.6 % of the heat demand, run 59.1 % of the hours and dump 9.1 kWh of heat in the year; in Bern, 7 servers cover 83.3 %. Heat valued at what a heat pump would have spent lowers the price a server-hour must fetch to CHF 0.1884. With hardware paid for, the mid case leaves CHF 1,415 per house and year at our assumed compute price, with a net present value of CHF 6,344; the dearest hardware case does not pay back within its life. The result rests most on the compute price and on an unlimited backlog of flexible work, our most optimistic assumption; without that backlog the servers run 8.3 % of the hours.
+**Abstract.** Kachel places small servers in the basements of homes, runs AI jobs on them and feeds their heat into space heating and hot water. A scheduler runs a job only when its heat is useful. This paper documents the model we run, step by step, so that each figure can be checked against the code and the data it comes from. A reference house in Basel is driven hour by hour by real weather (Open-Meteo archive, Basel 2025) through the heating formula of the case brief; the house needs 31,231 kWh of heat on 206 heating days. The scheduler is one pure function with four rules in priority order: interactive sessions run at once, deadline batch runs as early as its heat is useful, a deadline-free backlog fills the remaining useful heat room after a head-room reserve taken from a persistence forecast, and nothing else runs. Keeping each added server only while it still runs at least 40 % of the year gives 6 servers. They cover 79.6 % of the heat demand, run 59.1 % of the hours and dump 9.1 kWh of heat in the year; in Bern, 7 servers cover 83.3 %. Heat valued at what a heat pump would have spent lowers the price a server-hour must fetch to CHF 0.1884. With hardware paid for, the mid case leaves CHF 2,965 per house and year at our assumed compute price, with a net present value of CHF 15,672; the dearest hardware case does not pay back within its life. The result rests most on the compute price and on an unlimited backlog of flexible work, our most optimistic assumption; without that backlog the servers run 8.3 % of the hours.
 
 </section>
 
@@ -143,11 +143,15 @@ A rule on the marginal server, rather than on cover, stops before servers are bo
 
 ### 7.1 Hardware and the annuity
 
-Three hardware cases bound the cost (Table 1), each with a server price [10, 11], a water-cooling kit [12], fitter and electrician hours at published rates [13, 14], service visits at CHF 125 an hour plus CHF 65 a call-out [13], a lifetime from the write-off periods of large cloud providers [15, 16] and a discount rate [17, 18]. Dollar and pound prices are converted at the ECB reference rate [19]. Up front and upkeep per house are
+Three hardware cases bound the cost (Table 1), each with a server price [10, 11], a water-cooling kit [12], fitter and electrician hours at published rates [13, 14], service visits at CHF 125 an hour plus CHF 65 a call-out [13], a lifetime from the write-off periods of large cloud providers [15, 16], six years in the mid case as the case owner also judged realistic, a resale share of the server price at the end of its life [17, 18] and a discount rate [19, 20]. Dollar and pound prices are converted at the ECB reference rate [21]. Up front and upkeep per house are
 
 <div class="eq"><span>C = N·(P<sub>server</sub> + P<sub>kit</sub>) + h<sub>fit</sub>·w<sub>fit</sub> + h<sub>el</sub>·w<sub>el</sub>, &nbsp;&nbsp; U = v·(h<sub>v</sub>·w<sub>svc</sub> + c<sub>callout</sub>)</span><span class="eqno">(17)</span></div>
 
-and the hardware costs C·a + U a year, with the annuity factor
+The servers are sold at the end of their life for R = ρ·N·P<sub>server</sub>, which, discounted to today, comes off the capex:
+
+<div class="eq"><span>C′ = C − R·(1 + r)<sup>−L</sup></span><span class="eqno">(17a)</span></div>
+
+and the hardware costs C′·a + U a year, with the annuity factor
 
 <div class="eq"><span>a = r / (1 − (1 + r)<sup>−L</sup>)</span><span class="eqno">(18)</span></div>
 
@@ -157,37 +161,38 @@ for discount rate r and lifetime L.
 
 | Input (per server unless per house) | low | mid | high |
 | --- | ---: | ---: | ---: |
-| Description | Refurbished GPU host, 6-year life | New GPU workstation, 5-year life | Dear GPU host, 4-year life |
+| Description | Refurbished GPU host, 6-year life | New GPU workstation, 6-year life | Dear GPU host, 4-year life |
 | Server | CHF 2,518 | CHF 5,034 | CHF 6,714 |
 | Cooling kit | CHF 496 | CHF 633 | CHF 771 |
 | Fitter hours × rate | 6 × CHF 103 | 10 × CHF 120 | 16 × CHF 148 |
 | Electrician hours × rate | 2 × CHF 151 | 3 × CHF 151 | 4 × CHF 151 |
 | Service visits × hours a year | 1 × 1 | 1 × 2 | 2 × 2 |
-| Lifetime L | 6 y | 5 y | 4 y |
+| Lifetime L | 6 y | 6 y | 4 y |
+| Resale share ρ | 10.0 % | 7.5 % | 15.0 % |
 | Discount rate r | 3.28 % | 3.75 % | 6.00 % |
 
 ### 7.2 Net result, payback and net present value
 
 Before hardware, a house earns A = I − E + V a year (Eq. 12). The yearly cash once upkeep is paid is A − U, and
 
-<div class="eq"><span>net after hardware = A − C·a − U</span><span class="eqno">(19)</span></div>
-<div class="eq"><span>NPV = −C + (A − U) · (1 − (1 + r)<sup>−L</sup>) / r</span><span class="eqno">(20)</span></div>
-<div class="eq"><span>τ = −ln(1 − r·C / (A − U)) / ln(1 + r), &nbsp;&nbsp; τ = ∞ if A − U ≤ r·C</span><span class="eqno">(21)</span></div>
-<div class="eq"><span>c*<sub>hw</sub> = (E − V + C·a + U) / Σ n(t)</span><span class="eqno">(22)</span></div>
+<div class="eq"><span>net after hardware = A − C′·a − U</span><span class="eqno">(19)</span></div>
+<div class="eq"><span>NPV = −C′ + (A − U) · (1 − (1 + r)<sup>−L</sup>) / r</span><span class="eqno">(20)</span></div>
+<div class="eq"><span>τ = −ln(1 − r·C′ / (A − U)) / ln(1 + r), &nbsp;&nbsp; τ = ∞ if A − U ≤ r·C′</span><span class="eqno">(21)</span></div>
+<div class="eq"><span>c*<sub>hw</sub> = (E − V + C′·a + U) / Σ n(t)</span><span class="eqno">(22)</span></div>
 
-τ is the discounted payback, the time until the yearly cash, discounted at r, has repaid C; it is compared with L. c*<sub>hw</sub> is the break-even price per server-hour once hardware is paid for. The payback curve is evaluated on a grid of compute prices from CHF 0.20 to CHF 1.20 in steps of CHF 0.04.
+τ is the discounted payback, the time until the yearly cash, discounted at r, has repaid C less the discounted resale; it is compared with L. c*<sub>hw</sub> is the break-even price per server-hour once hardware is paid for. The payback curve is evaluated on a grid of compute prices from CHF 0.20 to CHF 1.20 in steps of CHF 0.04.
 
 ### 7.3 Sensitivity design
 
-The sensitivity analysis is one-at-a-time: from the configuration as it stands, 7 inputs are each set to a low and a high value while all others stay put, and the yearly result after hardware (Eq. 19, mid case) is recomputed. Inputs that change the plant or the prices rerun the whole year; inputs that change only the hardware reuse the base run. The ranges are the compute price at our assumption ±50 %, a backlog of none or unlimited, the Swiss range of municipal electricity tariffs as reported [9], heat recovery up to a vendor's stated maximum [20], the COP from the case brief to the best field result [8], and the server price and lifetime across the hardware cases.
+The sensitivity analysis is one-at-a-time: from the configuration as it stands, 7 inputs are each set to a low and a high value while all others stay put, and the yearly result after hardware (Eq. 19, mid case) is recomputed. Inputs that change the plant or the prices rerun the whole year; inputs that change only the hardware reuse the base run. The ranges are the compute price at our assumption ±50 %, a backlog of none or unlimited, the Swiss range of municipal electricity tariffs as reported [9], heat recovery up to a vendor's stated maximum [22], the COP from the case brief to the best field result [8], and the server price and lifetime across the hardware cases.
 
 ### 7.4 Roof PV and a battery
 
-Roof PV is modelled from the same weather file. The sun's position follows Spencer [21], the split of global light into direct and diffuse follows Erbs, Klein and Duffie [22], and the tilted roof sees an isotropic sky [23]:
+Roof PV is modelled from the same weather file. The sun's position follows Spencer [23], the split of global light into direct and diffuse follows Erbs, Klein and Duffie [24], and the tilted roof sees an isotropic sky [25]:
 
 <div class="eq"><span>G<sub>roof</sub> = G<sub>b</sub>·cos θ<sub>i</sub> / cos θ<sub>z</sub> + G<sub>d</sub>·(1 + cos β)/2 + G·ρ·(1 − cos β)/2, &nbsp;&nbsp; PV(t) = K · G<sub>roof</sub>/1000 · PR</span><span class="eqno">(23)</span></div>
 
-for a roof of K = 10 kWp at β = 30° facing south, with the performance ratio PR = 0.79 from PVGIS for Basel [24]. PV and an optional 10 kWh battery power the servers only. Each hour PV first meets the server load, the surplus charges the battery with √η<sub>rt</sub> lost each way (round trip η<sub>rt</sub> = 90 %), and the rest is sold at CHF 0.14 per kWh [25]. The servers' power bill is then grid·p − export·f. Up front is K·(c<sub>pv</sub> − subsidy), with the federal payment of CHF 360 per kWp [26], plus the battery [27, 28]; the yearly cost uses Eq. (18) on each part with its own life. The solar payback uses Eq. (21) with the bill saving less PV upkeep as cash. Four setups are compared: no solar; PV with a scheduler that ignores the sun; PV with the scheduler of Section 4.4; and PV with a battery and that scheduler. Each runs at the median tariff and at the Basel utility's tariff for the coming year, CHF 0.3342 per kWh [9].
+for a roof of K = 10 kWp at β = 30° facing south, with the performance ratio PR = 0.79 from PVGIS for Basel [26]. PV and an optional 10 kWh battery power the servers only. Each hour PV first meets the server load, the surplus charges the battery with √η<sub>rt</sub> lost each way (round trip η<sub>rt</sub> = 90 %), and the rest is sold at CHF 0.14 per kWh [27]. The servers' power bill is then grid·p − export·f. Up front is K·(c<sub>pv</sub> − subsidy), with the federal payment of CHF 360 per kWp [28], plus the battery [29, 30]; the yearly cost uses Eq. (18) on each part with its own life. The solar payback uses Eq. (21) with the bill saving less PV upkeep as cash. Four setups are compared: no solar; PV with a scheduler that ignores the sun; PV with the scheduler of Section 4.4; and PV with a battery and that scheduler. Each runs at the median tariff and at the Basel utility's tariff for the coming year, CHF 0.3342 per kWh [9].
 
 ## 8. Fleet
 
@@ -271,7 +276,7 @@ The servers follow the heat (Table 4). Utilisation peaks at 100.0 % in Jan and f
 
 ### 9.4 Money
 
-Before hardware a house earns CHF 9,683 a year at the assumed compute price. Table 5 takes the hardware off. The low case leaves CHF 5,952 a year and the mid case CHF 1,415; the high case ends at CHF −4,765 a year, pays back in 6.6 y against a life of 4 y, and has a net present value of CHF −16,512. Within each case's life, the payback grid first pays back at CHF 0.32 (low), CHF 0.48 (mid) and CHF 0.68 (high) per server-hour.
+Before hardware a house earns CHF 9,683 a year at the assumed compute price. Table 5 takes the hardware off. The low case leaves CHF 6,184 a year and the mid case CHF 2,965; the high case ends at CHF −3,384 a year, pays back in 5.8 y against a life of 4 y, and has a net present value of CHF −11,726. Within each case's life, the payback grid first pays back at CHF 0.32 (low), CHF 0.44 (mid) and CHF 0.64 (high) per server-hour.
 
 <p class="caption">Table 5. Hardware cases per house (docs/economics/data/hardware.csv).</p>
 
@@ -279,13 +284,14 @@ Before hardware a house earns CHF 9,683 a year at the assumed compute price. Tab
 | --- | ---: | ---: | ---: |
 | Up front, C | CHF 19,004 | CHF 35,655 | CHF 47,882 |
 | Upkeep a year, U | CHF 190 | CHF 315 | CHF 630 |
-| Hardware a year, C·a + U | CHF 3,731 | CHF 8,268 | CHF 14,448 |
+| Resale at the end, R | CHF 1,511 | CHF 2,265 | CHF 6,043 |
+| Hardware a year, C′·a + U | CHF 3,499 | CHF 6,718 | CHF 13,067 |
 | Net before hardware, A | CHF 9,683 | CHF 9,683 | CHF 9,683 |
-| Net after hardware, A − C·a − U | CHF 5,952 | CHF 1,415 | CHF −4,765 |
-| Discounted payback | 2.1 y | 4.2 y | 6.6 y |
-| Lifetime | 6 y | 5 y | 4 y |
-| Net present value | CHF 31,948 | CHF 6,344 | CHF −16,512 |
-| Break-even incl. hardware | CHF 0.308 | CHF 0.454 | CHF 0.653 |
+| Net after hardware, A − C′·a − U | CHF 6,184 | CHF 2,965 | CHF −3,384 |
+| Discounted payback | 2.0 y | 4.0 y | 5.8 y |
+| Lifetime | 6 y | 6 y | 4 y |
+| Net present value | CHF 33,192 | CHF 15,672 | CHF −11,726 |
+| Break-even incl. hardware | CHF 0.301 | CHF 0.405 | CHF 0.609 |
 
 ![Figure 4. Break-even per server-hour against the electricity price, for three heat-pump COPs. Generated by economics.py.](../economics/04_break_even.png)
 
@@ -293,19 +299,19 @@ Before hardware a house earns CHF 9,683 a year at the assumed compute price. Tab
 
 ### 9.5 Sensitivity
 
-Table 6 ranks the inputs by how far they swing the result after hardware, from the base of CHF 1,415. The Compute price moves it most; 5 of the 7 inputs can turn it negative at one end of their range. Heat recovery acts against intuition: at 60% the result is CHF 1,397, at 95% CHF 1,217. With more heat per server-hour, fewer server-hours fill the same demand, so fewer are sold.
+Table 6 ranks the inputs by how far they swing the result after hardware, from the base of CHF 2,965. The Compute price moves it most; 3 of the 7 inputs can turn it negative at one end of their range. Heat recovery acts against intuition: at 60% the result is CHF 2,947, at 95% CHF 2,767. With more heat per server-hour, fewer server-hours fill the same demand, so fewer are sold.
 
 <p class="caption">Table 6. One-at-a-time sensitivity, CHF per house and year after hardware (docs/economics/data/sensitivity.csv).</p>
 
 | Input changed (one at a time) | Low setting | Result | High setting | Result | Swing |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Compute price, 0.25 to 0.75 CHF per server-hour | 0.25 | CHF −6,354 | 0.75 | CHF 9,183 | CHF 15,537 |
-| Backlog of flexible jobs: none vs unlimited | none | CHF −6,903 | unlimited | CHF 1,415 | CHF 8,318 |
-| Electricity price, 10.6 to 45.9 Rp per kWh | 45.9 | CHF −2,430 | 10.6 | CHF 5,030 | CHF 7,460 |
-| Server price, 6,714 to 2,518 CHF each | 6,714 | CHF −833 | 2,518 | CHF 4,782 | CHF 5,615 |
-| Server lifetime, 4 to 6 years | 4 years | CHF −397 | 6 years | CHF 2,622 | CHF 3,019 |
-| Heat pump COP, 4.9 to 2.5 | 4.9 | CHF 67 | 2.5 | CHF 1,415 | CHF 1,348 |
-| Heat recovered, 60% to 95% | 60% | CHF 1,397 | 95% | CHF 1,217 | CHF 180 |
+| Compute price, 0.25 to 0.75 CHF per server-hour | 0.25 | CHF −4,804 | 0.75 | CHF 10,733 | CHF 15,537 |
+| Backlog of flexible jobs: none vs unlimited | none | CHF −5,353 | unlimited | CHF 2,965 | CHF 8,318 |
+| Electricity price, 10.6 to 45.9 Rp per kWh | 45.9 | CHF −880 | 10.6 | CHF 6,580 | CHF 7,460 |
+| Server price, 6,714 to 2,518 CHF each | 6,714 | CHF 1,173 | 2,518 | CHF 5,650 | CHF 4,477 |
+| Server lifetime, 4 to 6 years | 4 years | CHF 139 | 6 years | CHF 2,965 | CHF 2,826 |
+| Heat pump COP, 4.9 to 2.5 | 4.9 | CHF 1,617 | 2.5 | CHF 2,965 | CHF 1,348 |
+| Heat recovered, 60% to 95% | 60% | CHF 2,947 | 95% | CHF 2,767 | CHF 180 |
 
 ![Figure 6. The same sensitivity as a tornado chart. Generated by economics.py.](../economics/06_what_moves_the_result.png)
 
@@ -317,14 +323,14 @@ The 10 kWp roof makes 11,671 kWh in the year, 1,167 kWh per kWp. Its own power g
 
 | Setup | Electricity | Own PV share | Power bill | Solar up front | Payback (mid) | Net after all |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| No solar | CHF 0.2770 | 0.0 % | CHF 8,608 | – | – | CHF 1,415 |
-| Roof PV, scheduler ignores the sun | CHF 0.2770 | 17.7 % | CHF 6,222 | CHF 15,510 | 8.4 y | CHF 2,740 |
-| Roof PV, scheduler prefers the sun | CHF 0.2770 | 18.6 % | CHF 6,174 | CHF 15,510 | 8.2 y | CHF 2,772 |
-| Roof PV + battery, prefers the sun | CHF 0.2770 | 21.4 % | CHF 6,069 | CHF 21,952 | 11.7 y | CHF 2,200 |
-| No solar | CHF 0.3342 | 0.0 % | CHF 10,385 | – | – | CHF 207 |
-| Roof PV, scheduler ignores the sun | CHF 0.3342 | 17.7 % | CHF 7,686 | CHF 15,510 | 7.2 y | CHF 1,845 |
-| Roof PV, scheduler prefers the sun | CHF 0.3342 | 18.6 % | CHF 7,619 | CHF 15,510 | 7.0 y | CHF 1,895 |
-| Roof PV + battery, prefers the sun | CHF 0.3342 | 21.4 % | CHF 7,464 | CHF 21,952 | 9.7 y | CHF 1,373 |
+| No solar | CHF 0.2770 | 0.0 % | CHF 8,608 | – | – | CHF 2,965 |
+| Roof PV, scheduler ignores the sun | CHF 0.2770 | 17.7 % | CHF 6,222 | CHF 15,510 | 8.4 y | CHF 4,290 |
+| Roof PV, scheduler prefers the sun | CHF 0.2770 | 18.6 % | CHF 6,174 | CHF 15,510 | 8.2 y | CHF 4,322 |
+| Roof PV + battery, prefers the sun | CHF 0.2770 | 21.4 % | CHF 6,069 | CHF 21,952 | 11.7 y | CHF 3,750 |
+| No solar | CHF 0.3342 | 0.0 % | CHF 10,385 | – | – | CHF 1,757 |
+| Roof PV, scheduler ignores the sun | CHF 0.3342 | 17.7 % | CHF 7,686 | CHF 15,510 | 7.2 y | CHF 3,395 |
+| Roof PV, scheduler prefers the sun | CHF 0.3342 | 18.6 % | CHF 7,619 | CHF 15,510 | 7.0 y | CHF 3,445 |
+| Roof PV + battery, prefers the sun | CHF 0.3342 | 21.4 % | CHF 7,464 | CHF 21,952 | 9.7 y | CHF 2,923 |
 
 ![Figure 7. The servers' electricity by source, month by month, with roof PV and battery. Generated by economics.py.](../economics/09_solar_month.png)
 
@@ -345,11 +351,11 @@ Table 8 gives the fleet of 100 synthetic houses with 481 servers on a winter day
 
 The model says plainly where Kachel loses money for the house:
 
-- **Compute sells below the break-even.** Below CHF 0.19 per server-hour the servers lose money before any hardware; with hardware the threshold rises to CHF 0.308, CHF 0.454 and CHF 0.653 per server-hour for the low, mid and high cases.
-- **Dear hardware with a short life.** The high case ends at CHF −4,765 a year at the assumed price and its net present value is CHF −16,512.
-- **No flexible work.** With no backlog the result after hardware is CHF −6,903 a year.
-- **A low compute price.** At 0.25 CHF per server-hour the result is CHF −6,354.
-- **Dear electricity.** At 45.9 Rp per kWh the result is CHF −2,430.
+- **Compute sells below the break-even.** Below CHF 0.19 per server-hour the servers lose money before any hardware; with hardware the threshold rises to CHF 0.301, CHF 0.405 and CHF 0.609 per server-hour for the low, mid and high cases.
+- **Dear hardware with a short life.** The high case ends at CHF −3,384 a year at the assumed price and its net present value is CHF −11,726.
+- **No flexible work.** With no backlog the result after hardware is CHF −5,353 a year.
+- **A low compute price.** At 0.25 CHF per server-hour the result is CHF −4,804.
+- **Dear electricity.** At 45.9 Rp per kWh the result is CHF −880.
 
 ## 10. Limitations
 
@@ -358,7 +364,7 @@ The model says plainly where Kachel loses money for the house:
 - **Idle power is zero.** A paused server is assumed to draw nothing; a real one draws some power while it waits.
 - **The backlog is unlimited.** `config.json` calls this the single most optimistic assumption in the model. Section 9.3 and Table 6 show how much the result depends on it; the fleet model, with a finite backlog, shows work moved away in summer.
 - **The compute price is ours.** CHF 0.50 per server-hour has no outside source yet; it is shown only against the break-even.
-- **Old building data.** The heat map of Basel and Switzerland (`apps/map`) shows SFOE heat demand per hectare, built from building and company statistics more than a decade old [29]. The model in this paper does not use that layer, but anyone reading the map next to it should know its age.
+- **Old building data.** The heat map of Basel and Switzerland (`apps/map`) shows SFOE heat demand per hectare, built from building and company statistics more than a decade old [31]. The model in this paper does not use that layer, but anyone reading the map next to it should know its age.
 - **One weather year, one tariff at a time.** Every result is for one year of weather, and prices are held constant over each hardware life.
 
 ## 11. Concept, not modelled: electricity from hotter sites
@@ -393,16 +399,18 @@ Each table is regenerated from the repository: `make year` writes the Basel bala
 14. EIT.nordwest (Basel), recommended hourly rates 2026, without VAT: Elektroinstallateur EFZ 151 CHF: https://www.eitnordwest.swiss/fileadmin/sections/eitbasel/documents/Loehne/Stundenansaetze_Personalkategorien_2026_als_Empfehlung_Rev.1.pdf.
 15. SiliconANGLE, "Resetting GPU depreciation", 22 Nov 2025: Amazon moved servers from three to four years in 2020, and the three largest clouds used six years by 2023: https://siliconangle.com/2025/11/22/resetting-gpu-depreciation-ai-factories-bend-dont-break-useful-life-assumptions/.
 16. Amazon, Form 10-K for 2025: part of its servers moved from six to five years from 1 Jan 2025: https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm.
-17. UVEK, "UVEK legt WACC für Stromnetze für das Tarifjahr 2027 fest", 2 Mar 2026: 3.28% https://www.admin.ch/de/newnsb/ZNjc_Y1WGHBjMrFROHcoK.
-18. pv magazine, 2 Mar 2026: WACC for PV investment contributions in 2026 is 3.75% https://www.pv-magazine.de/2026/03/02/schweiz-legt-neue-kapitalkostensaetze-fuer-erneuerbare-und-stromnetze-fest/.
-19. ECB euro reference rates, 20 Nov 2026, used for USD and GBP to CHF: https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html.
-20. Heat recovery up to 95% is Qarnot's own claim for its water-cooled boilers, not a measured average: https://techcrunch.com/2023/01/09/qarnot-creates-green-data-centers-by-putting-servers-in-central-heating-boilers/.
-21. Spencer, J. W. (1971). Fourier series representation of the position of the sun. Search 2(5), 172.
-22. Erbs, D. G., Klein, S. A. and Duffie, J. A. (1982). Estimation of the diffuse radiation fraction for hourly, daily and monthly-average global radiation. Solar Energy 28(4), 293–302. https://doi.org/10.1016/0038-092X(82)90302-4.
-23. Liu, B. Y. H. and Jordan, R. C. (1963). The long-term average performance of flat-plate solar-energy collectors. Solar Energy 7(2), 53–74. https://doi.org/10.1016/0038-092X(63)90006-9.
-24. JRC, PVGIS 5.3, Basel (47.56 N, 7.59 E), 1 kWp, 30° south, 14% system loss, SARAH3 2005–2023: 1,160 kWh per kWp a year, 21.05% total loss, checked 21 Nov 2026: https://re.jrc.ec.europa.eu/pvg_tools/en/.
-25. IWB, PV-Rückliefertarif: 14 Rp per kWh for systems up to 100 kW, for 12 years https://www.iwb.ch/servicecenter/stromtarife/pv-rueckliefertarif; kept for 2026 in IWB's release of 26 Aug 2025: https://www.iwb.ch/ueber-uns/newsroom/medienmitteilungen/artikel~_stromtarife-in-basel-sinken-leicht~.
-26. CKW, "Einmalvergütung Photovoltaik" (as of Sep 2025): the federal one-off payment for attached systems under 30 kWp is 360 CHF per kWp: https://www.ckw.ch/energie/photovoltaik/foerderung-photovoltaik-schweiz/einmalverguetung.
-27. EnergieSchweiz, "Photovoltaikmarkt: Preisbeobachtungsstudie 2025" (Planair), 3 Aug 2026, without VAT: rooftop systems of 10–30 kW cost 1,659 (lower quartile), 1,911 (median) and 2,237 (upper quartile) CHF per kW (Tabelle 4); a battery costs 432 CHF per kWh + 2,122 CHF (Abbildung 27): https://pubdb.bfe.admin.ch/de/publication/download/12694.
-28. Swissolar, "Faktenblatt Photovoltaik Schweiz", Jul 2025: a PV system lasts 33 years on average; a 10–15 kWh home battery costs 6,000 to 10,000 CHF to fit: https://www.swissolar.ch/02_markt-politik/faktenblatt/de_2025_faktenblatt_pv_schweiz_sws.pdf.
-29. Heat demand per hectare: SFOE, 2014 building and 2013 company statistics; "Source: SFOE". Layer ch.bfe.fernwaerme-nachfrage_wohn_dienstleistungsgebaeude on api3.geo.admin.ch.
+17. Servnet, "ITAD Value Recovery 2026: What Retired IT Is Really Worth", 13 Aug 2026: enterprise servers fetch 5-10% of their original value at five years and more, 15-25% at four, when sold within six months of retirement https://www.servnetuk.com/research/itad-data-sanitisation-value-study-2026.
+18. Resource Recycling, "Server resale values surge in AI-driven secondary IT markets", 22 Jan 2026 (Sage Sustainable Electronics benchmarking report): server resale values in 2025 at about 2.5 times their seven-year average https://resource-recycling.com/e-scrap/2026/01/22/server-resale-values-surge-in-ai-driven-secondary-it-markets/.
+19. UVEK, "UVEK legt WACC für Stromnetze für das Tarifjahr 2027 fest", 2 Mar 2026: 3.28% https://www.admin.ch/de/newnsb/ZNjc_Y1WGHBjMrFROHcoK.
+20. pv magazine, 2 Mar 2026: WACC for PV investment contributions in 2026 is 3.75% https://www.pv-magazine.de/2026/03/02/schweiz-legt-neue-kapitalkostensaetze-fuer-erneuerbare-und-stromnetze-fest/.
+21. ECB euro reference rates, 20 Nov 2026, used for USD and GBP to CHF: https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html.
+22. Heat recovery up to 95% is Qarnot's own claim for its water-cooled boilers, not a measured average: https://techcrunch.com/2023/01/09/qarnot-creates-green-data-centers-by-putting-servers-in-central-heating-boilers/.
+23. Spencer, J. W. (1971). Fourier series representation of the position of the sun. Search 2(5), 172.
+24. Erbs, D. G., Klein, S. A. and Duffie, J. A. (1982). Estimation of the diffuse radiation fraction for hourly, daily and monthly-average global radiation. Solar Energy 28(4), 293–302. https://doi.org/10.1016/0038-092X(82)90302-4.
+25. Liu, B. Y. H. and Jordan, R. C. (1963). The long-term average performance of flat-plate solar-energy collectors. Solar Energy 7(2), 53–74. https://doi.org/10.1016/0038-092X(63)90006-9.
+26. JRC, PVGIS 5.3, Basel (47.56 N, 7.59 E), 1 kWp, 30° south, 14% system loss, SARAH3 2005–2023: 1,160 kWh per kWp a year, 21.05% total loss, checked 21 Nov 2026: https://re.jrc.ec.europa.eu/pvg_tools/en/.
+27. IWB, PV-Rückliefertarif: 14 Rp per kWh for systems up to 100 kW, for 12 years https://www.iwb.ch/servicecenter/stromtarife/pv-rueckliefertarif; kept for 2026 in IWB's release of 26 Aug 2025: https://www.iwb.ch/ueber-uns/newsroom/medienmitteilungen/artikel~_stromtarife-in-basel-sinken-leicht~.
+28. CKW, "Einmalvergütung Photovoltaik" (as of Sep 2025): the federal one-off payment for attached systems under 30 kWp is 360 CHF per kWp: https://www.ckw.ch/energie/photovoltaik/foerderung-photovoltaik-schweiz/einmalverguetung.
+29. EnergieSchweiz, "Photovoltaikmarkt: Preisbeobachtungsstudie 2025" (Planair), 3 Aug 2026, without VAT: rooftop systems of 10–30 kW cost 1,659 (lower quartile), 1,911 (median) and 2,237 (upper quartile) CHF per kW (Tabelle 4); a battery costs 432 CHF per kWh + 2,122 CHF (Abbildung 27): https://pubdb.bfe.admin.ch/de/publication/download/12694.
+30. Swissolar, "Faktenblatt Photovoltaik Schweiz", Jul 2025: a PV system lasts 33 years on average; a 10–15 kWh home battery costs 6,000 to 10,000 CHF to fit: https://www.swissolar.ch/02_markt-politik/faktenblatt/de_2025_faktenblatt_pv_schweiz_sws.pdf.
+31. Heat demand per hectare: SFOE, 2014 building and 2013 company statistics; "Source: SFOE". Layer ch.bfe.fernwaerme-nachfrage_wohn_dienstleistungsgebaeude on api3.geo.admin.ch.

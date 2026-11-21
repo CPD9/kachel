@@ -20,7 +20,8 @@ const VRLA = "[10] VRLA Tech workstation 2026";
 const LOOP = "[11] Watercooling UK";
 const WBAG = "[12] WBAG Regietarif 2025";
 const EIT = "[13] EIT.nordwest rates 2026";
-const LIFE = "[14] SiliconANGLE, [15] Amazon 10-K 2025";
+const LIFE = "[14] SiliconANGLE, [15] Amazon 10-K 2025; 6 also the case owner (21 Nov 2026)";
+const RESALE = "[41] Servnet ITAD value study 2026";
 const WACC = "[16] UVEK grid WACC, [17] pv magazine";
 export const GUESS = "our guess";
 const ASR = "[19] Open ASR Leaderboard";
@@ -34,6 +35,8 @@ const KLEIV = "[30] federal one-off payment (CKW)";
 const FEED_IN = "[31] IWB feed-in tariff";
 const SWISSOLAR = "[32] Swissolar factsheet 2025";
 const IWB_2027 = "[3] ElCom, IWB Basel 2027 H4";
+const SONNENDACH = "[38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024";
+const RENOVATION = "[39] EnergieSchweiz and EnFK 2019";
 
 /** Job values that have a source; every other job value is our guess (docs/job-types.md). */
 const JOB_SOURCES = {
@@ -70,6 +73,18 @@ export const VALUES = {
   "server.power_kw": ["Server power", "kW", show.plain, BRIEF],
   "server.heat_recovery": ["Share of server power recovered as heat", "", show.pct, BRIEF],
   "server.idle_power_kw": ["Power a paused server draws", "kW", show.plain, GUESS],
+  "server.sizes_kw": [
+    "Server sizes the map's card offers; price, flows and heat per kW",
+    "kW",
+    (v) => v.join(", "),
+    GUESS,
+  ],
+  "server.gpu_workstation_kw": [
+    "GPU workstation's power, at its case's full price",
+    "kW",
+    show.plain,
+    `${VRLA}: 600 W GPU; the rest of the machine ${GUESS}`,
+  ],
   "prices.electricity_chf_per_kwh": ["Electricity price", "CHF/kWh", show.plain, ELCOM],
   "prices.heat_pump_cop": [
     "Heat pump efficiency (COP) the server heat replaces",
@@ -102,6 +117,62 @@ export const VALUES = {
   "solar.iwb_2027_chf_per_kwh": ["Electricity price, IWB 2027", "CHF/kWh", show.plain, IWB_2027],
   "solar.case_for_results": ["Solar case the results use", "", show.plain, GUESS],
 };
+
+/** House quality (config.json: house_quality): heat by construction period, for the map's card. */
+const USES = {
+  single: "single-family house",
+  multi: "flats and hotels",
+  office: "offices",
+  shop: "shops",
+  restaurant: "restaurants",
+  industry: "industry",
+  assembly: "halls and churches",
+  school: "schools, museums, libraries",
+  hospital: "hospitals",
+  sport: "sports halls",
+};
+for (const [kind, who] of Object.entries(USES)) {
+  VALUES[`house_quality.space_heating_kwh_per_m2.${kind}`] = [
+    `Space heating, stock mean, ${who}`,
+    "kWh/m²",
+    show.plain,
+    SONNENDACH,
+  ];
+  VALUES[`house_quality.hot_water_kwh_per_m2.${kind}`] = [
+    `Hot water, ${who}`,
+    "kWh/m²",
+    show.plain,
+    SONNENDACH,
+  ];
+}
+const PERIOD_WORDS = (p) =>
+  p.startsWith("before_") || p.startsWith("after_") ? p.replace("_", " ") : p.replace("_", " to ");
+for (const period of [
+  "before_1919",
+  "1919_1945",
+  "1946_1960",
+  "1961_1970",
+  "1971_1980",
+  "1981_1990",
+  "1991_2000",
+  "2001_2005",
+  "2006_2010",
+  "2011_2015",
+  "after_2015",
+]) {
+  VALUES[`house_quality.period_factor.${period}`] = [
+    `Space heating, built ${PERIOD_WORDS(period)}, times the mean`,
+    "",
+    show.plain,
+    SONNENDACH,
+  ];
+}
+VALUES["house_quality.renovated_factor"] = [
+  "Space heating after a renovation, times before",
+  "",
+  show.plain,
+  `${RENOVATION}; never below a new building: ${GUESS}`,
+];
 
 /** The synthetic fleet for make fleet (config.json: fleet). A [low, high] pair is one value. */
 const FLEET_VALUES = {
@@ -174,6 +245,7 @@ export const HARDWARE = {
   service_visits_per_year: ["Service visits a year", "", show.plain, GUESS],
   service_hours_per_visit: ["Hours per service visit", "h", show.plain, GUESS],
   lifetime_years: ["Lifetime", "years", show.plain, LIFE],
+  resale_share: ["Resale at the end of life, share of the server price", "", show.rate, RESALE],
   discount_rate: ["Discount rate", "", show.rate, `${WACC}; high case ${GUESS}`],
 };
 
@@ -247,6 +319,7 @@ export function table(head, rows) {
 
 const SECTIONS = [
   ["House", "house"],
+  ["House quality (the map's card)", "house_quality"],
   ["Server", "server"],
   ["Prices", "prices"],
   ["Model", null],

@@ -40,17 +40,21 @@ export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName:
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted">
+        <p className="text-[13px] text-white/55">
           {rows.length} houses · averages per hour of {monthName}
         </p>
-        <div role="group" aria-label="Sort" className="flex rounded-md border border-grid p-0.5">
+        <div
+          role="group"
+          aria-label="Sort"
+          className="flex rounded-md border border-white/10 p-0.5"
+        >
           {(["demand", "name"] as const).map((s) => (
             <button
               key={s}
               type="button"
               aria-pressed={sort === s}
               onClick={() => setSort(s)}
-              className={`rounded px-2.5 py-1 text-xs ${sort === s ? "bg-ink text-paper" : "text-muted hover:text-ink"}`}
+              className={`rounded px-2.5 py-1 text-[13px] ${sort === s ? "bg-white text-black" : "text-white/55 hover:text-white"}`}
             >
               {s === "demand" ? "Most heat first" : "By name"}
             </button>
@@ -59,43 +63,43 @@ export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName:
       </div>
       <ul
         aria-label="Houses"
-        className="mt-2 max-h-[32rem] divide-y divide-grid overflow-auto text-sm sm:hidden"
+        className="mt-2 max-h-[32rem] divide-y divide-white/10 overflow-auto text-[15px] sm:hidden"
       >
         {sorted.map((r) => (
           <li key={r.house.id} data-house-card={r.house.id} className="py-2.5">
             <p className="flex items-baseline justify-between gap-3">
               <span>
                 <span className="font-medium">{houseName(r)}</span>
-                <span className="ml-2 text-xs text-muted">{r.house.city}</span>
+                <span className="ml-2 text-[13px] text-white/55">{r.house.city}</span>
               </span>
-              <span className="text-xs text-muted tabular-nums">
+              <span className="text-[13px] text-white/55 tabular-nums">
                 {fixed1(r.running)} of {r.house.servers} servers
               </span>
             </p>
-            <dl className="mt-1 grid grid-cols-3 gap-x-3 text-xs tabular-nums">
+            <dl className="mt-1 grid grid-cols-3 gap-x-3 text-[13px] tabular-nums">
               <div>
-                <dt className="text-muted">Demand</dt>
+                <dt className="text-white/55">Demand</dt>
                 <dd>{fixed1(r.demandKw)} kW</dd>
               </div>
               <div>
-                <dt className="text-muted">Servers</dt>
+                <dt className="text-white/55">Servers</dt>
                 <dd>{fixed1(r.servedKw)} kW</dd>
               </div>
               <div>
-                <dt className="text-muted">Backup</dt>
+                <dt className="text-white/55">Backup</dt>
                 <dd>{fixed1(r.backupKw)} kW</dd>
               </div>
             </dl>
-            <p className="mt-0.5 text-xs text-muted tabular-nums">
+            <p className="mt-0.5 text-[13px] text-white/55 tabular-nums">
               {mwh(r.house.heat_demand_kwh_2025)} MWh a year · tank {count(r.house.tank_kwh)} kWh
             </p>
           </li>
         ))}
       </ul>
       <div className="mt-2 hidden max-h-[32rem] overflow-auto sm:block">
-        <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-paper text-xs text-muted">
-            <tr className="border-b border-grid">
+        <table className="w-full text-left text-[15px]">
+          <thead className="sticky top-0 z-10 bg-[#1b1d21] text-[13px] text-white/55">
+            <tr className="border-b border-white/10">
               <Head source="A synthetic house of the scheduler's fleet (heatsched/fleet_scenario.py).">
                 House
               </Head>
@@ -139,16 +143,16 @@ export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName:
               </Head>
             </tr>
           </thead>
-          <tbody className="divide-y divide-grid">
+          <tbody className="divide-y divide-white/10">
             {sorted.map((r) => (
               <tr key={r.house.id} data-house={r.house.id}>
                 <td className="py-1.5 pr-4 whitespace-nowrap">
                   <span className="font-medium">{houseName(r)}</span>
-                  <span className="ml-2 text-xs text-muted">{r.house.city}</span>
+                  <span className="ml-2 text-[13px] text-white/55">{r.house.city}</span>
                 </td>
                 <td className="py-1.5 pr-4 text-right tabular-nums">
                   {fixed1(r.running)}
-                  <span className="text-muted"> / {r.house.servers}</span>
+                  <span className="text-white/55"> / {r.house.servers}</span>
                 </td>
                 <td className="py-1.5 pr-4 text-right tabular-nums">
                   {mwh(r.house.heat_demand_kwh_2025)}

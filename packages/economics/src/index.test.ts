@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import summary from "../../../docs/economics/data/summary.json" with { type: "json" };
-import { BASIS, BUILDINGS, SOLAR, TARIFFS, building, estimate, tariffFor } from "./index";
+import {
+  BASIS,
+  BUILDINGS,
+  SERVER_SIZES,
+  SOLAR,
+  TARIFFS,
+  building,
+  estimate,
+  tariffFor,
+} from "./index";
 
 describe("solar", () => {
   it("keeps the roof's saving and payback as on the economics page", () => {
@@ -28,7 +37,7 @@ describe("reference buildings", () => {
     expect(house?.servers).toBe(6);
     expect(house?.shareOfHeatCoveredPct).toBe(79.6);
     expect(house?.results.swiss_median_2026.netBeforeHardwareChf).toBe(9683);
-    expect(house?.results.swiss_median_2026.netAfterHardwareChf).toBe(1415);
+    expect(house?.results.swiss_median_2026.netAfterHardwareChf).toBe(2965);
   });
 
   it("has every building at every tariff, with the books balanced", () => {
@@ -67,7 +76,7 @@ describe("estimate", () => {
     const house = building("basel_house");
     const e = estimate(house?.heatDemandKwh ?? 0, "swiss_median_2026");
     expect(e.servers).toBe(6);
-    expect(e.netAfterHardwareChf).toBe(1415);
+    expect(e.netAfterHardwareChf).toBe(2965);
   });
 
   it("scales servers with heat demand and lands near the simulated buildings", () => {
@@ -82,6 +91,20 @@ describe("estimate", () => {
     expect(tariffFor("office")).toBe("iwb_c3_2027");
     expect(estimate(144_000, tariffFor("office")).tariff).toBe("iwb_c3_2027");
     expect(estimate(31_231).tariff).toBe("iwb_h4_2027");
+  });
+
+  it("takes the server size: count follows, smaller servers pay for more water loops", () => {
+    const house = building("basel_house");
+    const demand = house?.heatDemandKwh ?? 0;
+    const sizes = Object.fromEntries(SERVER_SIZES.map((s) => [s.id, s]));
+    const half = estimate(demand, "swiss_median_2026", sizes["0.5kw"]);
+    const two = estimate(demand, "swiss_median_2026", sizes["2kw"]);
+    expect([half.servers, half.serverKw]).toEqual([12, 0.5]);
+    expect([two.servers, two.serverKw]).toEqual([3, 2]);
+    expect(half.netBeforeHardwareChf).toBe(9683);
+    expect(half.netAfterHardwareChf).toBeLessThan(2965);
+    expect(two.netAfterHardwareChf).toBeGreaterThan(2965);
+    expect(estimate(demand, "swiss_median_2026", sizes["gpu"]).servers).toBe(9);
   });
 
   it("never gives a building fewer than one server", () => {

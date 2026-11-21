@@ -121,8 +121,8 @@ If the stack is not up, Duc plays
 - 3:32 "One Basel house, six servers, real 2025 weather. Server heat covers 79.6 percent of
   the heat demand, and the house sells 31,075 server-hours a year."
 - 3:47 "Before hardware it pays from 0.188 francs a server-hour. We assume 0.50."
-- 3:57 "That leaves 9,683 francs a year before hardware. After hardware, mid case, 1,415, and
-  the hardware pays back in 4.2 years."
+- 3:57 "That leaves 9,683 francs a year before hardware. After hardware, mid case, 2,965, and
+  the hardware pays back in 4.0 years."
 - 4:12 "The buyer pays for compute, the home gets the heat. Next, one scheduler for many homes
   sends each job to wherever the heat is useful now."
 - 4:22 "Our ask: a Basel building for a pilot, buyers of compute that can pause, and a
