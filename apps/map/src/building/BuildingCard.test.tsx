@@ -8,6 +8,8 @@ const FACTS: BuildingFacts = {
     egid: 441428,
     address: "Missionsstrasse 55",
     built: "1874",
+    period: "before_1919",
+    kind: "single",
     heatedAreaM2: 668,
     floors: 4,
     dwellings: 2,
@@ -62,6 +64,29 @@ describe("building card", () => {
     // 386,067 kWh ÷ 31,231 kWh × 6 servers = 74.2, so about 74 servers.
     expect(screen.getByText("about 74")).toBeTruthy();
     expect(screen.getByText(/scaled from Kachel's Basel reference house/)).toBeTruthy();
+  });
+
+  it("adds our period-based estimate and a renovated box that cuts the Kachel servers", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    // 668 m² × (156 × 0.89 space heating + 12 hot water) = 100,761 kWh.
+    expect(screen.getByText("Our estimate, built before 1919")).toBeTruthy();
+    expect(screen.getByText("101 MWh")).toBeTruthy();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Renovated/ }));
+    // Space heating halved: 668 × (69.42 + 12) = 54,389 kWh.
+    expect(screen.getByText("Our estimate, built before 1919, renovated")).toBeTruthy();
+    expect(screen.getByText("54.4 MWh")).toBeTruthy();
+    // SFOE's published figure stays; Kachel gets 314,659 ÷ 2 + 71,408 = 228,738 kWh: 43.9 servers.
+    expect(screen.getAllByText("386 MWh")).toHaveLength(2);
+    expect(screen.getByText("about 44")).toBeTruthy();
+  });
+
+  it("halves space heating for a renovated building with no period in the register", () => {
+    if (FACTS.register === null) throw new Error("the fixture has a register");
+    const noPeriod = { ...FACTS, register: { ...FACTS.register, period: null } };
+    render(<BuildingCard facts={noPeriod} month={10} onClose={() => undefined} />);
+    expect(screen.queryByText(/^Our estimate, built/)).toBeNull();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Renovated/ }));
+    expect(screen.getByText("about 44")).toBeTruthy();
   });
 
   it("says a fleet house is synthetic and the building real", () => {

@@ -34,6 +34,8 @@ const KLEIV = "[30] federal one-off payment (CKW)";
 const FEED_IN = "[31] IWB feed-in tariff";
 const SWISSOLAR = "[32] Swissolar factsheet 2025";
 const IWB_2027 = "[3] ElCom, IWB Basel 2027 H4";
+const SONNENDACH = "[38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024";
+const RENOVATION = "[39] EnergieSchweiz and EnFK 2019";
 
 /** Job values that have a source; every other job value is our guess (docs/job-types.md). */
 const JOB_SOURCES = {
@@ -102,6 +104,62 @@ export const VALUES = {
   "solar.iwb_2027_chf_per_kwh": ["Electricity price, IWB 2027", "CHF/kWh", show.plain, IWB_2027],
   "solar.case_for_results": ["Solar case the results use", "", show.plain, GUESS],
 };
+
+/** House quality (config.json: house_quality): heat by construction period, for the map's card. */
+const USES = {
+  single: "single-family house",
+  multi: "flats and hotels",
+  office: "offices",
+  shop: "shops",
+  restaurant: "restaurants",
+  industry: "industry",
+  assembly: "halls and churches",
+  school: "schools, museums, libraries",
+  hospital: "hospitals",
+  sport: "sports halls",
+};
+for (const [kind, who] of Object.entries(USES)) {
+  VALUES[`house_quality.space_heating_kwh_per_m2.${kind}`] = [
+    `Space heating, stock mean, ${who}`,
+    "kWh/m²",
+    show.plain,
+    SONNENDACH,
+  ];
+  VALUES[`house_quality.hot_water_kwh_per_m2.${kind}`] = [
+    `Hot water, ${who}`,
+    "kWh/m²",
+    show.plain,
+    SONNENDACH,
+  ];
+}
+const PERIOD_WORDS = (p) =>
+  p.startsWith("before_") || p.startsWith("after_") ? p.replace("_", " ") : p.replace("_", " to ");
+for (const period of [
+  "before_1919",
+  "1919_1945",
+  "1946_1960",
+  "1961_1970",
+  "1971_1980",
+  "1981_1990",
+  "1991_2000",
+  "2001_2005",
+  "2006_2010",
+  "2011_2015",
+  "after_2015",
+]) {
+  VALUES[`house_quality.period_factor.${period}`] = [
+    `Space heating, built ${PERIOD_WORDS(period)}, times the mean`,
+    "",
+    show.plain,
+    SONNENDACH,
+  ];
+}
+VALUES["house_quality.renovated_factor"] = [
+  "Space heating after a renovation, times before",
+  "",
+  show.plain,
+  `${RENOVATION}; never below a new building: ${GUESS}`,
+];
 
 /** The synthetic fleet for make fleet (config.json: fleet). A [low, high] pair is one value. */
 const FLEET_VALUES = {
@@ -247,6 +305,7 @@ export function table(head, rows) {
 
 const SECTIONS = [
   ["House", "house"],
+  ["House quality (the map's card)", "house_quality"],
   ["Server", "server"],
   ["Prices", "prices"],
   ["Model", null],

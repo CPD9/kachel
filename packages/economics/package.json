@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./house": "./src/house.ts",
     "./buildings.json": "./src/buildings.json"
   },
   "scripts": {

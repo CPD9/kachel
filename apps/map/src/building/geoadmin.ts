@@ -1,3 +1,4 @@
+import { kindOf, periodOf, type HouseKind, type PeriodId } from "@kachel/economics/house";
 import { BUILD_PERIOD, ENERGY_SOURCE, sourceKind, type SourceKind } from "./codes";
 import { parseSolar, solarUrl, type OsmSolar } from "./solar";
 import { envelope, groupUnder, roofRings, withBuilding, type BuildingGroup } from "./group";
@@ -18,6 +19,10 @@ export interface Register {
   readonly egid: number;
   readonly address: string;
   readonly built: string | null;
+  /** The construction period our heat estimate uses (#159); null when the register has none. */
+  readonly period: PeriodId | null;
+  /** What it is used for, from the GWR building class (gklas), else the dwellings; null if neither says. */
+  readonly kind: HouseKind | null;
   readonly heatedAreaM2: number | null;
   readonly floors: number | null;
   readonly dwellings: number | null;
@@ -71,13 +76,24 @@ export function parseRegister(a: Attributes): Register | null {
   const genw = num(a.genw1);
   const year = num(a.gbauj);
   const period = num(a.gbaup);
+  const gklas = num(a.gklas);
+  const dwellings = num(a.ganzwhg);
   return {
     egid,
     address: str(a.strname_deinr) ?? str(a.label) ?? `EGID ${egid}`,
     built: year !== null ? String(year) : period !== null ? (BUILD_PERIOD[period] ?? null) : null,
+    period: periodOf(period, year),
+    kind:
+      gklas !== null
+        ? kindOf(gklas)
+        : dwellings === null || dwellings === 0
+          ? null
+          : dwellings <= 2
+            ? "single"
+            : "multi",
     heatedAreaM2: num(a.gebf),
     floors: num(a.gastw),
-    dwellings: num(a.ganzwhg),
+    dwellings,
     heating: genh !== null ? (ENERGY_SOURCE[genh] ?? "other") : "not recorded",
     heatingKind: sourceKind(genh),
     hotWater: genw !== null ? (ENERGY_SOURCE[genw] ?? "other") : "not recorded",

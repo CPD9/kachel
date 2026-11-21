@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@kachel/config": "workspace:*",
+    "@kachel/economics": "workspace:*",
     "@kachel/ui": "workspace:*",
     "@tailwindcss/vite": "4.3.5",
     "@testing-library/react": "16.3.3",

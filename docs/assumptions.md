@@ -16,6 +16,43 @@ This page is generated: change `config.json`, then run `node scripts/assumptions
 
 Note in config.json: DigitalHeat case brief (reference house). hot_water_shape=flat is OUR assumption; overridden when the case CSV is passed with --profile.
 
+## House quality (the map's card)
+
+| What                                                   | Key                | Value | Unit   | Source                                                                   |
+| ------------------------------------------------------ | ------------------ | ----- | ------ | ------------------------------------------------------------------------ |
+| Space heating, stock mean, single-family house         | `single`           | 156   | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, flats and hotels            | `multi`            | 94    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, offices                     | `office`           | 70    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, shops                       | `shop`             | 50    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, restaurants                 | `restaurant`       | 121   | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, industry                    | `industry`         | 86    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, halls and churches          | `assembly`         | 101   | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, schools, museums, libraries | `school`           | 105   | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, hospitals                   | `hospital`         | 75    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, stock mean, sports halls                | `sport`            | 87    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, single-family house                         | `single`           | 12    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, flats and hotels                            | `multi`            | 16    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, offices                                     | `office`           | 2     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, shops                                       | `shop`             | 1     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, restaurants                                 | `restaurant`       | 59    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, industry                                    | `industry`         | 2     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, halls and churches                          | `assembly`         | 4     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, schools, museums, libraries                 | `school`           | 3     | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, hospitals                                   | `hospital`         | 31    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Hot water, sports halls                                | `sport`            | 33    | kWh/m² | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built before 1919, times the mean       | `before_1919`      | 0.89  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1919 to 1945, times the mean      | `1919_1945`        | 1.17  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1946 to 1960, times the mean      | `1946_1960`        | 1.17  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1961 to 1970, times the mean      | `1961_1970`        | 1.15  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1971 to 1980, times the mean      | `1971_1980`        | 1.15  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1981 to 1990, times the mean      | `1981_1990`        | 0.81  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 1991 to 2000, times the mean      | `1991_2000`        | 0.53  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 2001 to 2005, times the mean      | `2001_2005`        | 0.42  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 2006 to 2010, times the mean      | `2006_2010`        | 0.42  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built 2011 to 2015, times the mean      | `2011_2015`        | 0.33  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating, built after 2015, times the mean        | `after_2015`       | 0.31  |        | [38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024          |
+| Space heating after a renovation, times before         | `renovated_factor` | 0.5   |        | [39] EnergieSchweiz and EnFK 2019; never below a new building: our guess |
+
 ## Server
 
 | What                                    | Key             | Value | Unit | Source                     |
