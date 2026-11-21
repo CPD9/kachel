@@ -1,3 +1,4 @@
+import { TARGET } from "./target";
 import {
   Atom,
   Bot,
@@ -140,7 +141,7 @@ export const OFFERS: Offer[] = [
   {
     id: "byfang",
     at: HOME,
-    address: "Byfangweg 18",
+    address: TARGET.name,
     area: "Gotthelf",
     host: "Family of four · 1930s house",
     heatsWhat: "the radiators and the kids' baths",

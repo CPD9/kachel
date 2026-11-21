@@ -1,18 +1,12 @@
+import { TARGET } from "./target";
 import { ArrowUp, Mic, Presentation, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Waveform } from "./Waveform";
 
 /** What the presenter "says" in the mock. */
-export const MOCK_TRANSCRIPT = "I'm living in Basel, at Byfangweg 18.";
+export const MOCK_TRANSCRIPT = TARGET.transcript;
 /** Interim guesses in uneven chunks, including a misheard word: [ms after start, text]. */
-const MOCK_INTERIM: [number, string][] = [
-  [700, "I'm living"],
-  [1050, "I'm living in"],
-  [1400, "I'm living in bass"],
-  [1750, "I'm living in Basel"],
-  [2150, "I'm living in Basel, in street"],
-  [2500, MOCK_TRANSCRIPT],
-];
+const MOCK_INTERIM: [number, string][] = [...TARGET.interim, [2500, MOCK_TRANSCRIPT]];
 const MOCK_AUTO_SEND_MS = 3000;
 
 const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
