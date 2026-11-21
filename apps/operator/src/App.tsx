@@ -1,22 +1,16 @@
-import { HeatLoop } from "@kachel/ui";
-import { Fleet } from "./fleet/Fleet";
+import { Dashboard } from "./fleet/Dashboard";
+import type { OperatorSource } from "./live/live";
 
 /**
- * Operator app: the business view of the whole system. Every house, what it runs and needs,
- * and the money, for any month of the year and a warmer or colder one.
+ * Operator app: the business view of the whole system. Every home, what it runs and needs, the
+ * buyers and their jobs, and the money, for any month of the year and a warmer or colder one.
+ * Laid out for a 1920 × 1080 screen, in the dark look of the pitch app.
  */
-export function App() {
+export function App({ source }: { source?: OperatorSource }) {
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-idle/40 px-4 py-4 sm:px-6">
-        <HeatLoop variant="wide" className="h-12 w-auto shrink-0 sm:h-16" />
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold">Kachel operator</h1>
-          <p className="text-sm text-muted">Every house, every server, the heat and the money.</p>
-        </div>
-      </header>
-      <div className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6">
-        <Fleet />
+    <main className="min-h-screen overflow-x-hidden bg-[#0e1013] text-white">
+      <div className="mx-auto max-w-[1920px] px-4 py-5 sm:px-8">
+        <Dashboard {...(source ? { source } : {})} />
       </div>
     </main>
   );

@@ -51,7 +51,8 @@ if __name__ == "__main__":
         for s in sites:
             per_offset = [results[(city, o)][1][s.id] for o in offsets]
             houses.append(dict(
-                id=s.id, name=s.name, city=s.city, servers=s.n_servers, tank_kwh=s.tank_kwh,
+                id=s.id, name=s.name, city=s.city, latitude=s.lat, longitude=s.lon, servers=s.n_servers,
+                tank_kwh=s.tank_kwh,
                 hot_water_kwh_per_day=s.hot_water_kwh_per_day, heat_demand_kwh_2025=round(sum(s.demand)),
                 # [offset][month], in the order of `offsets` and January to December
                 **{k: [[round(float(m[k][i])) for i in range(1, 13)] for m in per_offset] for k in SUMS},

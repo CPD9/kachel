@@ -28,6 +28,8 @@ export interface FleetHouse {
   id: string;
   name: string;
   city: string;
+  latitude: number;
+  longitude: number;
   servers: number;
   tank_kwh: number;
   hot_water_kwh_per_day: number;
