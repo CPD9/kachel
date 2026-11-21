@@ -17,6 +17,7 @@ describe("operator app", () => {
     expect(screen.getByRole("heading", { name: "Kachel operator" })).toBeTruthy();
     expect(reading("Houses")).toContain("100");
     expect(document.querySelectorAll("tbody tr[data-house]")).toHaveLength(100);
+    expect(document.querySelectorAll("li[data-house-card]")).toHaveLength(100);
     expect(screen.getByRole("heading", { name: /The year/ })).toBeTruthy();
   });
 

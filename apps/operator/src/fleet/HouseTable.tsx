@@ -5,6 +5,9 @@ import type { HouseMonth } from "./months";
 
 type Sort = "demand" | "name";
 
+/** "Synthetic Bern house 07" reads as "House 07"; the city shows beside it. */
+const houseName = (r: HouseMonth) => r.house.name.replace(/^Synthetic (Bern )?house/, "House");
+
 function Head({
   children,
   source,
@@ -26,6 +29,7 @@ function Head({
 /**
  * Every fleet house in the chosen month: its servers, its size, its tank, and its heat as
  * averages per hour (kW): what it needs, what the servers gave it and what the backup made.
+ * A table on a wide screen; on a phone, one small card per house so nothing scrolls sideways.
  */
 export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName: string }) {
   const [sort, setSort] = useState<Sort>("demand");
@@ -53,7 +57,42 @@ export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName:
           ))}
         </div>
       </div>
-      <div className="mt-2 max-h-[32rem] overflow-auto">
+      <ul
+        aria-label="Houses"
+        className="mt-2 max-h-[32rem] divide-y divide-grid overflow-auto text-sm sm:hidden"
+      >
+        {sorted.map((r) => (
+          <li key={r.house.id} data-house-card={r.house.id} className="py-2.5">
+            <p className="flex items-baseline justify-between gap-3">
+              <span>
+                <span className="font-medium">{houseName(r)}</span>
+                <span className="ml-2 text-xs text-muted">{r.house.city}</span>
+              </span>
+              <span className="text-xs text-muted tabular-nums">
+                {fixed1(r.running)} of {r.house.servers} servers
+              </span>
+            </p>
+            <dl className="mt-1 grid grid-cols-3 gap-x-3 text-xs tabular-nums">
+              <div>
+                <dt className="text-muted">Demand</dt>
+                <dd>{fixed1(r.demandKw)} kW</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Servers</dt>
+                <dd>{fixed1(r.servedKw)} kW</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Backup</dt>
+                <dd>{fixed1(r.backupKw)} kW</dd>
+              </div>
+            </dl>
+            <p className="mt-0.5 text-xs text-muted tabular-nums">
+              {mwh(r.house.heat_demand_kwh_2025)} MWh a year · tank {count(r.house.tank_kwh)} kWh
+            </p>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-2 hidden max-h-[32rem] overflow-auto sm:block">
         <table className="w-full text-left text-sm">
           <thead className="sticky top-0 z-10 bg-paper text-xs text-muted">
             <tr className="border-b border-grid">
@@ -104,9 +143,7 @@ export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName:
             {sorted.map((r) => (
               <tr key={r.house.id} data-house={r.house.id}>
                 <td className="py-1.5 pr-4 whitespace-nowrap">
-                  <span className="font-medium">
-                    {r.house.name.replace(/^Synthetic (Bern )?house/, "House")}
-                  </span>
+                  <span className="font-medium">{houseName(r)}</span>
                   <span className="ml-2 text-xs text-muted">{r.house.city}</span>
                 </td>
                 <td className="py-1.5 pr-4 text-right tabular-nums">
