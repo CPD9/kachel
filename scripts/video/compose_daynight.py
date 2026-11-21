@@ -30,8 +30,8 @@ HALF = c.W // 2
 CREDITS = {
     "basel": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river outline "
     "approximated. Heat demand: SFOE, hectare cells, data status 2013.",
-    "bern": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain approximated; "
-    "the Aare is not shown.",
+    "bern": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river course "
+    "approximated.",
 }
 CITY = {"name": "basel"}
 

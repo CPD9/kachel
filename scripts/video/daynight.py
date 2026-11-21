@@ -277,7 +277,11 @@ def outside(a, rows):
             (0.012, 0.025, 0.06),
             night,
         )
-        SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
+        if a.city == "basel":
+            SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
+        else:  # Bern's view is shorter: haze from nearer in, so the land fades into the sky
+            haze = lerp(fog, (0.95, 0.97, 1.0), day)  # pale enough to meet the day sky
+            SK.set_fog(lerp(700.0, 900.0, day), lerp(900.0, 1600.0, day), 1.0, haze)
         sc.view_settings.exposure = -0.3
         dark = max(0.0, min(1.0, (3 - elev) / 9))
         for n, g in gains.items():
