@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Fetch } from "../building/geoadmin";
 import type { Scene } from "../scene/viewer";
-import { loadNetworks } from "./thermal";
+import { loadNetworks, NETWORK_LIMIT } from "./thermal";
 
 /** Layer switches: SFOE's district heating networks, and our idea of home servers beside them. */
 export function Layers({ scene, fetcher = fetch }: { scene: Scene; fetcher?: Fetch }) {
@@ -44,7 +44,9 @@ export function Layers({ scene, fetcher = fetch }: { scene: Scene; fetcher?: Fet
             {networks === "loading"
               ? "Loading SFOE's networks in view…"
               : typeof networks === "number"
-                ? `${networks} ${networks === 1 ? "network" : "networks"} in view. Source: SFOE.`
+                ? networks >= NETWORK_LIMIT
+                  ? `The first ${NETWORK_LIMIT} networks in view; zoom in for all. Source: SFOE.`
+                  : `${networks} ${networks === 1 ? "network" : "networks"} in view. Source: SFOE.`
                 : "Thermal networks from SFOE."}
           </span>
         </span>

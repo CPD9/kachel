@@ -48,6 +48,22 @@ describe("layers", () => {
     ]);
   });
 
+  it("says when the list was cut at the request limit", async () => {
+    const many = {
+      results: Array.from({ length: 500 }, (_, i) => ({
+        id: `tn${i}`,
+        geometry: { coordinates: [7.6, 47.55] },
+        properties: { name: `Network ${i}` },
+      })),
+    };
+    const fetcher: Fetch = async () => ({ ok: true, json: async () => many });
+    render(<Layers scene={fakeScene()} fetcher={fetcher} />);
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText(/District heating today/));
+    });
+    expect(await screen.findByText(/The first 500 networks in view; zoom in for all/)).toBeTruthy();
+  });
+
   it("labels the home servers as an illustration", () => {
     const scene = fakeScene();
     render(<Layers scene={scene} />);

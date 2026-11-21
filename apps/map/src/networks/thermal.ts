@@ -7,6 +7,8 @@ import type { Fetch } from "../building/geoadmin";
  */
 const API = "https://api3.geo.admin.ch/rest/services/ech/MapServer/identify";
 export const NETWORK_LAYER = "ch.bfe.thermische-netze";
+/** The most networks one request returns; at this many the list may be cut short. */
+export const NETWORK_LIMIT = 500;
 
 export interface Network {
   readonly id: string;
@@ -85,7 +87,7 @@ export function networksUrl(a: Area): string {
     returnGeometry: "true",
     geometryFormat: "geojson",
     layers: `all:${NETWORK_LAYER}`,
-    limit: "500",
+    limit: String(NETWORK_LIMIT),
     lang: "en",
   });
   return `${API}?${q}`;
