@@ -28,10 +28,10 @@ The tables behind each chart are in [`data/`](data/), ready for a spreadsheet.
 | Computing income at 0.50 CHF/server-hour   | 15,538 CHF | assumption |
 | Left before hardware                       | 9,683 CHF  | model      |
 | Break-even price per server-hour           | 0.188 CHF  | model      |
-| Hardware per year, mid case                | 8,268 CHF  | [9]–[18]   |
-| Left after hardware, mid case              | 1,415 CHF  | model      |
-| Payback, mid case                          | 4.2 years  | model      |
-| Break-even price including hardware, mid   | 0.454 CHF  | model      |
+| Hardware per year, mid case                | 6,718 CHF  | [9]–[18]   |
+| Left after hardware, mid case              | 2,965 CHF  | model      |
+| Payback, mid case                          | 4.0 years  | model      |
+| Break-even price including hardware, mid   | 0.405 CHF  | model      |
 | Server power from own roof PV (10 kWp)     | 18.6%      | [25]–[28]  |
 | Electricity for the servers with roof PV   | 6,174 CHF  | [3], [31]  |
 | Payback of the roof PV, mid                | 8.2 years  | [29], [30] |
@@ -103,30 +103,37 @@ only while computing pays better than heating.
 Three hardware cases, each for six servers in one house. Prices are without VAT; dollar and
 pound prices use the ECB rates of 20 Nov 2026 (1 USD = 0.839 CHF, 1 GBP = 1.10 CHF).
 
-| Input, per server unless per house  | Low                  | Mid                 | High           | Comes from            |
-| ----------------------------------- | -------------------- | ------------------- | -------------- | --------------------- |
-| Server, about 1 kW                  | 2,518 CHF            | 5,034 CHF           | 6,714 CHF      | [9], [10]             |
-| What it is                          | refurbished GPU host | new GPU workstation | dear GPU host  | [9], [10]             |
-| Water loop to the tank              | 496 CHF              | 633 CHF             | 771 CHF        | [11], our guess       |
-| Fitter, hours per house × rate      | 6 h × 103 CHF        | 10 h × 120 CHF      | 16 h × 148 CHF | our guess, [12]       |
-| Electrician, hours per house × rate | 2 h × 151 CHF        | 3 h × 151 CHF       | 4 h × 151 CHF  | our guess, [13]       |
-| Upkeep per house and year           | 190 CHF              | 315 CHF             | 630 CHF        | our guess, [12]       |
-| Lifetime                            | 6 years              | 5 years             | 4 years        | [14], [15]            |
-| Discount rate                       | 3.28%                | 3.75%               | 6%             | [16], [17], our guess |
+| Input, per server unless per house  | Low                  | Mid                 | High           | Comes from             |
+| ----------------------------------- | -------------------- | ------------------- | -------------- | ---------------------- |
+| Server, about 1 kW                  | 2,518 CHF            | 5,034 CHF           | 6,714 CHF      | [9], [10]              |
+| What it is                          | refurbished GPU host | new GPU workstation | dear GPU host  | [9], [10]              |
+| Water loop to the tank              | 496 CHF              | 633 CHF             | 771 CHF        | [11], our guess        |
+| Fitter, hours per house × rate      | 6 h × 103 CHF        | 10 h × 120 CHF      | 16 h × 148 CHF | our guess, [12]        |
+| Electrician, hours per house × rate | 2 h × 151 CHF        | 3 h × 151 CHF       | 4 h × 151 CHF  | our guess, [13]        |
+| Upkeep per house and year           | 190 CHF              | 315 CHF             | 630 CHF        | our guess, [12]        |
+| Lifetime                            | 6 years              | 6 years             | 4 years        | [14], [15], case owner |
+| Resale at the end, share of server  | 10%                  | 7.5%                | 15%            | [41], [42]             |
+| Discount rate                       | 3.28%                | 3.75%               | 6%             | [16], [17], our guess  |
 
 | Result, per house                         | Low        | Mid        | High        |
 | ----------------------------------------- | ---------- | ---------- | ----------- |
 | Paid up front                             | 19,004 CHF | 35,655 CHF | 47,882 CHF  |
-| Hardware per year (annuity + upkeep)      | 3,731 CHF  | 8,268 CHF  | 14,448 CHF  |
-| Left per year after hardware              | 5,952 CHF  | 1,415 CHF  | −4,765 CHF  |
-| Payback, discounted                       | 2.1 years  | 4.2 years  | 6.6 years   |
-| Net present value over the lifetime       | 31,948 CHF | 6,344 CHF  | −16,512 CHF |
-| Break-even per server-hour, with hardware | 0.308 CHF  | 0.454 CHF  | 0.653 CHF   |
+| Servers sold at the end of their life     | 1,511 CHF  | 2,265 CHF  | 6,043 CHF   |
+| Hardware per year (annuity + upkeep)      | 3,499 CHF  | 6,718 CHF  | 13,067 CHF  |
+| Left per year after hardware              | 6,184 CHF  | 2,965 CHF  | −3,384 CHF  |
+| Payback, discounted                       | 2.0 years  | 4.0 years  | 5.8 years   |
+| Net present value over the lifetime       | 33,192 CHF | 15,672 CHF | −11,726 CHF |
+| Break-even per server-hour, with hardware | 0.301 CHF  | 0.405 CHF  | 0.609 CHF   |
 
-With hardware, break-even rises from 0.188 CHF to between 0.31 and 0.65 CHF a server-hour.
-At our assumed 0.50 CHF the mid case only just pays, and the high case needs 6.6 years on a
-4-year life. Whether a 1 kW unit really costs this little, and whether it lasts, is now as
-important as the compute price.
+With hardware, break-even rises from 0.188 CHF to between 0.30 and 0.61 CHF a server-hour.
+The mid case now lasts six years, as the large clouds write servers off and as the case owner
+judged realistic (21 Nov 2026), and the servers are sold at the end for 7.5% of their price
+[41]. The resale, discounted to today, comes off the up-front cost, so it shortens payback and
+lowers the yearly annuity. At our assumed 0.50 CHF the mid case keeps 2,965 CHF a year (1,415
+with a 5-year life and no resale), and the high case needs 5.8 years on a 4-year life. Used
+servers sold for about 2.5 times their seven-year average in 2025 [42], so the resale may be
+low. Whether a 1 kW unit really costs this little, and whether it lasts, is now as important as
+the compute price.
 
 ### 8. Solar: the scheduler waits for the sun
 
@@ -177,7 +184,7 @@ the sensitivity case: dearer power makes own PV worth more.
 | Paid up front, after federal payment  | –          | 15,510 CHF       | 15,510 CHF       | 21,952 CHF        |
 | Payback at 27.7 Rp (low, mid, high)   | –          | 6.7, 8.4, 11.4 y | 6.6, 8.2, 11.1 y | 9.7, 11.7, 18.3 y |
 | Payback at 33.42 Rp (low, mid, high)  | –          | 5.8, 7.2, 9.6 y  | 5.6, 7.0, 9.3 y  | 8.1, 9.7, 14.7 y  |
-| Left per year after servers and solar | 1,415 CHF  | 2,740 CHF        | 2,772 CHF        | 2,200 CHF         |
+| Left per year after servers and solar | 2,965 CHF  | 4,290 CHF        | 4,322 CHF        | 3,750 CHF         |
 
 Roof PV pays back in about 8 years at mid prices, and 7 at IWB's tariff, well inside its life.
 It adds about 1,350 CHF a year to the house's result after paying for servers and PV. The sun
@@ -204,16 +211,16 @@ server. Inputs and sources are in
 | Office building, Basel           | 2,000 m², our guess | 65 kWh/m², guess on [36] | 7 kWh/m² [35]    | 144 MWh     | 27      | 76.6%        |
 | FHNW Campus Dreispitz, HGK tower | 10,176 m² [33]      | 14.7 kWh/m² [33]         | 7 kWh/m² [35]    | 221 MWh     | 39      | 82.6%        |
 
-| Result per year, after hardware  | Swiss median 2026 (27.7 Rp) | Its own tariff                   | Break-even incl. hardware, own tariff |
-| -------------------------------- | --------------------------- | -------------------------------- | ------------------------------------- |
-| Reference house, Basel           | 1,415 CHF                   | 207 CHF (IWB H4 2027, 33.42 Rp)  | 0.49 CHF                              |
-| Flat block, Bern                 | 6,822 CHF                   | 7,938 CHF (median 2027, 26.5 Rp) | 0.44 CHF                              |
-| Office building, Basel           | 5,737 CHF                   | 1,149 CHF (IWB C3 2027, 32.6 Rp) | 0.49 CHF                              |
-| FHNW Campus Dreispitz, HGK tower | 17,346 CHF                  | 9,750 CHF (IWB C3 2027, 32.6 Rp) | 0.46 CHF                              |
+| Result per year, after hardware  | Swiss median 2026 (27.7 Rp) | Its own tariff                    | Break-even incl. hardware, own tariff |
+| -------------------------------- | --------------------------- | --------------------------------- | ------------------------------------- |
+| Reference house, Basel           | 2,965 CHF                   | 1,757 CHF (IWB H4 2027, 33.42 Rp) | 0.44 CHF                              |
+| Flat block, Bern                 | 13,540 CHF                  | 14,656 CHF (median 2027, 26.5 Rp) | 0.39 CHF                              |
+| Office building, Basel           | 12,713 CHF                  | 8,125 CHF (IWB C3 2027, 32.6 Rp)  | 0.44 CHF                              |
+| FHNW Campus Dreispitz, HGK tower | 27,422 CHF                  | 19,826 CHF (IWB C3 2027, 32.6 Rp) | 0.41 CHF                              |
 
 Servers grow with heat demand, about one per 5.2 MWh a year. Per server the tariff matters
 more than the building: at IWB's 2027 prices [37] the Basel house
-keeps 207 CHF a year after hardware instead of 1,415. The campus does best per server because
+keeps 1,757 CHF a year after hardware instead of 2,965. The campus does best per server because
 its hot water keeps servers busy in summer. The often quoted 20,000 m² for the FHNW campus is
 the tower and the Zollfreilager together (about 28,800 m² gross [33]); we use the tower alone,
 the one with a published heating figure. All results, at five tariffs, are in
@@ -261,9 +268,10 @@ size. A kW draws, earns and heats the same in any size, and a server costs its c
 kW (our guess); the GPU workstation costs its case's full price. Each server needs its own water
 loop [11], so smaller servers cost more per kW. For the reference house at the 2026 median, mid
 case: 12 servers of 0.5 kW, 6 of 1 kW or 3 of 2 kW, all making 9,683 CHF before hardware,
-keep 568, 1,415 or 1,839 CHF after it. Nine GPU workstations lose 1,927 CHF a year: they cost
-the full 1 kW price for 0.7 kW, and we let a kW earn 0.50 CHF an hour whatever runs on it. A
-GPU-hour selling for more would change that; it is the same open question as the compute price.
+keep 2,247, 2,965 or 3,325 CHF after it. Nine GPU workstations keep only 373 CHF a year: they
+cost the full 1 kW price for 0.7 kW, and we let a kW earn 0.50 CHF an hour whatever runs on it.
+A GPU-hour selling for more would change that; it is the same open question as the compute
+price.
 
 ## Sources
 
@@ -398,6 +406,14 @@ GPU-hour selling for more would change that; it is the same open question as the
 40. ElCom, electricity tariffs API (GraphQL), 2027, category H4, standard product, total
     without VAT, by municipality, and the Swiss median (26.557 Rp), fetched 21 Nov 2026
     <https://www.strompreis.elcom.admin.ch/api/graphql>.
+41. Servnet, "ITAD Value Recovery 2026: What Retired IT Is Really Worth", 13 Aug 2026:
+    enterprise servers fetch 5-10% of their original value at five years and more, 15-25% at
+    four, when sold within six months of retirement
+    <https://www.servnetuk.com/research/itad-data-sanitisation-value-study-2026>.
+42. Resource Recycling, "Server resale values surge in AI-driven secondary IT markets", 22 Jan
+    2026 (Sage Sustainable Electronics benchmarking report): server resale values in 2025 at
+    about 2.5 times their seven-year average
+    <https://resource-recycling.com/e-scrap/2026/01/22/server-resale-values-surge-in-ai-driven-secondary-it-markets/>.
 
 Our own assumptions, with no outside source yet:
 

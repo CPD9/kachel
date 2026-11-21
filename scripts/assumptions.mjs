@@ -20,7 +20,8 @@ const VRLA = "[10] VRLA Tech workstation 2026";
 const LOOP = "[11] Watercooling UK";
 const WBAG = "[12] WBAG Regietarif 2025";
 const EIT = "[13] EIT.nordwest rates 2026";
-const LIFE = "[14] SiliconANGLE, [15] Amazon 10-K 2025";
+const LIFE = "[14] SiliconANGLE, [15] Amazon 10-K 2025; 6 also the case owner (21 Nov 2026)";
+const RESALE = "[41] Servnet ITAD value study 2026";
 const WACC = "[16] UVEK grid WACC, [17] pv magazine";
 export const GUESS = "our guess";
 const ASR = "[19] Open ASR Leaderboard";
@@ -244,6 +245,7 @@ export const HARDWARE = {
   service_visits_per_year: ["Service visits a year", "", show.plain, GUESS],
   service_hours_per_visit: ["Hours per service visit", "h", show.plain, GUESS],
   lifetime_years: ["Lifetime", "years", show.plain, LIFE],
+  resale_share: ["Resale at the end of life, share of the server price", "", show.rate, RESALE],
   discount_rate: ["Discount rate", "", show.rate, `${WACC}; high case ${GUESS}`],
 };
 

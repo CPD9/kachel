@@ -51,14 +51,19 @@ export interface Hardware {
   upkeepChfPerYear: number;
   rate: number;
   lifeYears: number;
-  /** Annuity on the capex plus upkeep, CHF a year. */
+  /** What the servers fetch when sold at the end of their life, CHF (#159). */
+  resaleChf: number;
+  /** The capex less the resale, discounted to today: what payback and the annuity repay. */
+  netCapexChf: number;
+  /** Annuity on the net capex plus upkeep, CHF a year. */
   perYearChf: number;
 }
 
 /**
  * Hardware for one case (economics.py hardware()): `servers` of `size`, each at its case's price
  * per kW (the GPU workstation at its full price) with its own water loop; fitting and upkeep as
- * the reference house's per kW installed; the annuity at the case's rate over its lifetime.
+ * the reference house's per kW installed; the servers sold at the end of their life for their
+ * case's resale share; the annuity at the case's rate over its lifetime.
  */
 export function hardware(
   c: HardwareCase,
@@ -80,12 +85,16 @@ export function hardware(
     (h.service_hours_per_visit * hw.service_chf_per_hour + hw.service_callout_chf);
   const r = h.discount_rate;
   const annuity = r / (1 - (1 + r) ** -h.lifetime_years);
+  const resale = servers * unit * h.resale_share;
+  const netCapex = capex - resale * (1 + r) ** -h.lifetime_years;
   return {
     capexChf: capex,
     upkeepChfPerYear: upkeep,
     rate: r,
     lifeYears: h.lifetime_years,
-    perYearChf: capex * annuity + upkeep,
+    resaleChf: resale,
+    netCapexChf: netCapex,
+    perYearChf: netCapex * annuity + upkeep,
   };
 }
 
@@ -142,7 +151,7 @@ export function kachelAt(
   for (const c of HARDWARE_CASES) {
     const h = hardware(c, servers, size);
     after[c] = beforeHardwareChf - h.perYearChf;
-    payback[c] = paybackYears(h.capexChf, beforeHardwareChf - h.upkeepChfPerYear, h.rate);
+    payback[c] = paybackYears(h.netCapexChf, beforeHardwareChf - h.upkeepChfPerYear, h.rate);
   }
   return {
     servers,

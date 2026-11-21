@@ -27,7 +27,7 @@ export function formatChf(chf: number): string {
   return `${chf < 0 ? "−" : ""}${rounded} CHF`;
 }
 
-/** "4.2 years", or "never" when it does not pay back within 50 years. */
+/** "4.0 years", or "never" when it does not pay back within 50 years. */
 export function formatYears(years: number): string {
   return Number.isFinite(years) && years <= 50 ? `${years.toFixed(1)} years` : "never";
 }

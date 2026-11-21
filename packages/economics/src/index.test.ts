@@ -37,7 +37,7 @@ describe("reference buildings", () => {
     expect(house?.servers).toBe(6);
     expect(house?.shareOfHeatCoveredPct).toBe(79.6);
     expect(house?.results.swiss_median_2026.netBeforeHardwareChf).toBe(9683);
-    expect(house?.results.swiss_median_2026.netAfterHardwareChf).toBe(1415);
+    expect(house?.results.swiss_median_2026.netAfterHardwareChf).toBe(2965);
   });
 
   it("has every building at every tariff, with the books balanced", () => {
@@ -76,7 +76,7 @@ describe("estimate", () => {
     const house = building("basel_house");
     const e = estimate(house?.heatDemandKwh ?? 0, "swiss_median_2026");
     expect(e.servers).toBe(6);
-    expect(e.netAfterHardwareChf).toBe(1415);
+    expect(e.netAfterHardwareChf).toBe(2965);
   });
 
   it("scales servers with heat demand and lands near the simulated buildings", () => {
@@ -102,8 +102,8 @@ describe("estimate", () => {
     expect([half.servers, half.serverKw]).toEqual([12, 0.5]);
     expect([two.servers, two.serverKw]).toEqual([3, 2]);
     expect(half.netBeforeHardwareChf).toBe(9683);
-    expect(half.netAfterHardwareChf).toBeLessThan(1415);
-    expect(two.netAfterHardwareChf).toBeGreaterThan(1415);
+    expect(half.netAfterHardwareChf).toBeLessThan(2965);
+    expect(two.netAfterHardwareChf).toBeGreaterThan(2965);
     expect(estimate(demand, "swiss_median_2026", sizes["gpu"]).servers).toBe(9);
   });
 

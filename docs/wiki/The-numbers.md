@@ -62,17 +62,19 @@ and [hardware.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/
 | ----------------------------------------- | -------------------- | ------------------- | ------------- |
 | What the server is                        | Refurbished GPU host | New GPU workstation | Dear GPU host |
 | Server price, each                        | 2,518 CHF            | 5,034 CHF           | 6,714 CHF     |
-| Lifetime                                  | 6 years              | 5 years             | 4 years       |
+| Lifetime                                  | 6 years              | 6 years             | 4 years       |
+| Resale at the end, share of the server    | 10%                  | 7.5%                | 15%           |
 | Paid up front                             | 19,004 CHF           | 35,655 CHF          | 47,882 CHF    |
-| Hardware per year (annuity and upkeep)    | 3,731 CHF            | 8,268 CHF           | 14,448 CHF    |
-| Left per year after hardware              | 5,952 CHF            | 1,415 CHF           | −4,765 CHF    |
-| Payback, discounted                       | 2.1 years            | 4.2 years           | 6.6 years     |
-| Net present value over the lifetime       | 31,948 CHF           | 6,344 CHF           | −16,512 CHF   |
-| Break-even per server-hour, with hardware | 0.308 CHF            | 0.454 CHF           | 0.653 CHF     |
+| Hardware per year (annuity and upkeep)    | 3,499 CHF            | 6,718 CHF           | 13,067 CHF    |
+| Left per year after hardware              | 6,184 CHF            | 2,965 CHF           | −3,384 CHF    |
+| Payback, discounted                       | 2.0 years            | 4.0 years           | 5.8 years     |
+| Net present value over the lifetime       | 33,192 CHF           | 15,672 CHF          | −11,726 CHF   |
+| Break-even per server-hour, with hardware | 0.301 CHF            | 0.405 CHF           | 0.609 CHF     |
 
-In plain words: at 0.50 CHF a server-hour the mid case only just pays, and the high case does not
-pay back within its four-year life. Whether a 1 kW unit really costs this little, and whether it
-lasts, matters as much as the compute price.
+In plain words: at 0.50 CHF a server-hour the mid case keeps 2,965 CHF a year over a six-year life
+with the servers sold at the end, and the high case does not pay back within its four-year life.
+Whether a 1 kW unit really costs this little, and whether it lasts, matters as much as the
+compute price.
 
 ## What moves the result
 
@@ -82,11 +84,11 @@ Result after hardware, CHF a year. Source:
 
 | Input                                       | Low end | High end |
 | ------------------------------------------- | ------- | -------- |
-| Compute price, 0.25 to 0.75 CHF             | −6,354  | 9,183    |
-| Backlog of flexible jobs, none or unlimited | −6,903  | 1,415    |
-| Electricity price, 45.9 to 10.6 Rp          | −2,430  | 5,030    |
-| Server price, 6,714 to 2,518 CHF            | −833    | 4,782    |
-| Server lifetime, 4 to 6 years               | −397    | 2,622    |
+| Compute price, 0.25 to 0.75 CHF             | −4,804  | 10,733   |
+| Backlog of flexible jobs, none or unlimited | −5,353  | 2,965    |
+| Electricity price, 45.9 to 10.6 Rp          | −880    | 6,580    |
+| Server price, 6,714 to 2,518 CHF            | 1,173   | 5,650    |
+| Server lifetime, 4 to 6 years               | 139     | 2,965    |
 
 Two things decide it: the price a server-hour fetches, and whether there is always flexible work
 waiting. Without that backlog, utilisation falls from 59.1% to 8.3% (`summary.json:
@@ -108,7 +110,7 @@ until the sun is up, then runs the backlog on sunshine. Source: `summary.json: s
 | Servers' electricity at 33.42 Rp     | 10,385 CHF | 7,619 CHF  | 7,464 CHF           |
 | Paid up front, after federal payment | none       | 15,510 CHF | 21,952 CHF          |
 | Payback at 27.7 Rp, mid              | none       | 8.2 years  | 11.7 years          |
-| Left per year after servers and PV   | 1,415 CHF  | 2,772 CHF  | 2,200 CHF           |
+| Left per year after servers and PV   | 2,965 CHF  | 4,322 CHF  | 3,750 CHF           |
 
 The roof pays back in about 8 years and adds about 1,350 CHF a year. The battery does not pay.
 Six servers use about 31,000 kWh a year, nearly three times the roof's 11,671 kWh, and mostly in
@@ -124,14 +126,14 @@ of servers follows one rule: add servers while the last one still runs at least 
 
 | Building                         | Heat a year | Servers | Heat covered | After hardware, 27.7 Rp | After hardware, its own tariff |
 | -------------------------------- | ----------- | ------- | ------------ | ----------------------- | ------------------------------ |
-| Reference house, Basel           | 31 MWh      | 6       | 79.6%        | 1,415 CHF               | 207 CHF (IWB H4, 33.42 Rp)     |
-| Flat block, Bern (1970s)         | 140 MWh     | 26      | 78.2%        | 6,822 CHF               | 7,938 CHF (median, 26.5 Rp)    |
-| Office building, Basel           | 144 MWh     | 27      | 76.6%        | 5,737 CHF               | 1,149 CHF (IWB C3, 32.6 Rp)    |
-| FHNW Campus Dreispitz, HGK tower | 221 MWh     | 39      | 82.6%        | 17,346 CHF              | 9,750 CHF (IWB C3, 32.6 Rp)    |
+| Reference house, Basel           | 31 MWh      | 6       | 79.6%        | 2,965 CHF               | 1,757 CHF (IWB H4, 33.42 Rp)   |
+| Flat block, Bern (1970s)         | 140 MWh     | 26      | 78.2%        | 13,540 CHF              | 14,656 CHF (median, 26.5 Rp)   |
+| Office building, Basel           | 144 MWh     | 27      | 76.6%        | 12,713 CHF              | 8,125 CHF (IWB C3, 32.6 Rp)    |
+| FHNW Campus Dreispitz, HGK tower | 221 MWh     | 39      | 82.6%        | 27,422 CHF              | 19,826 CHF (IWB C3, 32.6 Rp)   |
 
 Servers grow with heat demand, about one per 5.2 MWh a year. The tariff matters more than the
-building: at IWB's 2027 household tariff the Basel house keeps 207 CHF a year after hardware
-instead of 1,415. The Bern block's and the office's areas and heat per m² are our guesses; the
+building: at IWB's 2027 household tariff the Basel house keeps 1,757 CHF a year after hardware
+instead of 2,965. The Bern block's and the office's areas and heat per m² are our guesses; the
 FHNW tower's are published.
 
 ## The fleet

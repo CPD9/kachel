@@ -142,11 +142,15 @@ A rule on the marginal server, rather than on cover, stops before servers are bo
 
 ### 7.1 Hardware and the annuity
 
-Three hardware cases bound the cost (Table 1), each with a server price [@econ9; @econ10], a water-cooling kit [@econ11], fitter and electrician hours at published rates [@econ12; @econ13], service visits at {service_chf_h} an hour plus {callout_chf} a call-out [@econ12], a lifetime from the write-off periods of large cloud providers [@econ14; @econ15] and a discount rate [@econ16; @econ17]. Dollar and pound prices are converted at the ECB reference rate [@econ18]. Up front and upkeep per house are
+Three hardware cases bound the cost (Table 1), each with a server price [@econ9; @econ10], a water-cooling kit [@econ11], fitter and electrician hours at published rates [@econ12; @econ13], service visits at {service_chf_h} an hour plus {callout_chf} a call-out [@econ12], a lifetime from the write-off periods of large cloud providers [@econ14; @econ15], six years in the mid case as the case owner also judged realistic, a resale share of the server price at the end of its life [@econ41; @econ42] and a discount rate [@econ16; @econ17]. Dollar and pound prices are converted at the ECB reference rate [@econ18]. Up front and upkeep per house are
 
 <div class="eq"><span>C = N·(P<sub>server</sub> + P<sub>kit</sub>) + h<sub>fit</sub>·w<sub>fit</sub> + h<sub>el</sub>·w<sub>el</sub>, &nbsp;&nbsp; U = v·(h<sub>v</sub>·w<sub>svc</sub> + c<sub>callout</sub>)</span><span class="eqno">(17)</span></div>
 
-and the hardware costs C·a + U a year, with the annuity factor
+The servers are sold at the end of their life for R = ρ·N·P<sub>server</sub>, which, discounted to today, comes off the capex:
+
+<div class="eq"><span>C′ = C − R·(1 + r)<sup>−L</sup></span><span class="eqno">(17a)</span></div>
+
+and the hardware costs C′·a + U a year, with the annuity factor
 
 <div class="eq"><span>a = r / (1 − (1 + r)<sup>−L</sup>)</span><span class="eqno">(18)</span></div>
 
@@ -160,12 +164,12 @@ for discount rate r and lifetime L.
 
 Before hardware, a house earns A = I − E + V a year (Eq. 12). The yearly cash once upkeep is paid is A − U, and
 
-<div class="eq"><span>net after hardware = A − C·a − U</span><span class="eqno">(19)</span></div>
-<div class="eq"><span>NPV = −C + (A − U) · (1 − (1 + r)<sup>−L</sup>) / r</span><span class="eqno">(20)</span></div>
-<div class="eq"><span>τ = −ln(1 − r·C / (A − U)) / ln(1 + r), &nbsp;&nbsp; τ = ∞ if A − U ≤ r·C</span><span class="eqno">(21)</span></div>
-<div class="eq"><span>c*<sub>hw</sub> = (E − V + C·a + U) / Σ n(t)</span><span class="eqno">(22)</span></div>
+<div class="eq"><span>net after hardware = A − C′·a − U</span><span class="eqno">(19)</span></div>
+<div class="eq"><span>NPV = −C′ + (A − U) · (1 − (1 + r)<sup>−L</sup>) / r</span><span class="eqno">(20)</span></div>
+<div class="eq"><span>τ = −ln(1 − r·C′ / (A − U)) / ln(1 + r), &nbsp;&nbsp; τ = ∞ if A − U ≤ r·C′</span><span class="eqno">(21)</span></div>
+<div class="eq"><span>c*<sub>hw</sub> = (E − V + C′·a + U) / Σ n(t)</span><span class="eqno">(22)</span></div>
 
-τ is the discounted payback, the time until the yearly cash, discounted at r, has repaid C; it is compared with L. c*<sub>hw</sub> is the break-even price per server-hour once hardware is paid for. The payback curve is evaluated on a grid of compute prices from {payback_grid_min} to {payback_grid_max} in steps of {payback_grid_step}.
+τ is the discounted payback, the time until the yearly cash, discounted at r, has repaid C less the discounted resale; it is compared with L. c*<sub>hw</sub> is the break-even price per server-hour once hardware is paid for. The payback curve is evaluated on a grid of compute prices from {payback_grid_min} to {payback_grid_max} in steps of {payback_grid_step}.
 
 ### 7.3 Sensitivity design
 

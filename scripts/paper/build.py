@@ -25,6 +25,8 @@ SCHED = ROOT / "services/scheduler"
 ECON = ROOT / "docs/economics"
 MINUS = "\u2212"
 TIMES = "\u00d7"
+PRIME = "\u2032"
+RHO = "\u03c1"
 DASH = "\u2013"
 
 
@@ -363,6 +365,7 @@ def values():
             ),
         ),
         ("Lifetime L", lambda c: f"{num(c['lifetime_years'])} y"),
+        (f"Resale share {RHO}", lambda c: pct(100 * c["resale_share"], 1)),
         ("Discount rate r", lambda c: pct(100 * c["discount_rate"], 2)),
     ]
     v["table_hw_inputs"] = table(
@@ -372,10 +375,11 @@ def values():
     hw_out = [
         ("Up front, C", lambda r: chf(r["capex_chf"])),
         ("Upkeep a year, U", lambda r: chf(r["upkeep_chf_per_year"])),
-        ("Hardware a year, C·a + U", lambda r: chf(r["hardware_chf_per_year"])),
+        ("Resale at the end, R", lambda r: chf(r["resale_chf"])),
+        (f"Hardware a year, C{PRIME}·a + U", lambda r: chf(r["hardware_chf_per_year"])),
         ("Net before hardware, A", lambda r: chf(r["net_chf_before_hardware"])),
         (
-            f"Net after hardware, A {MINUS} C·a {MINUS} U",
+            f"Net after hardware, A {MINUS} C{PRIME}·a {MINUS} U",
             lambda r: chf(r["net_chf_after_hardware"]),
         ),
         ("Discounted payback", lambda r: years(r["payback_years"])),
