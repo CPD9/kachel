@@ -21,6 +21,12 @@ cached.
 
 <p align="center"><img src="../../docs/images/map-card.webp" width="720" alt="The card for Steinengraben 5, Basel: 528 MWh of heat a year, estimated, a month slider on November, and what about 101 Kachel servers would cover there, each figure with its source"></p>
 
+Switch on **District heating today** for SFOE's thermal networks in view (click one for its
+operator, heat source and size), and **Kachel: heat from home servers** for our idea beside them:
+many small servers in many homes. That second layer is an illustration, not data.
+
+<p align="center"><img src="../../docs/images/map-networks.webp" width="720" alt="Basel at dusk with SFOE's district heating networks as red points and Kachel's home servers as amber dots; the card for Wärmeverbund Theodor shows IWB as operator, groundwater heat pumps and gas, 1.38 MW and 2.4 GWh a year"></p>
+
 ## How it works
 
 - [CesiumJS](https://cesium.com/platform/cesiumjs/) 1.147 (Apache-2.0) draws the globe, the
@@ -41,6 +47,7 @@ cached.
 | Building register (GWR)         | `api3.geo.admin.ch` find on `ch.bfs.gebaeude_wohnungs_register` by EGID                    | BFS; level A data are public and free to use; "Source: BFS GWR"                                                                                                     |
 | Heat demand, solar (Sonnendach) | `api3.geo.admin.ch` identify on `ch.bfe.solarenergie-eignung-daecher`                      | SFOE, data status 21.02.2023; "Source: SFOE"                                                                                                                        |
 | Heat demand per hectare         | `api3.geo.admin.ch` identify on `ch.bfe.fernwaerme-nachfrage_wohn_dienstleistungsgebaeude` | SFOE, 2014 building and 2013 company statistics; "Source: SFOE"                                                                                                     |
+| Thermal networks                | `api3.geo.admin.ch` identify on `ch.bfe.thermische-netze` for the area in view             | SFOE, data status 18.11.2026; "Source: SFOE"                                                                                                                        |
 | Map outside Switzerland         | `https://tile.openstreetmap.org/`                                                          | [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/); "© OpenStreetMap contributors", data [ODbL](https://www.openstreetmap.org/copyright) |
 
 The credits sit in the footer at all times. For a public deployment with real traffic, swap

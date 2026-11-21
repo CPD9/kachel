@@ -13,6 +13,9 @@ function fakeScene(): Scene {
     },
     flyTo: vi.fn(),
     onPick: () => () => undefined,
+    viewArea: () => ({ west: 7.5, south: 47.5, east: 7.7, north: 47.6 }),
+    showNetworks: vi.fn(),
+    showHomeServers: vi.fn(),
     destroy: vi.fn(),
   };
 }
