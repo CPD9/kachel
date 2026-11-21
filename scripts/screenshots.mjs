@@ -51,6 +51,10 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({
     headless: true,
+    // Chromium formats a date input in its own UI language, not the page's or the context's
+    // locale, so en-GB here is what turns mm/dd/yyyy into dd/mm/yyyy.
+    args: ["--lang=en-GB"],
+    env: { ...process.env, LANG: "en_GB.UTF-8", LANGUAGE: "en_GB" },
     ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
   });
   try {

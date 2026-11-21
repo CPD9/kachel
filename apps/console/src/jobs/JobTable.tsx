@@ -23,11 +23,14 @@ export const KINDS: Record<JobKind, string> = {
   opportunistic: "Backlog",
 };
 
+/** 22 Nov, 10:04: a 24-hour clock in the houses' own time zone, whatever the browser's. */
 const when = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
   hour: "2-digit",
   minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: "Europe/Zurich",
 });
 
 const kwh = new Intl.NumberFormat("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
