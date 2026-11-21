@@ -4,7 +4,10 @@
 import data from "./buildings.json" with { type: "json" };
 import solarData from "./solar.json" with { type: "json" };
 
+import { REFERENCE_SIZE, hardware, type HardwareCase, type ServerSize } from "./model";
+
 export * from "./house";
+export * from "./model";
 
 export type TariffId = keyof typeof data.tariffs;
 
@@ -116,6 +119,8 @@ export function tariffFor(
 /** A rough estimate for any building from its yearly heat demand, scaled from the reference house. */
 export interface Estimate {
   servers: number;
+  /** Power of each server, kW. */
+  serverKw: number;
   shareOfHeatCoveredPct: number;
   netBeforeHardwareChf: number;
   netAfterHardwareChf: number;
@@ -125,18 +130,29 @@ export interface Estimate {
 
 /**
  * Servers and money for a building that has only a heat demand (kWh a year): the reference
- * house's servers per kWh of demand and its result per server, at the chosen tariff. The
- * simulated buildings above land within about 10% of this line.
+ * house's kW per kWh of demand and its result per kW, at the chosen tariff, in whole servers of
+ * `size` (#159: 0.5, 1 or 2 kW, or the GPU workstation). The hardware follows the size
+ * (model.ts hardware()). The simulated buildings above land within about 10% of this line.
  */
-export function estimate(heatDemandKwh: number, tariff: TariffId = tariffFor("house")): Estimate {
+export function estimate(
+  heatDemandKwh: number,
+  tariff: TariffId = tariffFor("house"),
+  size: ServerSize = REFERENCE_SIZE,
+): Estimate {
   const ref = reference();
-  const servers = Math.max(1, Math.round((heatDemandKwh * ref.servers) / ref.heatDemandKwh));
+  const servers = Math.max(
+    1,
+    Math.round((heatDemandKwh * ref.servers) / (ref.heatDemandKwh * size.kw)),
+  );
   const r = ref.results[tariff];
+  const before = (r.netBeforeHardwareChf * servers * size.kw) / ref.servers;
+  const hw = hardware(data.hardware_case as HardwareCase, servers, size).perYearChf;
   return {
     servers,
+    serverKw: size.kw,
     shareOfHeatCoveredPct: ref.shareOfHeatCoveredPct,
-    netBeforeHardwareChf: Math.round((r.netBeforeHardwareChf * servers) / ref.servers),
-    netAfterHardwareChf: Math.round((r.netAfterHardwareChf * servers) / ref.servers),
+    netBeforeHardwareChf: Math.round(before),
+    netAfterHardwareChf: Math.round(before - hw),
     tariff,
     scaledFrom: ref.name,
   };

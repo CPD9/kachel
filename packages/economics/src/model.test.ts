@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import summary from "../../../docs/economics/data/summary.json" with { type: "json" };
-import { HARDWARE_CASES, hardware, kachelAt, paybackYears } from "./model";
+import { HARDWARE_CASES, SERVER_SIZES, hardware, kachelAt, paybackYears } from "./model";
 
 const REF = summary.base_case;
 
@@ -49,6 +49,46 @@ describe("payback", () => {
   it("never pays back when the cash does not cover the interest", () => {
     expect(paybackYears(10_000, 0, 0.05)).toBe(Infinity);
     expect(paybackYears(10_000, 500, 0.05)).toBe(Infinity);
+  });
+});
+
+describe("server size", () => {
+  const size = (id: string) => {
+    const s = SERVER_SIZES.find((x) => x.id === id);
+    if (s === undefined) throw new Error(`no size ${id}`);
+    return s;
+  };
+
+  it("offers 0.5, 1 and 2 kW and the 0.7 kW GPU workstation", () => {
+    expect(SERVER_SIZES.map((s) => s.kw)).toEqual([0.5, 1, 2, 0.7]);
+    expect(size("gpu").gpu).toBe(true);
+  });
+
+  it("counts servers by size for the same heat", () => {
+    expect(kachelAt(REF.heat_demand_kwh, 0.277, size("0.5kw"))?.servers).toBe(12);
+    expect(kachelAt(REF.heat_demand_kwh, 0.277, size("2kw"))?.servers).toBe(3);
+    // 6 kW of GPU workstations at 0.7 kW: 8.57, so 9.
+    expect(kachelAt(REF.heat_demand_kwh, 0.277, size("gpu"))?.servers).toBe(9);
+  });
+
+  it("keeps the flows per kW, and charges each server its own water loop", () => {
+    const one = kachelAt(REF.heat_demand_kwh, 0.277, size("1kw"));
+    const half = kachelAt(REF.heat_demand_kwh, 0.277, size("0.5kw"));
+    expect(half?.beforeHardwareChf).toBeCloseTo(one?.beforeHardwareChf ?? 0, 6);
+    const kit = hardware("mid", 12, size("0.5kw")).capexChf - hardware("mid").capexChf;
+    expect(kit).toBeCloseTo(6 * 633, 6);
+    expect(half?.afterHardwareChf.mid).toBeLessThan(one?.afterHardwareChf.mid ?? 0);
+  });
+
+  it("prices the GPU workstation at its case's full server price", () => {
+    const gpu = hardware("mid", 9, size("gpu"));
+    const labour = (35_655 - 6 * (5034 + 633)) * ((9 * 0.7) / 6);
+    expect(gpu.capexChf).toBeCloseTo(9 * (5034 + 633) + labour, 0);
+  });
+
+  it("gives a small house one 0.5 kW server where 1 kW would be too much", () => {
+    expect(kachelAt(2_000)).toBeNull();
+    expect(kachelAt(2_000, 0.277, size("0.5kw"))?.servers).toBe(1);
   });
 });
 

@@ -252,6 +252,16 @@ ElCom's Swiss median, 26.557 Rp. The card names the source. Basel pays 33.42 Rp,
 Bern 31.11 Rp, and 192 of the canton of Bern's 333 municipalities (BKW) 25.59 Rp. ElCom's API
 refuses calls from other websites, so the map's dev and preview servers pass them on (`/elcom`).
 
+### Server size
+
+The card and `estimate()` take 0.5, 1 or 2 kW servers, or the 0.7 kW GPU workstation (the mid
+case's RTX PRO 6000 at up to 600 W [10] plus the rest of the machine, our guess). The kW follow
+the heat as in the reference house, 6 kW for 31,231 kWh, and the count of servers follows the
+size. A kW draws, earns and heats the same in any size, and a server costs its case's price per
+kW (our guess); the GPU workstation costs its case's full price. Each server needs its own water
+loop [11], so smaller servers cost more per kW. For the reference house at the 2026 median, mid
+case: 12 servers of 0.5 kW, 6 of 1 kW or 3 of 2 kW, all making 9,683 CHF before hardware.
+
 ## Sources
 
 1. DigitalHeat case brief, reference house: 35 kWh tank, 12 kWh hot water a day, 1 kW server,

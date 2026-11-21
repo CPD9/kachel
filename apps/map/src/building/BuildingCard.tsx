@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { REFERENCE_SIZE, SERVER_SIZES } from "@kachel/economics/model";
 import { electricityPrice, savedPrice, type Post, type Price } from "@kachel/economics/prices";
 import {
   HOUSE_SOURCE,
@@ -300,7 +301,9 @@ function WithKachel({
       current = false;
     };
   }, [bfs]);
-  const k = kachelEstimate(heatKwh, price.chfPerKwh);
+  const [sizeId, setSizeId] = useState(REFERENCE_SIZE.id);
+  const size = SERVER_SIZES.find((s) => s.id === sizeId) ?? REFERENCE_SIZE;
+  const k = kachelEstimate(heatKwh, price.chfPerKwh, size);
   return (
     <section className="mt-3 rounded-md border border-heat/50 p-3">
       <h3 className="font-medium text-heat">
@@ -308,11 +311,25 @@ function WithKachel({
           ? "If Kachel heated the whole building, renovated, estimated"
           : "If Kachel heated the whole building, estimated"}
       </h3>
+      <label className="mt-1 flex items-center justify-between gap-2">
+        <span className="text-paper/70">Server size</span>
+        <select
+          value={size.id}
+          onChange={(e) => setSizeId(e.target.value)}
+          className="rounded bg-ink px-1 text-paper"
+        >
+          {SERVER_SIZES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </label>
       {k === null ? (
-        <p>Too little heat for one 1 kW server.</p>
+        <p>{`Too little heat for one ${size.label} server.`}</p>
       ) : (
         <dl className="mt-1 space-y-0.5">
-          <Row label="Servers needed, 1 kW each" value={`about ${k.servers}`} />
+          <Row label={`Servers needed, ${size.label} each`} value={`about ${k.servers}`} />
           <Row
             label="Server heat used"
             value={`${formatEnergy(k.heatFromServersKwh)} (${Math.round(k.sharePct)}%)`}
@@ -331,7 +348,7 @@ function WithKachel({
       )}
       <p className="mt-1 text-xs text-paper/60">
         {
-          "Estimate, scaled from Kachel's Basel reference house (6 servers, 31,231 kWh, Basel 2025 weather) in proportion to this building's heat. It assumes interruptible AI work is always waiting and 0.50 CHF a server-hour. "
+          "Estimate, scaled from Kachel's Basel reference house (6 servers, 31,231 kWh, Basel 2025 weather) in proportion to this building's heat. It assumes interruptible AI work is always waiting and 0.50 CHF per kW of server an hour; any size draws, earns and heats per kW, a server costs its case's price per kW (the GPU workstation its full price) and each needs its own water loop. "
         }
         {`Electricity: ${price.source}. `}
         <a href={ASSUMPTIONS_URL} target="_blank" rel="noreferrer" className="underline">
