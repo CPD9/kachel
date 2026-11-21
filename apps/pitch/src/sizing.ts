@@ -15,6 +15,15 @@ export type Answers = {
   hotWater: boolean;
 };
 
+/** Where the questions start: a typical home. */
+export const DEFAULT_ANSWERS: Answers = {
+  windows: "double",
+  emitters: "radiators",
+  fuel: "oil",
+  residents: 4,
+  hotWater: true,
+};
+
 export type Rack = { id: string; name: string; kw: number; servers: number; size: string };
 
 /** Heated area of the demo building, in m². */

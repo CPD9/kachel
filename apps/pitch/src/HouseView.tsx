@@ -1,8 +1,18 @@
 import { ChevronLeft, ChevronRight, Home, Layers, Minus, Plus, Thermometer } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { Assessment } from "./Assessment";
-import { FLOORS, type FloorId, HouseScene } from "./House";
+import { Assessment, STEPS } from "./Assessment";
+import { FLOORS, type FloorId, type Focus, HouseScene } from "./House";
+import { DEFAULT_ANSWERS } from "./sizing";
 import { lightCard as card, lightLabel as label } from "./ui";
+
+/** The part of the house each question is about: the camera goes there. */
+const FOCUS: Record<(typeof STEPS)[number], Focus | null> = {
+  Windows: "windows",
+  Heating: "heating",
+  Energy: "energy",
+  People: "people",
+  Result: null,
+};
 
 const row = "flex w-full items-center gap-2.5 rounded-2xl px-2 py-2 text-left transition-colors";
 
@@ -66,6 +76,9 @@ function Setting({ icon, name, children }: { icon: ReactNode; name: string; chil
 export function HouseView({ onExit }: { onExit: () => void }) {
   const [open, setOpen] = useState<FloorId | null>(null);
   const [hover, setHover] = useState<FloorId | null>(null);
+  // The step-by-step questions, kept here so the house can show the answers
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState(DEFAULT_ANSWERS);
   // Room temperature per floor, in °C
   const [temps, setTemps] = useState<Record<FloorId, number>>({ ground: 21, upper: 20 });
 
@@ -92,14 +105,25 @@ export function HouseView({ onExit }: { onExit: () => void }) {
           back();
         }}
       >
-        <HouseScene open={open} hover={hover} onHover={setHover} onOpen={openFloor} />
+        <HouseScene
+          open={open}
+          hover={hover}
+          onHover={setHover}
+          onOpen={openFloor}
+          answers={answers}
+          focus={FOCUS[STEPS[step] ?? "Result"]}
+        />
       </div>
 
       {/* Right: the floors, or the open floor's rooms (until the result takes that side) */}
       <Assessment
+        step={step}
+        onStep={setStep}
+        answers={answers}
+        onAnswers={setAnswers}
         floors={
           <article
-            className={`${card} absolute top-20 right-6 w-[280px]`}
+            className={`${card} absolute top-6 right-6 w-[280px]`}
             style={{ animationDelay: "200ms" }}
           >
             <div className="px-2 pt-2 pb-1">

@@ -21,7 +21,7 @@ import {
   Waves,
   Zap,
 } from "lucide-react";
-import { type ComponentType, type ReactNode, useState } from "react";
+import type { ComponentType, ReactNode } from "react";
 import {
   type Answers,
   type Emitters,
@@ -55,7 +55,7 @@ const FUEL_OPTIONS: Option<Fuel>[] = [
   { value: "electric", icon: Zap, name: FUELS.electric.name, note: "Night storage, panels" },
 ];
 
-const STEPS = ["Windows", "Heating", "Energy", "People", "Result"] as const;
+export const STEPS = ["Windows", "Heating", "Energy", "People", "Result"] as const;
 type Step = (typeof STEPS)[number];
 
 const chf = (x: number) => `CHF ${Math.round(x).toLocaleString("de-CH")}`;
@@ -216,7 +216,7 @@ function RackCard({
 }) {
   const kWh = (x: number) => `${Math.round(x / 100) / 10}k kWh`;
   return (
-    <article className={`${card} absolute top-20 left-6 w-[300px]`}>
+    <article className={`${card} absolute top-6 left-6 w-[300px]`}>
       <div className="px-2 pt-2">
         <p className={`${label} text-clay`}>
           <Server size={11} /> Best fit for your home
@@ -280,7 +280,7 @@ function ProjectionCard({ r }: { r: Result }) {
   const payback = r.paybackYears === Infinity ? "—" : `${r.paybackYears.toFixed(1)} yrs`;
   return (
     <article
-      className={`${card} absolute top-20 right-6 w-[300px]`}
+      className={`${card} absolute top-6 right-6 w-[300px]`}
       style={{ animationDelay: "120ms" }}
     >
       <div className="px-2 pt-2">
@@ -341,20 +341,22 @@ function ProjectionCard({ r }: { r: Result }) {
  * Step by step over the 3D house: a few questions about the home on the left (the floors stay on
  * the right), then the rack that fits and what it saves.
  */
-export function Assessment({ floors }: { floors: ReactNode }) {
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Answers>({
-    windows: "double",
-    emitters: "radiators",
-    fuel: "oil",
-    residents: 4,
-    hotWater: true,
-  });
-  const set = <K extends keyof Answers>(k: K, v: Answers[K], advance = true) => {
-    setAnswers((a) => ({ ...a, [k]: v }));
-    // A tap is an answer: move on after a beat, so the pick is seen
-    if (advance) setTimeout(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 250);
-  };
+export function Assessment({
+  step,
+  onStep: setStep,
+  answers,
+  onAnswers,
+  floors,
+}: {
+  step: number;
+  onStep: (step: number) => void;
+  /** Kept by the house view, so the 3D house can show them (e.g. the window type). */
+  answers: Answers;
+  onAnswers: (a: Answers) => void;
+  floors: ReactNode;
+}) {
+  // Picking an option only changes the answer (and the house); Next moves on
+  const set = <K extends keyof Answers>(k: K, v: Answers[K]) => onAnswers({ ...answers, [k]: v });
   const current: Step = STEPS[step] ?? "Result";
   const done = current === "Result";
   const result = size(answers);
@@ -371,7 +373,7 @@ export function Assessment({ floors }: { floors: ReactNode }) {
       ) : (
         <>
           {/* Keyed by step so each question slides in */}
-          <article key={step} className={`${card} absolute top-20 left-6 w-[300px]`}>
+          <article key={step} className={`${card} absolute top-6 left-6 w-[300px]`}>
             {current === "Windows" && (
               <Question
                 n={1}
@@ -426,11 +428,11 @@ export function Assessment({ floors }: { floors: ReactNode }) {
                       value={answers.residents}
                       min={1}
                       max={12}
-                      onChange={(v) => set("residents", v, false)}
+                      onChange={(v) => set("residents", v)}
                     />
                   </div>
                   <button
-                    onClick={() => set("hotWater", !answers.hotWater, false)}
+                    onClick={() => set("hotWater", !answers.hotWater)}
                     className={`flex w-full items-center gap-2 rounded-2xl px-2.5 py-2.5 text-left text-[12.5px] font-semibold ring-1 transition-all ${
                       answers.hotWater
                         ? "bg-clay/[0.08] ring-clay"
