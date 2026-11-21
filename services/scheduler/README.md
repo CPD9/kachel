@@ -22,6 +22,28 @@ Outputs land in `out/`: `kpis.json`, `sweep.csv`, `hourly.csv`, `measurements.js
 (the coldest January day) and `out/day_july.csv` (15 July), one row per hour, for the animation. `kpis.json` and the
 two day CSVs are committed; rerun `make year` after any model change.
 
+## The fleet: many houses, one stream of jobs
+
+`make fleet` runs `heatsched/fleet.py` on 50 synthetic houses in Basel (`config.json: fleet`), each with its own
+servers, tank, hot water and size of heating demand, on the real Basel 2025 weather. Every hour each waiting job goes,
+least slack first, to the house with the most useful heat room left. It waits while its deadline allows and goes to
+an ordinary data centre only when no house can use its heat in time. Each day also runs with every job kept at the
+house it was sent to, for comparison.
+
+| Day (1,000 jobs)  | Compute heat used | House heat covered | Moved to a data centre | Kept at its house: moved | Deadline misses |
+| ----------------- | ----------------- | ------------------ | ---------------------- | ------------------------ | --------------- |
+| 13 January (cold) | 100 %             | 19 %               | 0                      | 1                        | 0               |
+| 15 July           | 55 %              | 100 %              | 331                    | 489                      | 0               |
+
+Compute heat used is the share of the jobs' heat that went into a house. House heat covered is the share of the
+houses' heat demand that day the jobs met; the rest came from their own heating. In January the job stream is far
+smaller than what 50 houses could absorb.
+
+In July the houses can only take what hot water and the tanks absorb, so routing cannot raise the heat used much;
+it sends a third fewer jobs off-site by putting each where there is room. Outputs in `out/`: `fleet_sites.csv`,
+`fleet_jobs_<day>.csv` (where each job was sent, where it ran, when it moved), `fleet_hourly_<day>.csv` (each house's
+heat by the hour), `fleet_placements_<day>.csv` (each job's house, hour by hour) and `fleet_kpis.json`. Every house is made up. Bern needs its own weather file first.
+
 ## Before you present: three things to replace
 
 1. `config.json → prices.electricity_chf_per_kwh` is a placeholder (Swiss H4 median 2026, 27.7 Rp). Put in IWB Basel H4.

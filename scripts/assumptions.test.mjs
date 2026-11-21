@@ -26,6 +26,15 @@ test("skips the notes and keeps a job's arrivals as one value", () => {
   assert.ok(!paths.some((p) => p.endsWith(".source") || p === "_note"));
   assert.ok(paths.includes("jobs.batch.arrivals_server_h"));
   assert.ok(!paths.includes("jobs.batch.arrivals_server_h.6"));
+  assert.ok(paths.includes("fleet.tank_kwh"));
+  assert.ok(!paths.includes("fleet.tank_kwh.0"));
+});
+
+test("prints a fleet range as low to high", () => {
+  assert.match(
+    page(config),
+    /\| Hot-water tank +\| `tank_kwh` +\| 20 to 50 +\| kWh +\| our guess +\|/,
+  );
 });
 
 test("lays tables out as Prettier does", () => {

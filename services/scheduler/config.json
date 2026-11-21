@@ -45,6 +45,27 @@
       "source": "ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model. Job size measured on our machine: 0.113 Wh and 34.2 CPU-s per 200,000 items, about 8,840 jobs per 1 kW server-hour (docs/measurements.md)."
     }
   },
+  "fleet": {
+    "houses": 50,
+    "seed": 2025,
+    "city": "Basel",
+    "latitude": [47.54, 47.58],
+    "longitude": [7.56, 7.63],
+    "servers_per_house": [2, 8],
+    "tank_kwh": [20, 50],
+    "space_heating_scale": [0.4, 1.6],
+    "hot_water_kwh_per_day": [6, 18],
+    "interactive_jobs_per_house_per_day": 4,
+    "interactive_hours_of_day": [17, 23],
+    "batch_jobs_per_house_per_day": 4,
+    "batch_hours": [2, 6],
+    "batch_deadline_h": [8, 24],
+    "backlog_jobs_per_house_per_day": 12,
+    "backlog_hours": [1, 4],
+    "backlog_deadline_h": 48,
+    "warmup_days": 2,
+    "source": "OUR synthetic scenario for make fleet (heatsched/fleet_scenario.py): every house is made up, drawn evenly from these ranges with this seed, on the real Basel 2025 weather. space_heating_scale multiplies the reference house's space heating. Unlike the one-house model, the backlog is finite and due within backlog_deadline_h, so work the houses cannot take shows up as moved to a data centre."
+  },
   "hardware": {
     "_note": "Per 1 kW server unless a name says per house. CHF without VAT. Dollar and pound prices converted at the ECB reference rates of 20 Nov 2026 (1 USD = 0.8392 CHF, 1 GBP = 1.1015 CHF). Each source is below; anything marked OUR GUESS has none yet. Charts and links: docs/economics/README.md",
     "case_for_results": "mid",
