@@ -17,6 +17,7 @@ const FACTS: BuildingFacts = {
     heatingKind: "district",
     hotWater: "district heating (low temperature)",
     asOf: "19.11.2026",
+    municipality: { bfs: 2701, name: "Basel" },
   },
   roof: {
     buildingId: 1599044,
@@ -87,6 +88,14 @@ describe("building card", () => {
     expect(screen.queryByText(/^Our estimate, built/)).toBeNull();
     fireEvent.click(screen.getByRole("checkbox", { name: /Renovated/ }));
     expect(screen.getByText("about 44")).toBeTruthy();
+  });
+
+  it("prices the servers' electricity at the municipality's tariff", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    // Basel: IWB's 2027 H4 tariff, saved from ElCom, until the live answer comes.
+    expect(screen.getByText("Electricity price, Basel")).toBeTruthy();
+    expect(screen.getByText("33.42 Rp/kWh")).toBeTruthy();
+    expect(screen.getByText(/ElCom 2027 H4, IWB Industrielle Werke Basel/)).toBeTruthy();
   });
 
   it("says a fleet house is synthetic and the building real", () => {

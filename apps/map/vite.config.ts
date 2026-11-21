@@ -48,8 +48,22 @@ function cesiumAssets(): Plugin {
   };
 }
 
+/**
+ * ElCom's tariff API blocks calls from other sites (its firewall rejects the CORS preflight), so
+ * the dev and preview servers pass the card's /elcom requests on (BuildingCard: ELCOM_PROXY).
+ */
+const elcom = {
+  "/elcom": {
+    target: "https://www.strompreis.elcom.admin.ch",
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace(/^\/elcom/, ""),
+  },
+};
+
 export default defineConfig({
   plugins: [react(), tailwindcss(), cesiumAssets()],
+  server: { proxy: elcom },
+  preview: { proxy: elcom },
   // CesiumJS is one large module; it loads once and is cached.
   build: { chunkSizeWarningLimit: 6000 },
   test: { environment: "jsdom" },

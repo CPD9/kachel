@@ -31,6 +31,8 @@ export interface Register {
   readonly hotWater: string;
   /** Date the register was exported, as published ("19.11.2026"). */
   readonly asOf: string | null;
+  /** The municipality (GWR ggdenr, ggdename): its BFS number picks the electricity price. */
+  readonly municipality: { readonly bfs: number; readonly name: string } | null;
 }
 
 /** SFOE's estimate for the building, from Sonnendach (computed from GWR data). */
@@ -78,6 +80,7 @@ export function parseRegister(a: Attributes): Register | null {
   const period = num(a.gbaup);
   const gklas = num(a.gklas);
   const dwellings = num(a.ganzwhg);
+  const bfs = num(a.ggdenr);
   return {
     egid,
     address: str(a.strname_deinr) ?? str(a.label) ?? `EGID ${egid}`,
@@ -98,6 +101,7 @@ export function parseRegister(a: Attributes): Register | null {
     heatingKind: sourceKind(genh),
     hotWater: genw !== null ? (ENERGY_SOURCE[genw] ?? "other") : "not recorded",
     asOf: str(a.gexpdat),
+    municipality: bfs === null ? null : { bfs, name: str(a.ggdename) ?? `BFS ${bfs}` },
   };
 }
 

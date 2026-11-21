@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { electricityPrice, savedPrice, type Post, type Price } from "@kachel/economics/prices";
 import {
   HOUSE_SOURCE,
   heatDemand,
@@ -12,11 +13,17 @@ import { formatEnergy, heatEstimate } from "./estimate";
 import { FLEET, type FleetHouse } from "../fleet/fleet";
 import type { BuildingFacts } from "./geoadmin";
 import { shareOf } from "./group";
-import { ASSUMPTIONS_URL, formatChf, kachelEstimate } from "./kachel";
+import { ASSUMPTIONS_URL, formatChf, formatYears, kachelEstimate } from "./kachel";
 import { MonthSlider } from "./MonthSlider";
 import { describeSolar, SOLAR_RADIUS_M } from "./solar";
 
 const NETWORK_THRESHOLD_MWH = 700;
+/**
+ * ElCom's API does not allow calls from other sites, so the map asks it through its own server
+ * (vite.config.ts: /elcom). Without that server the card keeps the saved tariff or the median.
+ */
+export const ELCOM_PROXY = "/elcom/api/graphql";
+const post: Post = (url, init) => fetch(url, init);
 /**
  * Above this, heat per m² of heated floor is unusual even for an old, unrenovated building
  * (our rule of thumb), so the card flags the SFOE estimate for a second look.
@@ -207,6 +214,7 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
         <WithKachel
           heatKwh={roof.heatingKwh * scale * renovation + roof.hotWaterKwh * scale}
           renovated={renovated}
+          municipality={register?.municipality ?? null}
         />
       )}
 
@@ -271,8 +279,28 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
 }
 
 /** What Kachel home servers could do here, scaled from the scheduler's reference house. */
-function WithKachel({ heatKwh, renovated }: { heatKwh: number; renovated: boolean }) {
-  const k = kachelEstimate(heatKwh);
+function WithKachel({
+  heatKwh,
+  renovated,
+  municipality,
+}: {
+  heatKwh: number;
+  renovated: boolean;
+  municipality: { bfs: number; name: string } | null;
+}) {
+  const bfs = municipality?.bfs ?? null;
+  // The saved tariff (or the Swiss median) at once, then ElCom's live answer.
+  const [price, setPrice] = useState<Price>(() => savedPrice(bfs));
+  useEffect(() => {
+    let current = true;
+    void electricityPrice(bfs, post, ELCOM_PROXY).then((p) => {
+      if (current) setPrice(p);
+    });
+    return () => {
+      current = false;
+    };
+  }, [bfs]);
+  const k = kachelEstimate(heatKwh, price.chfPerKwh);
   return (
     <section className="mt-3 rounded-md border border-heat/50 p-3">
       <h3 className="font-medium text-heat">
@@ -290,17 +318,22 @@ function WithKachel({ heatKwh, renovated }: { heatKwh: number; renovated: boolea
             value={`${formatEnergy(k.heatFromServersKwh)} (${Math.round(k.sharePct)}%)`}
           />
           <Row label="Electricity the servers draw" value={formatEnergy(k.electricityKwh)} />
+          <Row
+            label={`Electricity price, ${price.municipality ?? "Swiss median"}`}
+            value={`${(price.chfPerKwh * 100).toFixed(2)} Rp/kWh`}
+          />
           <Row label="A year, before hardware" value={formatChf(k.beforeHardwareChf)} />
           <Row label="A year, after hardware (mid)" value={formatChf(k.afterHardwareChf.mid)} />
           <Row label="… cheap hardware (low)" value={formatChf(k.afterHardwareChf.low)} />
           <Row label="… dear hardware (high)" value={formatChf(k.afterHardwareChf.high)} />
-          <Row label="Payback (mid)" value={`${k.paybackYearsMid} years`} />
+          <Row label="Payback (mid)" value={formatYears(k.paybackYears.mid)} />
         </dl>
       )}
       <p className="mt-1 text-xs text-paper/60">
         {
           "Estimate, scaled from Kachel's Basel reference house (6 servers, 31,231 kWh, Basel 2025 weather) in proportion to this building's heat. It assumes interruptible AI work is always waiting and 0.50 CHF a server-hour. "
         }
+        {`Electricity: ${price.source}. `}
         <a href={ASSUMPTIONS_URL} target="_blank" rel="noreferrer" className="underline">
           Assumptions and sources
         </a>

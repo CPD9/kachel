@@ -58,6 +58,12 @@ describe("building register", () => {
     expect(r?.period).toBe("before_1919");
   });
 
+  it("reads the municipality, whose BFS number picks the electricity price", () => {
+    const r = parseRegister({ ...GWR, ggdenr: 2701, ggdename: "Basel" });
+    expect(r?.municipality).toEqual({ bfs: 2701, name: "Basel" });
+    expect(parseRegister({ ...GWR, ggdenr: null })?.municipality).toBeNull();
+  });
+
   it("tells a house from flats by the building class, else by the dwellings", () => {
     expect(parseRegister({ ...GWR, gklas: 1110 })?.kind).toBe("single");
     expect(parseRegister({ ...GWR, gklas: 1122 })?.kind).toBe("multi");
