@@ -1,18 +1,10 @@
-import {
-  ArrowRight,
-  Building2,
-  Cable,
-  Check,
-  Gamepad2,
-  Heater,
-  LoaderCircle,
-  MapPin,
-} from "lucide-react";
+import { ArrowRight, Building2, Check, Heater, LoaderCircle, MapPin } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
-import { GamerDetails } from "./GamerDetails";
 import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
 import { HouseView } from "./HouseView";
+import { NeighbourDetails, NeighbourSwitch } from "./NeighbourDetails";
+import { NEIGHBOURS } from "./neighbours";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
 
 /** Status pill over the globe: pops in, with a check once done or a spinner while loading. */
@@ -83,9 +75,10 @@ export function App() {
     };
   }, [inside]);
 
-  // The house keeps its answers once opened: it stays mounted, hidden while on the map
-  // "a" on the result page: on to the neighbour who games on the rack (like adobe's mall)
+  // "a" on the result page: on to the neighbours who could use the rack (like adobe's mall)
   const [gamer, setGamer] = useState(false);
+  // Which neighbour is picked, switched with the bar at the top
+  const [who, setWho] = useState(0);
   const [atGamer, setAtGamer] = useState(false);
   const toGamer = useCallback(() => {
     setGamer(true);
@@ -128,14 +121,15 @@ export function App() {
             token={token}
             onStage={setStage}
             inside={inside}
-            gamer={gamer}
-            onGamer={() => setAtGamer(true)}
+            neighbour={gamer ? who : null}
+            onArrive={() => setAtGamer(true)}
+            onPick={setWho}
           />
         </div>
         {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
         {stage && (
           <div
-            key={atGamer ? "gamer" : stage}
+            key={atGamer ? `neighbour-${who}` : stage}
             aria-hidden
             className="edge-glow animate-edge-glow"
           />
@@ -144,14 +138,13 @@ export function App() {
         {stage === "building" && (houseShown || houseMounted) && (
           <HouseView visible={houseShown} onExit={() => setInside(false)} onNext={toGamer} />
         )}
-        {atGamer && <GamerDetails onBack={backFromGamer} />}
+        {atGamer && NEIGHBOURS[who] && (
+          <NeighbourDetails key={who} n={NEIGHBOURS[who]} onBack={backFromGamer} />
+        )}
         {gamer && (
           <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
             {atGamer ? (
-              <>
-                <Pill key="neighbour" icon={<Gamepad2 size={13} />} label="Gamer next door" />
-                <Pill key="link" icon={<Cable size={13} />} label="370 m of fibre to your rack" />
-              </>
+              <NeighbourSwitch i={who} onSwitch={setWho} />
             ) : (
               <Pill key="looking" label="Finding who could use your rack…" loading />
             )}

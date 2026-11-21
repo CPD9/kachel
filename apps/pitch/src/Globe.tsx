@@ -1,7 +1,7 @@
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Gamepad2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { HOME, NEIGHBOURS } from "./neighbours";
 
 /** One full turn every this many seconds. */
 const SECONDS_PER_REVOLUTION = 120;
@@ -9,12 +9,6 @@ const SECONDS_PER_REVOLUTION = 120;
 const MAX_SPIN_ZOOM = 5;
 /** Between this zoom and MAX_SPIN_ZOOM the spin slows down. */
 const SLOW_SPIN_ZOOM = 3;
-
-/** The presenter's home, hard-coded for the demo: [lng, lat]. */
-const HOME: [number, number] = [7.58215, 47.55212];
-/** A neighbour who games on the rack at HOME (like the mall in baselhack_2026_adobe). */
-export const GAMER: [number, number] = [7.581800279272595, 47.55543369350158];
-export const GAMER_COLOR = "#8b5cf6";
 
 // Timeline, like baselhack_2026_adobe's GlobeView: spin, fly to the city, then dive at the building
 /** How long the globe spins before flying in (GLOBE_INTRO_MS in baselhack_2026_adobe). */
@@ -30,16 +24,24 @@ const HOME_FLY_MS = 3000;
 /** Pressing "a": dive at the building, steep and close, before the 3D house takes over. */
 const INSIDE_CAMERA = { center: HOME, zoom: 19.8, pitch: 72, bearing: -25 };
 export const INSIDE_DIVE_MS = 1400;
-/** On to the gamer: looking south, so their building is up front and HOME behind it. */
-const GAMER_CAMERA = {
-  center: [GAMER[0] * 0.75 + HOME[0] * 0.25, GAMER[1] * 0.75 + HOME[1] * 0.25] as [number, number],
-  zoom: 17,
-  pitch: 58,
-  bearing: 165,
-};
-const GAMER_FLY_MS = 3000;
-const GAMER_RISE_MS = 1400;
-const GAMER_BUILDING = "gamer-building";
+/**
+ * On to a neighbour: looking from their building towards HOME, so they're up front and HOME
+ * behind, with the other neighbours around.
+ */
+function neighbourCamera([lng, lat]: [number, number]) {
+  const dx = (HOME[0] - lng) * Math.cos((lat * Math.PI) / 180);
+  const dy = HOME[1] - lat;
+  return {
+    center: [lng * 0.75 + HOME[0] * 0.25, lat * 0.75 + HOME[1] * 0.25] as [number, number],
+    zoom: 16.7,
+    pitch: 58,
+    bearing: (Math.atan2(dx, dy) * 180) / Math.PI,
+  };
+}
+const NEIGHBOUR_FLY_MS = 3000;
+const SWITCH_FLY_MS = 1800;
+const RISE_MS = 1400;
+const NEIGHBOUR_BUILDINGS = "neighbour-buildings";
 const LINK = "rack-link";
 
 const BUILDINGS = "3d-buildings";
@@ -150,74 +152,145 @@ function exclude(map: mapboxgl.Map, id: string | number, on: boolean) {
   map.setFilter(BUILDINGS, ["all", EXTRUDED, ["!", ["in", ["id"], ["literal", [...ids]]]]]);
 }
 
+/** The lit-up neighbours on the map: pick one, pull more in as tiles load, and clean up. */
+type Raised = {
+  /** Building heights by neighbour index, for the roof tags. */
+  heights: Record<number, number>;
+  select: (i: number) => void;
+  /** Look again for neighbours whose building hadn't loaded; true if any was found. */
+  resolve: () => boolean;
+  cleanup: () => void;
+};
+
 /**
- * The gamer's building rises out of the ground in violet, with a glowing fibre line back to
- * HOME. Returns the building's height (for the roof tag) and a cleanup.
+ * Every neighbour's building rises out of the ground in its colour (bright for the picked one,
+ * dim for the rest), each with a fibre line back to HOME; the picked line glows with a bright
+ * dashed core. Null if none of the buildings has loaded yet.
  */
-function raiseGamer(map: mapboxgl.Map): { height: number; cleanup: () => void } | null {
-  const id = findBuildingId(map, GAMER);
-  if (id === undefined || map.getLayer(GAMER_BUILDING)) return null;
-  const feature = map
-    .querySourceFeatures("composite", { sourceLayer: "building", filter: ["==", ["id"], id] })
-    .at(0);
-  const height = Number(feature?.properties?.["height"] ?? 15);
-  exclude(map, id, true);
+function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
+  const ids = new Map<number, string | number>();
+  const heights: Record<number, number> = {};
+  let current = selected;
+
+  const resolve = () => {
+    let found = false;
+    NEIGHBOURS.forEach((n, i) => {
+      if (ids.has(i)) return;
+      const id = findBuildingId(map, n.at);
+      // Two neighbours on one building would break the colour match
+      if (id === undefined || [...ids.values()].includes(id)) return;
+      const f = map
+        .querySourceFeatures("composite", { sourceLayer: "building", filter: ["==", ["id"], id] })
+        .at(0);
+      ids.set(i, id);
+      heights[i] = Number(f?.properties?.["height"] ?? 15);
+      exclude(map, id, true);
+      found = true;
+    });
+    if (found && map.getLayer(NEIGHBOUR_BUILDINGS)) paint();
+    return found;
+  };
+
+  const paint = () => {
+    const all = [...ids.values()];
+    map.setFilter(NEIGHBOUR_BUILDINGS, ["in", ["id"], ["literal", all]]);
+    const pairs = [...ids].flatMap(([i, id]) => {
+      const n = NEIGHBOURS[i];
+      return n ? [id, i === current ? n.color : n.dim] : [];
+    });
+    map.setPaintProperty(
+      NEIGHBOUR_BUILDINGS,
+      "fill-extrusion-color",
+      pairs.length
+        ? (["match", ["id"], ...pairs, "#555"] as mapboxgl.ExpressionSpecification)
+        : "#555",
+    );
+    const source = map.getSource<mapboxgl.GeoJSONSource>(LINK);
+    source?.setData({
+      type: "FeatureCollection",
+      features: NEIGHBOURS.map((n, i) => ({
+        type: "Feature",
+        properties: { on: i === current, color: n.color },
+        geometry: { type: "LineString", coordinates: [HOME, n.at] },
+      })),
+    });
+  };
+
+  resolve();
+  if (ids.size === 0) return null;
+
   map.addLayer({
-    id: GAMER_BUILDING,
+    id: NEIGHBOUR_BUILDINGS,
     type: "fill-extrusion",
     source: "composite",
     "source-layer": "building",
-    filter: ["==", ["id"], id],
+    filter: ["in", ["id"], ["literal", []]],
     paint: {
-      "fill-extrusion-color": GAMER_COLOR,
+      "fill-extrusion-color": "#555",
       "fill-extrusion-base": ["get", "min_height"],
       "fill-extrusion-height": ["get", "min_height"],
       "fill-extrusion-opacity": 1,
     },
   });
-  // The fibre between the two buildings: a wide soft glow and a bright dashed core
-  map.addSource(LINK, {
-    type: "geojson",
-    data: {
-      type: "Feature",
-      properties: {},
-      geometry: { type: "LineString", coordinates: [HOME, GAMER] },
-    },
+  // The fibre from each neighbour to HOME: faint for the others, glowing for the picked one
+  map.addSource(LINK, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({
+    id: `${LINK}-others`,
+    type: "line",
+    source: LINK,
+    filter: ["!", ["get", "on"]],
+    layout: { "line-cap": "round" },
+    paint: { "line-color": ["get", "color"], "line-width": 1.5, "line-opacity": 0.45 },
   });
   map.addLayer({
     id: `${LINK}-glow`,
     type: "line",
     source: LINK,
-    paint: { "line-color": GAMER_COLOR, "line-width": 14, "line-blur": 10, "line-opacity": 0.6 },
+    filter: ["get", "on"],
+    paint: {
+      "line-color": ["get", "color"],
+      "line-width": 14,
+      "line-blur": 10,
+      "line-opacity": 0.6,
+    },
   });
   map.addLayer({
     id: LINK,
     type: "line",
     source: LINK,
+    filter: ["get", "on"],
     layout: { "line-cap": "round" },
     paint: { "line-color": "#fbbf24", "line-width": 3, "line-dasharray": [1, 2] },
   });
+  paint();
+
   // Rise with an ease-out, like the mall in baselhack_2026_adobe
   const start = performance.now();
   let frame = requestAnimationFrame(function tick(now) {
-    if (!map.getLayer(GAMER_BUILDING)) return;
-    const t = Math.min(1, (now - start) / GAMER_RISE_MS);
+    if (!map.getLayer(NEIGHBOUR_BUILDINGS)) return;
+    const t = Math.min(1, (now - start) / RISE_MS);
     const k = 1 - (1 - t) ** 3;
-    map.setPaintProperty(GAMER_BUILDING, "fill-extrusion-height", [
+    map.setPaintProperty(NEIGHBOUR_BUILDINGS, "fill-extrusion-height", [
       "+",
       ["get", "min_height"],
       ["*", ["-", ["get", "height"], ["get", "min_height"]], k],
     ]);
     if (t < 1) frame = requestAnimationFrame(tick);
   });
+
   return {
-    height,
+    heights,
+    select: (i) => {
+      current = i;
+      paint();
+    },
+    resolve,
     cleanup: () => {
       cancelAnimationFrame(frame);
-      for (const layer of [GAMER_BUILDING, LINK, `${LINK}-glow`])
+      for (const layer of [NEIGHBOUR_BUILDINGS, LINK, `${LINK}-glow`, `${LINK}-others`])
         if (map.getLayer(layer)) map.removeLayer(layer);
       if (map.getSource(LINK)) map.removeSource(LINK);
-      exclude(map, id, false);
+      for (const id of ids.values()) exclude(map, id, false);
     },
   };
 }
@@ -225,13 +298,24 @@ function raiseGamer(map: mapboxgl.Map): { height: number; cleanup: () => void } 
 const EARTH_M = 40075016.686;
 
 /**
- * A glowing tag floating on the gamer's roof (as on baselhack_2026_adobe's mall): project the
- * ground point, lift it by the building's height in pixels, every frame.
+ * Something floating on a roof (as on baselhack_2026_adobe's mall): project the ground point,
+ * lift it by the building's height in pixels, every frame.
  */
-function Beacon({ map, height }: { map: mapboxgl.Map; height: number }) {
+function OnRoof({
+  map,
+  at: [lng, lat],
+  height,
+  front = false,
+  children,
+}: {
+  map: mapboxgl.Map;
+  at: [number, number];
+  height: number;
+  front?: boolean;
+  children: ReactNode;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const [lng, lat] = GAMER;
     const place = () => {
       if (!ref.current) return;
       const p = map.project([lng, lat]);
@@ -244,36 +328,68 @@ function Beacon({ map, height }: { map: mapboxgl.Map; height: number }) {
     return () => {
       map.off("render", place);
     };
-  }, [map, height]);
+  }, [map, lng, lat, height]);
   return (
-    <div
-      ref={ref}
-      className="pointer-events-none absolute top-0 left-0 flex animate-pill-in flex-col items-center font-sans"
-    >
+    // The animation moves its own transform, so it sits inside the positioned wrapper
+    <div ref={ref} className={`absolute top-0 left-0 ${front ? "z-10" : ""}`}>
+      {children}
+    </div>
+  );
+}
+
+/** The picked neighbour's roof tag: "Noah · plays on your rack". */
+function Beacon({ i }: { i: number }) {
+  const n = NEIGHBOURS[i];
+  if (!n) return null;
+  const Icon = n.icon;
+  return (
+    <div className="pointer-events-none flex animate-pill-in flex-col items-center font-sans">
       <span className="flex items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/90 py-1.5 pr-3.5 pl-1.5 text-sm font-medium whitespace-nowrap text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
         <span
           className="grid size-6 place-items-center rounded-full"
-          style={{ background: GAMER_COLOR }}
+          style={{ background: n.color }}
         >
-          <Gamepad2 size={13} />
+          <Icon size={13} />
         </span>
-        Noah · plays on your rack
+        {n.tag}
       </span>
       <span
         className="h-5 w-px"
-        style={{ background: `linear-gradient(${GAMER_COLOR}, transparent)` }}
+        style={{ background: `linear-gradient(${n.color}, transparent)` }}
       />
       <span className="relative flex size-3">
         <span
           className="absolute inset-0 animate-ping rounded-full"
-          style={{ background: GAMER_COLOR }}
+          style={{ background: n.color }}
         />
         <span
           className="size-3 rounded-full ring-2 ring-white/70"
-          style={{ background: GAMER_COLOR }}
+          style={{ background: n.color }}
         />
       </span>
     </div>
+  );
+}
+
+/** A small pin on the other neighbours' roofs: click to switch to them. */
+function Pin({ i, onPick }: { i: number; onPick: (i: number) => void }) {
+  const n = NEIGHBOURS[i];
+  if (!n) return null;
+  const Icon = n.icon;
+  return (
+    <button
+      onClick={() => onPick(i)}
+      title={`${n.name} · ${n.what}`}
+      className="group flex animate-pill-in flex-col items-center font-sans"
+    >
+      <span
+        className="grid size-7 place-items-center rounded-full border border-white/20 text-white/90 shadow-[0_4px_16px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-110"
+        style={{ background: n.dim }}
+      >
+        <Icon size={13} />
+      </span>
+      <span className="h-3 w-px bg-white/30" />
+    </button>
   );
 }
 
@@ -314,29 +430,38 @@ export function Globe({
   token,
   onStage,
   inside = false,
-  gamer = false,
-  onGamer,
+  neighbour = null,
+  onArrive,
+  onPick,
 }: {
   token: string;
   onStage?: (stage: Stage) => void;
   /** Diving into the building (true) or back out to the street view (false). */
   inside?: boolean;
-  /** Off to the neighbour who games on the rack (true), or back home (false). */
-  gamer?: boolean;
-  /** The gamer's building has risen: time for its cards. */
-  onGamer?: () => void;
+  /** Index into NEIGHBOURS: off to someone who could use the rack, or null to stay home. */
+  neighbour?: number | null;
+  /** The neighbours' buildings have risen: time for the cards. */
+  onArrive?: () => void;
+  /** A neighbour's roof pin was clicked. */
+  onPick?: (i: number) => void;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   // Latest callback without re-running the map effect
   const onStageRef = useRef(onStage);
-  const onGamerRef = useRef(onGamer);
+  const onArriveRef = useRef(onArrive);
+  const neighbourRef = useRef(neighbour);
   useEffect(() => {
     onStageRef.current = onStage;
-    onGamerRef.current = onGamer;
+    onArriveRef.current = onArrive;
+    neighbourRef.current = neighbour;
   });
-  // Set once the gamer's building has risen, for the roof tag
-  const [gamerTag, setGamerTag] = useState<{ map: mapboxgl.Map; height: number } | null>(null);
+  const away = neighbour !== null;
+  // Set once the neighbours' buildings have risen, for the roof tags
+  const [roofs, setRoofs] = useState<{ map: mapboxgl.Map; heights: Record<number, number> } | null>(
+    null,
+  );
+  const raisedRef = useRef<Raised | null>(null);
 
   useEffect(() => {
     if (container.current === null) return;
@@ -426,48 +551,80 @@ export function Globe({
   }, [token]);
 
   // Into the building and back out again (only after we've been inside, not on first load).
-  // Leaving the house for the gamer is handled below.
+  // Leaving the house for a neighbour is handled below.
   const wasInside = useRef(false);
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (inside) map.flyTo({ ...INSIDE_CAMERA, duration: INSIDE_DIVE_MS, essential: true });
-    else if (wasInside.current && !gamer)
+    else if (wasInside.current && !away)
       map.flyTo({ ...HOME_CAMERA, duration: INSIDE_DIVE_MS, essential: true });
     wasInside.current = inside;
-  }, [inside, gamer]);
+  }, [inside, away]);
 
-  // On to the gamer: fly across, then their building rises and the fibre lights up
+  // Off to the neighbours: fly across, then their buildings rise and the fibre lights up
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !gamer) return;
+    if (!map || !away) return;
     add3dBuildings(map);
-    map.flyTo({ ...GAMER_CAMERA, duration: GAMER_FLY_MS, essential: true });
-    let cleanup: (() => void) | undefined;
+    const first = NEIGHBOURS[neighbourRef.current ?? 0] ?? NEIGHBOURS[0];
+    if (first)
+      map.flyTo({ ...neighbourCamera(first.at), duration: NEIGHBOUR_FLY_MS, essential: true });
+    // Further neighbours' tiles load as the camera moves: look for them on every idle
+    const onLater = () => {
+      if (raisedRef.current?.resolve())
+        setRoofs({ map, heights: { ...raisedRef.current.heights } });
+    };
     // Building tiles may still be loading: try on the next few idles, then show the cards anyway
     let tries = 0;
     const onIdle = () => {
-      const raised = raiseGamer(map);
+      const raised = raiseNeighbours(map, neighbourRef.current ?? 0);
       if (raised) {
-        cleanup = raised.cleanup;
-        setGamerTag({ map, height: raised.height });
+        raisedRef.current = raised;
+        setRoofs({ map, heights: { ...raised.heights } });
+        map.on("idle", onLater);
       } else if (++tries < 3) return void map.once("idle", onIdle);
-      onGamerRef.current?.();
+      onArriveRef.current?.();
     };
-    const onArrive = () => map.once("idle", onIdle);
-    map.once("moveend", onArrive);
+    const onLand = () => map.once("idle", onIdle);
+    map.once("moveend", onLand);
     return () => {
-      map.off("moveend", onArrive);
+      map.off("moveend", onLand);
       map.off("idle", onIdle);
-      cleanup?.();
-      setGamerTag(null);
+      map.off("idle", onLater);
+      raisedRef.current?.cleanup();
+      raisedRef.current = null;
+      setRoofs(null);
     };
-  }, [gamer]);
+  }, [away]);
+
+  // Switching between neighbours once there: recolour and fly over
+  useEffect(() => {
+    const map = mapRef.current;
+    const n = neighbour === null ? undefined : NEIGHBOURS[neighbour];
+    if (!map || !n || neighbour === null || !raisedRef.current) return;
+    raisedRef.current.select(neighbour);
+    map.flyTo({ ...neighbourCamera(n.at), duration: SWITCH_FLY_MS, essential: true });
+  }, [neighbour]);
 
   return (
     <div className="relative h-full w-full">
       <div ref={container} className="h-full w-full" />
-      {gamerTag && <Beacon map={gamerTag.map} height={gamerTag.height} />}
+      {roofs &&
+        neighbour !== null &&
+        NEIGHBOURS.map((n, i) => {
+          const height = roofs.heights[i];
+          if (height === undefined) return null;
+          return (
+            <OnRoof key={n.id} map={roofs.map} at={n.at} height={height} front={i === neighbour}>
+              {i === neighbour ? (
+                <Beacon key={`tag-${n.id}`} i={i} />
+              ) : (
+                <Pin key={`pin-${n.id}`} i={i} onPick={(j) => onPick?.(j)} />
+              )}
+            </OnRoof>
+          );
+        })}
     </div>
   );
 }
