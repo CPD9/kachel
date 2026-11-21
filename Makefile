@@ -35,11 +35,15 @@ check-py:
 
 # The yearly balance on the saved Basel 2025 weather: out/kpis.json, hourly.csv and the
 # January and July day CSVs (the animation reads those two), plus the plots.
+# Spring days for the pitch film's winter-to-summer sweep (with snow, 13 Jan and 15 Jul).
+SEASON_DAYS ?= march=2025-03-15 may=2025-05-15
+
 # A snowy January day for the films, with snow on the ground in both cities (data/snow_*.csv).
 SNOW_DAY ?= 2025-01-04
 
 year:
-	cd $(SCHED) && uv run python run_year.py --weather tests/data/weather_basel_2025.csv --day snow=$(SNOW_DAY)
+	cd $(SCHED) && uv run python run_year.py --weather tests/data/weather_basel_2025.csv --day snow=$(SNOW_DAY) \
+		$(foreach d,$(SEASON_DAYS),--day $(d))
 
 # The same reference house on Bern 2025 weather: day files and kpis in $(SCHED)/out/bern/.
 # run_year.py writes to ./out, so it runs in a scratch folder and the results are copied.

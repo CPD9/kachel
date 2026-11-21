@@ -248,6 +248,45 @@ def heat_overlay(SK, cam, col):
     return mats
 
 
+def light_sky(SK, sc, sky, bg, sun, gains, elev, az, city):
+    """Sky, sun, haze and window lights for a sun at `elev` and `az` (degrees)."""
+    rot = 90 - az
+    # Twilight: from about -12 deg the sky brightens into the dusk colours of the
+    # heat-atlas still; below the horizon the sky model is held just under it.
+    SK.set_sun(sky, max(elev, -2.0) if elev > -12 else max(elev, -18.0), rot)
+    if elev >= 0:
+        bg.inputs["Strength"].default_value = lerp(0.9, 0.15, elev / 12)
+    else:
+        t = max(0.0, min(1.0, (elev + 12) / 9))
+        bg.inputs["Strength"].default_value = 0.03 + 0.9 * t * t * (3 - 2 * t)
+    day = max(0.0, min(1.0, elev / 12))
+    night = max(0.0, min(1.0, (-elev - 4) / 8))
+    sun.hide_render = elev <= 0
+    sun.data.energy = 1.2 * day + 0.4 * min(1.0, max(0.0, elev) / 3) * (1 - day)
+    sun.data.color = lerp((1.0, 0.6, 0.35), (1.0, 0.97, 0.93), elev / 15)
+    sun.rotation_euler = (
+        math.radians(90 - max(elev, 0.5)),
+        0,
+        math.radians(rot + 90),
+    )
+    fog = lerp(
+        lerp((0.06, 0.14, 0.29), (0.55, 0.6, 0.68), day),
+        (0.012, 0.025, 0.06),
+        night,
+    )
+    if city == "basel":
+        SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
+    else:  # Bern's view is shorter: haze from nearer in, so the land fades into the sky
+        haze = lerp(fog, (0.95, 0.97, 1.0), day)  # pale enough to meet the day sky
+        SK.set_fog(lerp(700.0, 900.0, day), lerp(900.0, 1600.0, day), 1.0, haze)
+    sc.view_settings.exposure = -0.3
+    dark = max(0.0, min(1.0, (3 - elev) / 9))
+    for n, g in gains.items():
+        bpy.data.materials[n].node_tree.nodes["WindowGain"].outputs[0].default_value = (
+            g * (0.05 + 0.95 * dark)
+        )
+
+
 def outside(a, rows):
     sys.dont_write_bytecode = True  # read heat-atlas, never write into it
     sys.path.insert(0, str(HEAT_ATLAS / "blender"))
@@ -303,41 +342,7 @@ def outside(a, rows):
     for r, minute in plan:
         local = date + timedelta(hours=int(r["hour"]), minutes=minute)
         elev, az = sun_position(local)
-        rot = 90 - az
-        # Twilight: from about -12 deg the sky brightens into the dusk colours of the
-        # heat-atlas still; below the horizon the sky model is held just under it.
-        SK.set_sun(sky, max(elev, -2.0) if elev > -12 else max(elev, -18.0), rot)
-        if elev >= 0:
-            bg.inputs["Strength"].default_value = lerp(0.9, 0.15, elev / 12)
-        else:
-            t = max(0.0, min(1.0, (elev + 12) / 9))
-            bg.inputs["Strength"].default_value = 0.03 + 0.9 * t * t * (3 - 2 * t)
-        day = max(0.0, min(1.0, elev / 12))
-        night = max(0.0, min(1.0, (-elev - 4) / 8))
-        sun.hide_render = elev <= 0
-        sun.data.energy = 1.2 * day + 0.4 * min(1.0, max(0.0, elev) / 3) * (1 - day)
-        sun.data.color = lerp((1.0, 0.6, 0.35), (1.0, 0.97, 0.93), elev / 15)
-        sun.rotation_euler = (
-            math.radians(90 - max(elev, 0.5)),
-            0,
-            math.radians(rot + 90),
-        )
-        fog = lerp(
-            lerp((0.06, 0.14, 0.29), (0.55, 0.6, 0.68), day),
-            (0.012, 0.025, 0.06),
-            night,
-        )
-        if a.city == "basel":
-            SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
-        else:  # Bern's view is shorter: haze from nearer in, so the land fades into the sky
-            haze = lerp(fog, (0.95, 0.97, 1.0), day)  # pale enough to meet the day sky
-            SK.set_fog(lerp(700.0, 900.0, day), lerp(900.0, 1600.0, day), 1.0, haze)
-        sc.view_settings.exposure = -0.3
-        dark = max(0.0, min(1.0, (3 - elev) / 9))
-        for n, g in gains.items():
-            bpy.data.materials[n].node_tree.nodes["WindowGain"].outputs[
-                0
-            ].default_value = g * (0.05 + 0.95 * dark)
+        light_sky(SK, sc, sky, bg, sun, gains, elev, az, a.city)
         dk = float(r["demand_kwh"]) / demand_max
         for m in heat_mats:
             m.node_tree.nodes["Emission"].inputs["Strength"].default_value = (
@@ -420,4 +425,5 @@ def main():
         inside(a, rows, cfg, kpis)
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -81,6 +81,11 @@ def args():
     ap.add_argument(
         "--step", type=int, default=1, help="render every n-th frame (previews)"
     )
+    ap.add_argument(
+        "--camera",
+        default="hero",
+        help="hero, or diag for the portrait view of the films",
+    )
     return ap.parse_args(argv)
 
 
@@ -167,6 +172,24 @@ def main():
     h = ks.prepare()
     scene = h["scene"]
     ks.setup_render(scene, a.width, a.height, a.samples)
+    if a.camera == "diag":  # the portrait half-frame view used by the day-night films
+        import daynight as dn
+
+        cd = bpy.data.cameras.new("Setup_Diag")
+        cd.sensor_fit = "HORIZONTAL"
+        cd.lens = 20.0
+        cam = bpy.data.objects.new("Setup_Diag", cd)
+        scene.collection.objects.link(cam)
+        cam.location = dn.INSIDE_EYE
+        cam.rotation_euler = (
+            (Vector(dn.INSIDE_AIM) - Vector(dn.INSIDE_EYE))
+            .to_track_quat("-Z", "Y")
+            .to_euler()
+        )
+        scene.camera = cam
+        for o in scene.objects:
+            if o.name == "Wall_Front" or o.name.startswith("Batten"):
+                o.visible_camera = False
     scene.render.use_persistent_data = True
     scene.frame_start, scene.frame_end = 1, END
     scene.render.fps = FPS
