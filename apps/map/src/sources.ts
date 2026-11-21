@@ -15,10 +15,6 @@ export const SWISS_TERRAIN = "https://3d.geo.admin.ch/ch.swisstopo.terrain.3d/v1
 export const SWISS_IMAGE =
   "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{z}/{x}/{y}.jpeg";
 
-/** Canton areas from swissBOUNDARIES3D (data status 01.01.2026), WMTS in Web Mercator. */
-export const SWISS_CANTONS =
-  "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissboundaries3d-kanton-flaeche.fill/default/current/3857/{z}/{x}/{y}.png";
-
 /** OpenStreetMap's standard tiles, for everywhere outside Switzerland. */
 export const OSM_TILES = "https://tile.openstreetmap.org/";
 
