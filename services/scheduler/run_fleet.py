@@ -83,6 +83,6 @@ open(f"{a.out}/fleet_kpis.json", "w").write(json.dumps(result, indent=2) + "\n")
 for name, d in result["days"].items():
     fl, ho = d["fleet"], d["home_only"]
     print(f"{name} {d['date']}: {d['jobs_arrived']} jobs | compute heat used {fl['compute_heat_used_pct']}% "
-          f"(home only {ho['compute_heat_used_pct']}%) | moved off-site {fl['jobs_moved_offsite']} "
+          f"(home only {ho['compute_heat_used_pct']}%) | house heat covered {fl['house_heat_covered_pct']}% | moved off-site {fl['jobs_moved_offsite']} "
           f"(home only {ho['jobs_moved_offsite']}) | deadline misses {fl['deadline_misses']}")
 print(f"{len(sites)} synthetic houses, {result['servers']} servers; fleet_*.csv and fleet_kpis.json written to {a.out}/")

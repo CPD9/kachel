@@ -30,10 +30,14 @@ least slack first, to the house with the most useful heat room left. It waits wh
 an ordinary data centre only when no house can use its heat in time. Each day also runs with every job kept at the
 house it was sent to, for comparison.
 
-| Day (1,000 jobs)  | Compute heat used | Moved to a data centre | Kept at its house: moved | Deadline misses |
-| ----------------- | ----------------- | ---------------------- | ------------------------ | --------------- |
-| 13 January (cold) | 100 %             | 0                      | 1                        | 0               |
-| 15 July           | 55 %              | 331                    | 489                      | 0               |
+| Day (1,000 jobs)  | Compute heat used | House heat covered | Moved to a data centre | Kept at its house: moved | Deadline misses |
+| ----------------- | ----------------- | ------------------ | ---------------------- | ------------------------ | --------------- |
+| 13 January (cold) | 100 %             | 19 %               | 0                      | 1                        | 0               |
+| 15 July           | 55 %              | 100 %              | 331                    | 489                      | 0               |
+
+Compute heat used is the share of the jobs' heat that went into a house. House heat covered is the share of the
+houses' heat demand that day the jobs met; the rest came from their own heating. In January the job stream is far
+smaller than what 50 houses could absorb.
 
 In July the houses can only take what hot water and the tanks absorb, so routing cannot raise the heat used much;
 it sends a third fewer jobs off-site by putting each where there is room. Outputs in `out/`: `fleet_sites.csv`,
