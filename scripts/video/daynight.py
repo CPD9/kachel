@@ -122,7 +122,7 @@ def add_snow(mat):
     k.use_clamp = True
     mix = nt.nodes.new("ShaderNodeMix")
     mix.data_type = "RGBA"
-    mix.inputs["B"].default_value = (0.85, 0.87, 0.9, 1)
+    mix.inputs["B"].default_value = (0.72, 0.76, 0.82, 1)  # snow, a little blue
     nt.links.new(k.outputs[0], mix.inputs["Factor"])
     base = b.inputs["Base Color"]
     if base.is_linked:
