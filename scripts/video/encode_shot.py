@@ -35,6 +35,16 @@ def credit(img, text):
     return Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
 
 
+def title(img, text):
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    f = c.F["date"]
+    tw = d.textlength(text, font=f)
+    d.rounded_rectangle((40, 40, 40 + tw + 56, 120), 14, fill=(16, 19, 24, 200))
+    d.text((68, 56), text, font=f, fill=c.INK)
+    return Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--frames", required=True, nargs="+", help="one or more frame dirs")
@@ -44,6 +54,10 @@ def main():
     ap.add_argument("--mp4", required=True)
     ap.add_argument("--sheet", required=True)
     ap.add_argument("--credit", default="")
+    ap.add_argument("--title", default="", help="a label panel at the top left")
+    ap.add_argument(
+        "--title-part", type=int, default=0, help="show the title from this part on"
+    )
     a = ap.parse_args()
     parts = [sorted(Path(d).glob("*.png")) for d in a.frames]
     text = SWISSTOPO if a.credit == "swisstopo" else a.credit
@@ -71,6 +85,8 @@ def main():
                 img = Image.blend(img, load(parts[k + 1][j]), (j + 1) / (a.xfade + 1))
             if text:
                 img = credit(img, text)
+            if a.title and k >= a.title_part:
+                img = title(img, a.title)
             ff.stdin.write(img.tobytes())
             if n in picks:
                 sheet.append(img.resize((640, 360), Image.LANCZOS))
