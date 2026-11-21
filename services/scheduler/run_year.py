@@ -32,7 +32,9 @@ be = k["break_even_chf_per_server_hour"]
 k["does_not_pay_off_when"] = (f"compute earns less than CHF {be:.2f} per server-hour" if be is not None
                               else "no server-hours are sold")
 for name, date in P.showcase_days(prof).items():
-    df[df["time"].str.startswith(date)].to_csv(f"out/day_{name}.csv", index=False)
+    d = df[df["time"].str.startswith(date)].copy()
+    d.insert(2, "hour", d["time"].str[11:13].astype(int))   # 0 to 23, for the animation's frames
+    d.to_csv(f"out/day_{name}.csv", index=False)
 open("out/kpis.json", "w").write(json.dumps(k, indent=2) + "\n")
 print(sw[["servers_per_house", "share_of_heat_covered_pct", "heat_dumped_kwh", "utilisation_pct",
           "marginal_server_utilisation_pct", "break_even_chf_per_server_hour"]].to_string(index=False))
