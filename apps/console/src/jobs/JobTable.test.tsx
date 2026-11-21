@@ -82,7 +82,8 @@ describe("JobTable", () => {
     expect(within(waiting).getByText("Not placed yet")).toBeTruthy();
 
     const away = row("Transcription batch");
-    expect(within(away).getByText("Data centre")).toBeTruthy();
+    expect(within(away).getByText(/^Data centre/)).toBeTruthy();
+    expect(within(away).getByText("No house could use its heat in time")).toBeTruthy();
     expect(within(away).queryByText("Not placed yet")).toBeNull();
   });
 

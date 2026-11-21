@@ -89,9 +89,12 @@ export function JobTable({ feed }: { feed: JobFeed }) {
                   </td>
                   <td className="py-2 pr-4">
                     {job.moved_offsite ? (
-                      <span title="No house could use its heat before the deadline">
+                      <>
                         Data centre
-                      </span>
+                        <span className="block text-xs text-idle">
+                          No house could use its heat in time
+                        </span>
+                      </>
                     ) : site ? (
                       `${site.name}, ${site.city}`
                     ) : (
