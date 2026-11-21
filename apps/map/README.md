@@ -3,7 +3,7 @@
 An interactive 3D map: Basel at dusk, the day passing with the real sun, every building
 streamed from swisstopo.
 
-<p align="center"><img src="../../docs/images/map-dusk.webp" width="720" alt="Basel at 17:15 on 21 November from above Kleinbasel: the Rhine, the old town beyond it, windows lit warm in the dark blocks"></p>
+<p align="center"><img src="../../docs/images/map-dusk.webp" width="720" alt="Basel at 17:00 on 21 November, looking east along the Rhine to the Roche towers: light walls, dark roofs, windows lit warm under a violet dusk sky"></p>
 <p align="center"><sub>Buildings, terrain and aerial photos © swisstopo. Lit windows are an illustration.</sub></p>
 
 ```sh

@@ -10,7 +10,9 @@ import {
   JulianDate,
   Math as CesiumMath,
   OpenStreetMapImageryProvider,
+  Cartesian2,
   Rectangle,
+  SunLight,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   UrlTemplateImageryProvider,
@@ -22,6 +24,7 @@ import type { Picked } from "../building/geoadmin";
 import { beforeSunset, swissHour } from "../clock";
 import { BASEL, ORIGIN, type View } from "../places";
 import { OSM_TILES, SWISS_BUILDINGS, SWISS_IMAGE, SWISS_TERRAIN, SWITZERLAND } from "../sources";
+import { duskSky } from "../sky";
 import { nightFactor, sunElevationDeg, windowsLitShare } from "../sun";
 import { originFrame, updateWindows, windowShader } from "./windows";
 
@@ -92,6 +95,8 @@ export async function createScene(
     infoBox: false,
     selectionIndicator: false,
     shouldAnimate: true,
+    // A transparent canvas, so the dusk sky painted behind it (duskSky) shows above the horizon.
+    contextOptions: { webgl: { alpha: true } },
   });
   const { scene } = viewer;
   scene.globe.enableLighting = true;
@@ -104,6 +109,9 @@ export async function createScene(
   scene.globe.showGroundAtmosphere = false;
   scene.globe.depthTestAgainstTerrain = true;
   scene.highDynamicRange = true;
+  scene.backgroundColor = Color.TRANSPARENT;
+  scene.fog.enabled = true;
+  scene.fog.density = 4.0e-4;
   scene.postProcessStages.fxaa.enabled = true;
 
   const swissImage = viewer.imageryLayers.addImageryProvider(
@@ -137,7 +145,10 @@ export async function createScene(
       credit: new Credit("© swisstopo"),
     }),
     // Cesium's default detail (screen-space error 16): polite to swisstopo's servers.
-    Cesium3DTileset.fromUrl(SWISS_BUILDINGS),
+    Cesium3DTileset.fromUrl(SWISS_BUILDINGS, {
+      // Load the screen's edges as well as its centre, so the city runs to the horizon.
+      foveatedScreenSpaceError: false,
+    }),
   ]);
   if (viewer.isDestroyed()) throw new Error("The map closed while it was loading.");
   viewer.terrainProvider = terrain;
@@ -145,15 +156,27 @@ export async function createScene(
   buildings.customShader = shader;
   scene.primitives.add(buildings);
 
+  const sun = new SunLight();
+  scene.light = sun;
   const frame = originFrame();
   const onTick = () => {
     const when = JulianDate.toDate(clock.currentTime);
     const night = nightFactor(sunElevationDeg(when, ORIGIN.lat, ORIGIN.lon));
     updateWindows(shader, frame, viewer.camera, night, windowsLitShare(swissHour(when)));
+    // Cesium's sun keeps shining from below the horizon: fade it and the sky's fill light out.
+    sun.intensity = 2 * (1 - 0.92 * night);
+    buildings.imageBasedLighting.imageBasedLightingFactor = new Cartesian2(
+      1 - 0.85 * night,
+      1 - 0.85 * night,
+    );
+    // Cesium's sky goes black a few degrees after sunset; from dusk on, our painted sky shows.
+    if (scene.skyBox !== undefined) scene.skyBox.show = false;
+    if (scene.skyAtmosphere !== undefined) scene.skyAtmosphere.show = night < 0.2;
+    container.style.background = duskSky(night);
     // Cesium never darkens the ground fully after sunset, so dim the photos and maps by hand.
     for (const layer of [viewer.imageryLayers.get(0), swissImage]) {
-      layer.brightness = 1 - 0.75 * night;
-      layer.saturation = 1 - 0.5 * night;
+      layer.brightness = 1 - 0.85 * night;
+      layer.saturation = 1 - 0.7 * night;
     }
   };
   const removeTick = scene.preRender.addEventListener(onTick);
