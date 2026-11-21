@@ -96,7 +96,13 @@ export function App({ start }: { start: StartScene }) {
         </button>
       </section>
 
-      {building !== null && <BuildingCard facts={building} onClose={() => setBuilding(null)} />}
+      {building !== null && (
+        <BuildingCard
+          facts={building}
+          month={(time ?? new Date()).getMonth()}
+          onClose={() => setBuilding(null)}
+        />
+      )}
 
       {failed && (
         <p
