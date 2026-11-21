@@ -1,5 +1,6 @@
 import { BUILD_PERIOD, ENERGY_SOURCE, sourceKind, type SourceKind } from "./codes";
 import { parseSolar, solarUrl, type OsmSolar } from "./solar";
+import { envelope, groupUnder, roofRings, withBuilding, type BuildingGroup } from "./group";
 
 /**
  * Lookups on api3.geo.admin.ch, the federal geodata API (free, "fair use"; see apps/map/README.md).
@@ -29,6 +30,9 @@ export interface Register {
 
 /** SFOE's estimate for the building, from Sonnendach (computed from GWR data). */
 export interface RoofEstimate {
+  /** Sonnendach's own building number: one swissBUILDINGS3D 2.0 building, perhaps a whole block. */
+  readonly buildingId: number | null;
+  /** Space heating for that whole Sonnendach building, kWh a year. */
   readonly heatingKwh: number;
   readonly hotWaterKwh: number;
   /** Heating degree days for this roof, January to December. */
@@ -93,6 +97,7 @@ export function parseRoofs(rows: Attributes[]): RoofEstimate | null {
     return at >= 0 ? (hdd[at] ?? 0) : 0;
   });
   return {
+    buildingId: num(first.building_id),
     heatingKwh: num(first.bedarf_heizung) ?? 0,
     hotWaterKwh: num(first.bedarf_warmwasser) ?? 0,
     degreeDays,
@@ -123,6 +128,37 @@ export function identifyUrl(layer: string, lon: number, lat: number, tolerance: 
   return `${API}/identify?${q}`;
 }
 
+/** All roof faces of one Sonnendach building, with their outlines. */
+export function roofFacesUrl(buildingId: number): string {
+  const q = new URLSearchParams({
+    layer: SOLAR_ROOF_LAYER,
+    searchText: String(buildingId),
+    searchField: "building_id",
+    contains: "false",
+    returnGeometry: "true",
+    geometryFormat: "geojson",
+    sr: "4326",
+  });
+  return `${API}/find?${q}`;
+}
+
+/** GWR buildings, with their points, in a box "west,south,east,north". */
+export function registerInBoxUrl(box: string): string {
+  const q = new URLSearchParams({
+    geometryType: "esriGeometryEnvelope",
+    geometry: box,
+    sr: "4326",
+    tolerance: "0",
+    mapExtent: box,
+    imageDisplay: "100,100,96",
+    returnGeometry: "true",
+    geometryFormat: "geojson",
+    layers: `all:${GWR_LAYER}`,
+    limit: "200",
+  });
+  return `${API}/identify?${q}`;
+}
+
 export function registerUrl(egid: number): string {
   const q = new URLSearchParams({
     layer: GWR_LAYER,
@@ -139,6 +175,8 @@ export interface BuildingFacts {
   readonly register: Register | null;
   readonly roof: RoofEstimate | null;
   readonly hectare: Hectare | null;
+  /** The GWR buildings under the same Sonnendach roof outline; null if it could not be found. */
+  readonly group: BuildingGroup | null;
   /** Solar already mapped in OpenStreetMap around the building; null if Overpass did not answer. */
   readonly osmSolar: OsmSolar | null;
 }
@@ -201,11 +239,16 @@ export function lookUp(picked: Picked, fetcher: Fetch = fetch): Promise<Building
           : get(identifyUrl(GWR_LAYER, picked.lon, picked.lat, 20)),
         get(identifyUrl(SOLAR_ROOF_LAYER, picked.lon, picked.lat, 4)),
         get(identifyUrl(HEAT_DEMAND_LAYER, picked.lon, picked.lat, 0)),
-      ]).then(([gwr, roofs, hectare]) => ({
-        register: gwr[0] === undefined ? null : parseRegister(gwr[0]),
-        roof: parseRoofs(roofs),
-        hectare: parseHectare(hectare[0]),
-      })),
+      ]).then(async ([gwr, roofs, hectare]) => {
+        const register = gwr[0] === undefined ? null : parseRegister(gwr[0]);
+        const roof = parseRoofs(roofs);
+        return {
+          register,
+          roof,
+          hectare: parseHectare(hectare[0]),
+          group: await findGroup(roof?.buildingId ?? null, register, fetcher),
+        };
+      }),
     (f) => f.register === null && f.roof === null && f.hectare === null,
   );
   const osm = cached(
@@ -222,6 +265,31 @@ export function lookUp(picked: Picked, fetcher: Fetch = fetch): Promise<Building
     (s) => s === null,
   );
   return Promise.all([facts, osm]).then(([f, osmSolar]) => ({ ...f, osmSolar }));
+}
+
+/**
+ * The GWR buildings under the Sonnendach building's roof outline: its roof faces, then the GWR
+ * points in their bounding box, kept when they fall inside a face. Two requests; null on failure.
+ */
+async function findGroup(
+  buildingId: number | null,
+  register: Register | null,
+  fetcher: Fetch,
+): Promise<BuildingGroup | null> {
+  if (buildingId === null) return null;
+  try {
+    const faces = await fetcher(roofFacesUrl(buildingId));
+    if (!faces.ok) return null;
+    const rings = roofRings(await faces.json());
+    const box = envelope(rings);
+    if (box === null) return null;
+    const gwr = await fetcher(registerInBoxUrl(box));
+    if (!gwr.ok) return null;
+    const group = groupUnder(await gwr.json(), rings);
+    return register === null ? group : withBuilding(group, register.egid, register.heatedAreaM2);
+  } catch {
+    return null;
+  }
 }
 
 /** For tests. */
