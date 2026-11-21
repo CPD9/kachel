@@ -32,7 +32,7 @@ def frame(i):
         rise_text(img, (x, y - 125), ctx, 40, seg(t, t0, t0 + 0.6), "serif", PAPER, stagger=0.03)
         rise_text(img, (x, y), val, 120, seg(t, t0 + 0.1, t0 + 0.8), "black", EMBER)
         w = text_size(val, 120, "black")[0]
-        draw_text(img, (x + w + 22, y), unit, 44, "bold", EMBER, ease_out(seg(t, t0 + 0.4, t0 + 0.9)))
+        draw_text(img, (x + w + 22, y), unit, 44, "bold", EMBER, ease_out(seg(t, t0 + 0.15, t0 + 0.5)))
     source_line(
         img,
         f'Source: docs/economics/data/summary.json, solar at {PRICE:.3f} CHF per kWh, "{SOLAR["setup"]}"',
