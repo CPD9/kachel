@@ -27,9 +27,10 @@ def ts(local):
     return datetime.strptime(local, "%Y-%m-%d %H:%M").replace(tzinfo=ZURICH).isoformat()
 
 
-def rows_for_hour(sites, jobs, placements, hourly, hour, host_id, buyer_id, limit=80):
+def rows_for_hour(sites, jobs, placements, hourly, hour, server, host_id, buyer_id, limit=80):
     """sites, jobs, placements, hourly: the DataFrames of out/fleet_sites.csv and the day's
-    fleet_jobs, fleet_placements and fleet_hourly CSVs. Returns {table: [row, ...]}."""
+    fleet_jobs, fleet_placements and fleet_hourly CSVs. server: config.json: server.
+    Returns {table: [row, ...]}."""
     day = hourly["time"].iloc[0][:10]
     now = f"{day} {hour:02d}:00"
     site_ids = {sid: uid("site", sid) for sid in sites["id"]}
@@ -49,7 +50,9 @@ def rows_for_hour(sites, jobs, placements, hourly, hour, host_id, buyer_id, limi
     for s in sites.itertuples():
         for slot in range(1, int(s.servers) + 1):
             out["servers"].append(dict(id=uid("server", s.id, slot), site_id=site_ids[s.id], slot=slot,
-                                       name=f"Server {slot}", power_kw=1.0, heat_recovery=0.8, idle_power_kw=0.0,
+                                       name=f"Server {slot}", power_kw=float(server["power_kw"]),
+                                       heat_recovery=float(server["heat_recovery"]),
+                                       idle_power_kw=float(server["idle_power_kw"]),
                                        state="RUNNING" if slot <= used.get(s.id, 0) else "OFF"))
 
     # Jobs that arrived on the day by this hour, newest first.

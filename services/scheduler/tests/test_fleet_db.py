@@ -1,8 +1,12 @@
+import json
+from pathlib import Path
+
 import pandas as pd
 
 from heatsched.fleet_db import TAG, rows_for_hour, ts, uid
 
 HOST, BUYER = "host", "buyer"
+SERVER = json.loads((Path(__file__).parent.parent / "config.json").read_text())["server"]
 SITES = pd.DataFrame(
     dict(
         id=["house-01", "house-02"],
@@ -55,7 +59,7 @@ HOURLY = pd.DataFrame(
 
 
 def rows() -> dict:
-    return rows_for_hour(SITES, JOBS, PLACEMENTS, HOURLY, 18, HOST, BUYER)
+    return rows_for_hour(SITES, JOBS, PLACEMENTS, HOURLY, 18, SERVER, HOST, BUYER)
 
 
 def test_each_job_shows_where_it_is_at_that_hour() -> None:
@@ -81,6 +85,15 @@ def test_servers_run_only_where_a_job_runs_this_hour() -> None:
         (uid("site", "house-01"), 2): "OFF",
         (uid("site", "house-02"), 1): "OFF",
     }
+
+
+def test_servers_take_their_power_from_the_config() -> None:
+    for s in rows()["servers"]:
+        assert (s["power_kw"], s["heat_recovery"], s["idle_power_kw"]) == (
+            SERVER["power_kw"],
+            SERVER["heat_recovery"],
+            SERVER["idle_power_kw"],
+        )
 
 
 def test_houses_are_synthetic_and_heat_has_local_times() -> None:

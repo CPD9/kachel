@@ -31,12 +31,14 @@ ap.add_argument("--day", choices=["january", "july"], default="january")
 ap.add_argument("--hour", type=int, default=18, choices=range(24), metavar="0-23")
 ap.add_argument("--jobs", type=int, default=80, help="newest jobs to write (default 80)")
 ap.add_argument("--out", default="out")
+ap.add_argument("--config", default="config.json")
 ap.add_argument("--dry-run", action="store_true")
 a = ap.parse_args()
 
 read = lambda name: pd.read_csv(f"{a.out}/{name}.csv")  # noqa: E731
 rows = rows_for_hour(read("fleet_sites"), read(f"fleet_jobs_{a.day}"), read(f"fleet_placements_{a.day}"),
-                     read(f"fleet_hourly_{a.day}"), a.hour, FLEET_HOST, BUYER, a.jobs)
+                     read(f"fleet_hourly_{a.day}"), a.hour, json.load(open(a.config))["server"], FLEET_HOST, BUYER,
+                     a.jobs)
 summary = {t: len(r) for t, r in rows.items()}
 states = pd.Series([j["state"] for j in rows["jobs"]]).value_counts().to_dict()
 moved = sum(j["moved_offsite"] for j in rows["jobs"])
