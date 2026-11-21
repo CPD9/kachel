@@ -69,7 +69,7 @@ VIDEO_SAMPLES ?= 64
 VIDEO_BLEND := scripts/video/assets/plantroom.blend
 VIDEO_BLENDER = TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(VIDEO_BLEND)
 
-.PHONY: video-scheduler
+.PHONY: video-scheduler video-glb
 
 video-scheduler:
 	test -f $(SCHED_OUT)/hourly.csv || (cd services/scheduler && uv run python run_year.py)
@@ -81,3 +81,6 @@ video-scheduler:
 		--frames $(VIDEO_OUT)/work/scheduler --csv $(SCHED_OUT)/hourly.csv \
 		--mp4 $(VIDEO_OUT)/03-scheduler.mp4 --sheet $(VIDEO_OUT)/03-scheduler-sheet.png
 
+# The plant room meshes as they appear in the video, for three.js.
+video-glb:
+	$(VIDEO_BLENDER) --python scripts/video/export_glb.py -- --out docs/models/plantroom.glb
