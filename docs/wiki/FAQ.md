@@ -20,9 +20,10 @@ they need least. Solar trims the bill; it does not remove it.
 
 ## Does it pay?
 
-Before hardware, yes, from 0.188 CHF a server-hour. With hardware it needs 0.31 to 0.65 CHF,
+Before hardware, yes, from 0.188 CHF a server-hour. With hardware it needs 0.30 to 0.61 CHF,
 depending on what the servers cost and how long they last. At our assumed 0.50 CHF, the mid case
-leaves 1,415 CHF a year and pays back in 4.2 years; the high case does not pay back within its
+leaves 2,965 CHF a year and pays back in 4.0 years, over a six-year life with the servers
+sold at the end; the high case does not pay back within its
 life. See [The numbers](The-numbers).
 
 ## Are these figures measured?

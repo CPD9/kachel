@@ -52,6 +52,24 @@ describe("payback", () => {
   });
 });
 
+describe("hardware life and resale", () => {
+  it("lasts six years in the mid case and sells the servers for 7.5% at the end", () => {
+    const h = hardware("mid");
+    expect(h.lifeYears).toBe(6);
+    expect(h.resaleChf).toBeCloseTo(6 * 5034 * 0.075, 6);
+    expect(h.netCapexChf).toBeCloseTo(h.capexChf - h.resaleChf / 1.0375 ** 6, 6);
+    expect(Math.round(h.resaleChf)).toBe(summary.hardware.mid.resale_chf);
+  });
+
+  it("pays back sooner with the resale than without", () => {
+    const h = hardware("mid");
+    const cash = summary.net_chf_per_house_before_hardware - h.upkeepChfPerYear;
+    expect(paybackYears(h.netCapexChf, cash, h.rate)).toBeLessThan(
+      paybackYears(h.capexChf, cash, h.rate),
+    );
+  });
+});
+
 describe("server size", () => {
   const size = (id: string) => {
     const s = SERVER_SIZES.find((x) => x.id === id);

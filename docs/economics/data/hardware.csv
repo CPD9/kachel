@@ -1,4 +1,4 @@
-case,capex_chf,upkeep_chf_per_year,hardware_chf_per_year,net_chf_before_hardware,net_chf_after_hardware,payback_years,lifetime_years,discount_rate,npv_chf,break_even_chf_per_server_hour_incl_hardware
-low,19004,190,3731,9683,5952,2.1,6,0.0328,31948,0.308
-mid,35655,315,8268,9683,1415,4.2,5,0.0375,6344,0.454
-high,47882,630,14448,9683,-4765,6.6,4,0.06,-16512,0.653
+case,capex_chf,upkeep_chf_per_year,resale_chf,hardware_chf_per_year,net_chf_before_hardware,net_chf_after_hardware,payback_years,lifetime_years,discount_rate,npv_chf,break_even_chf_per_server_hour_incl_hardware
+low,19004,190,1511,3499,9683,6184,2.0,6,0.0328,33192,0.301
+mid,35655,315,2265,6718,9683,2965,4.0,6,0.0375,15672,0.405
+high,47882,630,6043,13067,9683,-3384,5.8,4,0.06,-11726,0.609

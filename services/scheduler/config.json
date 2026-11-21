@@ -152,10 +152,11 @@
         "service_visits_per_year": 1,
         "service_hours_per_visit": 1,
         "lifetime_years": 6,
+        "resale_share": 0.1,
         "discount_rate": 0.0328
       },
       "mid": {
-        "label": "New GPU workstation, 5-year life",
+        "label": "New GPU workstation, 6-year life",
         "server_chf": 5034,
         "cooling_kit_chf": 633,
         "fitter_hours_per_house": 10,
@@ -164,7 +165,8 @@
         "electrician_chf_per_hour": 151,
         "service_visits_per_year": 1,
         "service_hours_per_visit": 2,
-        "lifetime_years": 5,
+        "lifetime_years": 6,
+        "resale_share": 0.075,
         "discount_rate": 0.0375
       },
       "high": {
@@ -178,6 +180,7 @@
         "service_visits_per_year": 2,
         "service_hours_per_visit": 2,
         "lifetime_years": 4,
+        "resale_share": 0.15,
         "discount_rate": 0.06
       }
     },
@@ -188,7 +191,8 @@
       "electrician_chf_per_hour": "Elektroinstallateur EFZ, 151 CHF an hour without VAT (EIT.nordwest, Basel, recommended rates 2026).",
       "hours_per_house": "Fitter and electrician hours to fit six servers to the tank: OUR GUESS.",
       "service": "Service fitter with van 125 CHF an hour, call-out 65 CHF (WBAG, Regietarif 2025). Visits and hours a year: OUR GUESS.",
-      "lifetime_years": "6: the large cloud providers' server life by 2023 (SiliconANGLE, 22 Nov 2025). 5: Amazon, for part of its servers from 1 Jan 2025 (Amazon 10-K 2025). 4: Amazon from 2020 (SiliconANGLE).",
+      "lifetime_years": "6 (low and mid): the large cloud providers' server life by 2023 (SiliconANGLE, 22 Nov 2025), and the case owner's view that 6 years or more is realistic (feedback, 21 Nov 2026). Amazon cut part of its servers to 5 years from 1 Jan 2025 (Amazon 10-K 2025). 4 (high): Amazon from 2020 (SiliconANGLE).",
+      "resale_share": "What the server fetches at the end of its life, as a share of its price: enterprise servers 5-10% of their original value at 5 years and more, 15-25% at 4 years, when sold within six months of retirement (Servnet, 'ITAD Value Recovery 2026', 13 Aug 2026). low 10% and mid 7.5% at 6 years; high 15% at 4 years. Only the server, not its water loop or the fitting. Resale in 2025 ran at about 2.5 times its seven-year average (Resource Recycling, 22 Jan 2026), so these may be low.",
       "discount_rate": "3.28%: WACC for Swiss power grids, tariff year 2027 (UVEK, 2 Mar 2026). 3.75%: WACC for PV investment contributions 2026 (pv magazine, 2 Mar 2026). 6%: OUR GUESS for a young, riskier business."
     }
   },
