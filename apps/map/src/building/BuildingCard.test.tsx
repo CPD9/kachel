@@ -170,6 +170,44 @@ describe("building card", () => {
     expect(screen.getByText("Heat a year, SFOE estimate for the building group")).toBeTruthy();
   });
 
+  it("leads with our estimate when Sonnendach has no roof, as for a new building", () => {
+    const campus: BuildingFacts = {
+      register: {
+        egid: 243058419,
+        address: "Dornacherstrasse 394",
+        built: "2026",
+        period: "after_2015",
+        kind: "school",
+        heatedAreaM2: 14_436,
+        floors: 6,
+        dwellings: null,
+        heating: "district heating (low temperature)",
+        heatingKind: "district",
+        hotWater: "district heating (low temperature)",
+        asOf: "19.11.2026",
+        municipality: { bfs: 2701, name: "Basel" },
+      },
+      roof: null,
+      hectare: { totalMwh: 628.5, districtSharePct: 0 },
+      group: null,
+      osmSolar: { photovoltaic: 0, thermal: 0, other: 0 },
+    };
+    render(<BuildingCard facts={campus} month={10} notIn3D onClose={() => undefined} />);
+    expect(screen.getByText(/Building newer than swisstopo's 3D data/)).toBeTruthy();
+    expect(screen.getByText("Heat a year, our estimate")).toBeTruthy();
+    // 14,436 m² × (105 × 0.31 space heating + 3 hot water) = 513,200 kWh: heat, energy bought
+    // (district heat) and the servers' electricity, which all turns into heat.
+    expect(screen.getAllByText("513 MWh")).toHaveLength(3);
+    expect(screen.getByText("36 kWh")).toBeTruthy();
+    expect(screen.getByText("no figure for this building yet")).toBeTruthy();
+    // 513,200 ÷ 31,231 × 6 = 98.6 servers.
+    expect(screen.getByText("about 99")).toBeTruthy();
+    // Built after 2015: a renovation cannot lower its heat, and the card says so.
+    expect(screen.getByText(/so Renovated changes nothing here/)).toBeTruthy();
+    // No degree days without a roof, so no month slider.
+    expect(screen.queryByRole("slider")).toBeNull();
+  });
+
   it("says so when nothing is published", () => {
     render(
       <BuildingCard

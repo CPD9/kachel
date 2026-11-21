@@ -1,11 +1,14 @@
 import {
   Cartesian3,
+  Cesium3DTile,
   Cesium3DTileFeature,
   Cesium3DTileset,
   Color,
   CesiumTerrainProvider,
   ClockRange,
   Credit,
+  type Entity,
+  HeightReference,
   EllipsoidTerrainProvider,
   ImageryLayer,
   JulianDate,
@@ -62,8 +65,32 @@ export interface Scene {
   /** Shows these thermal networks, or hides the layer with null. */
   showNetworks(networks: readonly Network[] | null): void;
   showHomeServers(on: boolean): void;
+  /**
+   * Colours one building by its EGID, as a click does, in every tile drawn from now on; null
+   * clears it. Returns how many 3D features carry that EGID so far (0: not in the 3D data yet).
+   */
+  highlightBuilding(egid: number | null): number;
+  /** How many 3D features of the highlighted building have been drawn so far. */
+  highlightedCount(): number;
+  /**
+   * An orange pin for a building the 3D data does not have: a slim column at the register's
+   * point, as tall as its storeys, with a dot on top. It claims no footprint: the register gives
+   * a point and an area, not a shape. null removes it.
+   */
+  showMarker(marker: Marker | null): void;
   destroy(): void;
 }
+
+/** Where a building missing from swissBUILDINGS3D stands, from the register. */
+export interface Marker {
+  readonly lon: number;
+  readonly lat: number;
+  /** Height of the column in metres. */
+  readonly heightM: number;
+}
+
+/** Radius of the marker's column, metres: thin enough not to look like the building. */
+const PIN_RADIUS_M = 3;
 
 const HIGHLIGHT = Color.fromCssColorString("#ff8a3d");
 
@@ -250,8 +277,36 @@ export async function createScene(
   const networks = networkLayer(viewer);
   const homeServers = homeServerLayer(viewer);
   let highlighted: Cesium3DTileFeature | null = null;
+  // A building chosen by EGID (the tour): coloured in each tile the first time the tile is drawn,
+  // tiles already loaded too, until the next click takes the highlight over.
+  let chosenEgid: number | null = null;
+  let scanned = new WeakSet<object>();
+  const chosen: Cesium3DTileFeature[] = [];
+  const scan = (tile: Cesium3DTile) => {
+    // A tile not loaded yet has no content; it is scanned when it is drawn.
+    const content = tile.content as Cesium3DTile["content"] | undefined;
+    if (chosenEgid === null || content === undefined || scanned.has(content)) return;
+    scanned.add(content);
+    for (let i = 0; i < content.featuresLength; i++) {
+      const feature = content.getFeature(i);
+      if (Number(feature.getProperty("EGID")) !== chosenEgid) continue;
+      feature.color = HIGHLIGHT;
+      chosen.push(feature);
+    }
+  };
+  const scanLoaded = (tile: Cesium3DTile) => {
+    scan(tile);
+    for (const child of tile.children) scanLoaded(child);
+  };
+  const removeTileVisible = buildings.tileVisible.addEventListener(scan);
+  const clearChosen = () => {
+    chosenEgid = null;
+    for (const feature of chosen.splice(0)) feature.color = Color.WHITE;
+  };
+  let marker: Entity[] = [];
   clicks.setInputAction((event: ScreenSpaceEventHandler.PositionedEvent) => {
     const hit: unknown = scene.pick(event.position);
+    clearChosen();
     if (highlighted !== null) highlighted.color = Color.WHITE;
     highlighted = hit instanceof Cesium3DTileFeature ? hit : null;
     if (highlighted !== null) highlighted.color = HIGHLIGHT;
@@ -315,8 +370,49 @@ export async function createScene(
       else networks.show(list);
     },
     showHomeServers: (on) => homeServers.setShown(on),
+    highlightBuilding: (egid) => {
+      clearChosen();
+      if (highlighted !== null) highlighted.color = Color.WHITE;
+      highlighted = null;
+      chosenEgid = egid;
+      scanned = new WeakSet();
+      if (egid !== null) scanLoaded(buildings.root);
+      return chosen.length;
+    },
+    highlightedCount: () => chosen.length,
+    showMarker: (m) => {
+      for (const e of marker) viewer.entities.remove(e);
+      marker = [];
+      if (m === null) return;
+      marker = [
+        viewer.entities.add({
+          position: Cartesian3.fromDegrees(m.lon, m.lat),
+          ellipse: {
+            semiMajorAxis: PIN_RADIUS_M,
+            semiMinorAxis: PIN_RADIUS_M,
+            height: 0,
+            heightReference: HeightReference.RELATIVE_TO_GROUND,
+            extrudedHeight: m.heightM,
+            extrudedHeightReference: HeightReference.RELATIVE_TO_GROUND,
+            material: HIGHLIGHT,
+          },
+        }),
+        viewer.entities.add({
+          position: Cartesian3.fromDegrees(m.lon, m.lat, m.heightM),
+          point: {
+            pixelSize: 18,
+            color: HIGHLIGHT,
+            outlineColor: Color.WHITE,
+            outlineWidth: 3,
+            heightReference: HeightReference.RELATIVE_TO_GROUND,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          },
+        }),
+      ];
+    },
     destroy: () => {
       removeTick();
+      removeTileVisible();
       clicks.destroy();
       if (!viewer.isDestroyed()) viewer.destroy();
     },

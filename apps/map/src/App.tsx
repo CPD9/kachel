@@ -10,6 +10,7 @@ import { NetworkCard } from "./networks/NetworkCard";
 import type { Network } from "./networks/thermal";
 import type { Scene } from "./scene/viewer";
 import { CREDITS } from "./sources";
+import type { TourBuilding } from "./tour/steps";
 import { TourBar } from "./tour/TourBar";
 
 export type StartScene = (container: HTMLElement) => Promise<Scene>;
@@ -32,6 +33,8 @@ export function App({
   const [building, setBuilding] = useState<BuildingFacts | "loading" | null>(null);
   const [network, setNetwork] = useState<Network | null>(null);
   const [house, setHouse] = useState<FleetHouse | null>(null);
+  /** The tour found its building missing from swissBUILDINGS3D: the card says so. */
+  const [notIn3D, setNotIn3D] = useState(false);
   const layers = useLayers(scene);
   // Only the latest card request may fill the card.
   const [requests] = useState(latestOnly);
@@ -41,6 +44,7 @@ export function App({
     (egid: number | null, lon: number, lat: number) => {
       setNetwork(null);
       setHouse(fleetHouse(egid));
+      setNotIn3D(false);
       setBuilding("loading");
       requests.run(lookUp({ egid, lon, lat }), setBuilding);
     },
@@ -51,6 +55,7 @@ export function App({
     requests.cancel();
     setBuilding(null);
     setNetwork(null);
+    setNotIn3D(false);
   }, [requests]);
 
   const { setNetworksOn, setServersOn } = layers;
@@ -60,7 +65,8 @@ export function App({
         ? null
         : {
             scene,
-            openBuilding: (h: FleetHouse) => openBuilding(h.egid, h.lon, h.lat),
+            openBuilding: (b: TourBuilding) => openBuilding(b.egid, b.lon, b.lat),
+            setNotIn3D,
             closeCards,
             setNetworksOn,
             setServersOn,
@@ -150,6 +156,7 @@ export function App({
           facts={building}
           month={(time ?? new Date()).getMonth()}
           fleet={house}
+          notIn3D={notIn3D}
           onClose={() => setBuilding(null)}
         />
       )}
