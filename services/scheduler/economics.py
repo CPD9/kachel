@@ -378,6 +378,10 @@ def chart_solar_month(runs, pv, res):
            title=f"Own solar gives the servers {res['own_pv_share_of_server_power_pct']:.0f}% of their power: winter still runs on the grid")
     ax.legend(frameon=False, loc="upper center", ncol=4, fontsize=10.5)
     save(fig, "09_solar_month", f"Servers' electricity by source, {N} servers, 10 kWp roof + 10 kWh battery. Sun the servers cannot use is sold at the feed-in price")
+    out = m[["pv", "pv_direct", "from_battery", "from_grid"]].round(1)
+    out.index = names
+    return out.rename(columns={"pv": "pv_made_kwh", "pv_direct": "servers_from_pv_kwh",
+                               "from_battery": "servers_from_battery_kwh", "from_grid": "servers_from_grid_kwh"})
 
 
 def chart_solar_bill(by_price, cfg):
@@ -482,7 +486,7 @@ def main():
         runs, pv = runs or r, p
     sol = by_price[cfg["prices"]["electricity_chf_per_kwh"]]
     chart_solar_day(runs, pv, cfg)
-    chart_solar_month(runs, pv, sol["pv_battery"])
+    chart_solar_month(runs, pv, sol["pv_battery"]).to_csv(f"{OUT}/data/solar_monthly.csv", index_label="month")
     chart_solar_bill(by_price, cfg)
     pd.DataFrame([r for res in by_price.values() for r in res.values()]).to_csv(f"{OUT}/data/solar.csv", index=False)
     summary = {"base_case": k, "no_backlog_case": k_none, "net_chf_per_house_before_hardware": round(net(k, cfg)),
