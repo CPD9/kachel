@@ -1,11 +1,5 @@
 import type { JobFeed, JobKind, KachelClient, LiveJob, TablesInsert } from "@kachel/db";
 
-/**
- * The seeded demo buyer (supabase/seed.sql). The console has no sign-in yet, so every job it
- * submits belongs to this buyer until row level security and accounts land (#3).
- */
-export const DEMO_BUYER = "00000000-0000-4000-8000-000000000002";
-
 export type NewJob = {
   label: string;
   kind: JobKind;
@@ -18,11 +12,22 @@ export type NewJob = {
 const JOB_COLUMNS =
   "id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, created_at, updated_at";
 
+/** The buyer's session has ended, so the job cannot be theirs; they need to sign in again. */
+export class SignedOut extends Error {
+  constructor() {
+    super("Nobody is signed in.");
+  }
+}
+
 /** Writes a job as QUEUED and returns the row as the database stored it. */
 export type SubmitJob = (job: NewJob) => Promise<LiveJob>;
 
-export function supabaseSubmit(db: KachelClient, buyer = DEMO_BUYER): SubmitJob {
+/** Submits as the signed-in buyer; row level security (#73) refuses anyone else. */
+export function supabaseSubmit(db: KachelClient): SubmitJob {
   return async (job) => {
+    const { data: session } = await db.auth.getSession();
+    const buyer = session.session?.user.id;
+    if (!buyer) throw new SignedOut();
     const row: TablesInsert<"jobs"> = {
       buyer_id: buyer,
       label: job.label,

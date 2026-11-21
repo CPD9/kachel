@@ -1,9 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import { isLocalStack, supabaseAuth } from "./auth/session";
 import { db } from "./db";
-import { supabaseFeed } from "@kachel/db";
+import { isLocalStack, supabaseAuth, supabaseFeed } from "@kachel/db";
 import "./index.css";
 
 const root = document.getElementById("root");

@@ -1,8 +1,8 @@
-import type { KachelClient } from "@kachel/db";
+import type { KachelClient } from "./client";
 
-/** Who is signed in to the host screen: Supabase Auth in the app, a fake in tests. */
-export interface HostAuth {
-  /** The signed-in host's email, or null. */
+/** Who is signed in to an app: Supabase Auth in the app, a fake in tests. */
+export interface AppAuth {
+  /** The signed-in user's email, or null. */
   current(): Promise<string | null>;
   /** Calls back whenever someone signs in or out; returns a function that stops listening. */
   onChange(listener: (email: string | null) => void): () => void;
@@ -12,7 +12,7 @@ export interface HostAuth {
 }
 
 /** Email and password sign-in on Supabase Auth. Row level security (#3) does the rest. */
-export function supabaseAuth(db: KachelClient): HostAuth {
+export function supabaseAuth(db: KachelClient): AppAuth {
   return {
     async current() {
       const { data } = await db.auth.getSession();
@@ -37,8 +37,9 @@ export function supabaseAuth(db: KachelClient): HostAuth {
   };
 }
 
-/** The seed's demo host (supabase/seed.sql). Shown only when the app talks to a local stack. */
+/** The seed's demo accounts (supabase/seed.sql). Shown only when an app talks to a local stack. */
 export const DEMO_HOST = { email: "host@kachel.test", password: "kachel-demo" } as const;
+export const DEMO_BUYER = { email: "buyer@kachel.test", password: "kachel-demo" } as const;
 
 /** True for the local Supabase stack from `make dev`, where the seed's demo accounts exist. */
 export function isLocalStack(url: string | undefined): boolean {
