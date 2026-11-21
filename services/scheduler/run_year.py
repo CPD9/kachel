@@ -17,7 +17,7 @@ a = ap.parse_args()
 cfg = json.load(open(a.config)); os.makedirs("out", exist_ok=True)
 
 if a.profile: prof, src = P.load_case_profile(a.profile, cfg), "case CSV"
-elif a.weather: prof, src = P.build_profile(P.load_weather(a.weather), cfg), "Open-Meteo archive, Basel 2025"
+elif a.weather: prof, src = P.build_profile(P.load_weather(a.weather), cfg), P.weather_source(a.weather)
 elif a.synthetic: prof, src = P.build_profile(P.synthetic_weather(), cfg), "SYNTHETIC weather (offline test only)"
 else: prof, src = P.build_profile(P.download_weather(), cfg), "Open-Meteo archive, Basel 2025"
 hd = int(prof.groupby("date")["heating_day"].first().sum())
