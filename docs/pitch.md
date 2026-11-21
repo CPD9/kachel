@@ -8,6 +8,11 @@ goal. Two slides, one Blender film we talk over, one live moment, then the ask.
   `services/scheduler/out/kpis.json` or `docs/economics/data/summary.json`, with the source on
   the slide. Render with
   `npx @marp-team/marp-cli docs/pitch/slides.md --pdf --allow-local-files`.
+- The two-minute film in talk-track order:
+  [kachel-film-2min.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/kachel-film-2min.mp4)
+  (1080p) or the
+  [720p copy](https://github.com/CPD9/kachel/releases/download/media-v1/kachel-film-2min-720p.mp4);
+  `make video-film-2min` rebuilds it from the rendered parts.
 - Film segments: [docs/media](media/README.md) and the
   [media-v1 release](https://github.com/CPD9/kachel/releases/tag/media-v1).
 - How the parts fit: [docs/architecture.md](architecture.md).

@@ -4,6 +4,13 @@ Renders for the pitch video, made in Blender. Every figure on screen is read fro
 scheduler's output or from [docs/economics/data](../economics/data) at render time, never
 typed by hand. The videos are in the [media-v1 release](https://github.com/CPD9/kachel/releases/tag/media-v1).
 
+## The two-minute film
+
+January day-night, setup, scheduler, break-even and payback, the live demo, and the July
+evening to close, in the order of the [talk track](../pitch.md).
+[1080p](https://github.com/CPD9/kachel/releases/download/media-v1/kachel-film-2min.mp4) or
+[720p](https://github.com/CPD9/kachel/releases/download/media-v1/kachel-film-2min-720p.mp4).
+
 ## One day in Basel
 
 ![Split screen at 09:00 on 13 January 2025: Basel outside in morning light, the plant room inside with six servers running](daynight.webp)
