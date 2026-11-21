@@ -62,7 +62,8 @@ export function JobTable({ feed }: { feed: JobFeed }) {
               <th className="py-2 pr-4 font-medium">Job</th>
               <th className="py-2 pr-4 font-medium">Kind</th>
               <th className="py-2 pr-4 font-medium">State</th>
-              <th className="py-2 pr-4 font-medium">Home</th>
+              <th className="py-2 pr-4 font-medium">House</th>
+              <th className="py-2 pr-4 font-medium">Server</th>
               <th className="py-2 pr-4 text-right font-medium">Heat delivered</th>
               <th className="py-2 font-medium">Deadline</th>
             </tr>
@@ -70,7 +71,7 @@ export function JobTable({ feed }: { feed: JobFeed }) {
           <tbody aria-live="polite" className="divide-y divide-idle/30">
             {status === "live" && rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-3 text-idle">
+                <td colSpan={7} className="py-3 text-idle">
                   No jobs yet. Submit one above.
                 </td>
               </tr>
@@ -87,11 +88,18 @@ export function JobTable({ feed }: { feed: JobFeed }) {
                     <StatePill state={PILL[job.state]} />
                   </td>
                   <td className="py-2 pr-4">
-                    {site ? (
-                      `${site.name}, ${site.city}${server ? ` · ${server.name}` : ""}`
+                    {job.moved_offsite ? (
+                      <span title="No house could use its heat before the deadline">
+                        Data centre
+                      </span>
+                    ) : site ? (
+                      `${site.name}, ${site.city}`
                     ) : (
                       <span className="text-idle">Not placed yet</span>
                     )}
+                  </td>
+                  <td className="py-2 pr-4">
+                    {server ? server.name : <span className="text-idle">–</span>}
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums">
                     {heat === undefined ? (
@@ -115,7 +123,8 @@ export function JobTable({ feed }: { feed: JobFeed }) {
       </div>
       <p className="mt-3 text-xs text-idle">
         Heat delivered is the job&apos;s run time on its server, times the server&apos;s power and
-        the share of that power recovered as heat.
+        the share of that power recovered as heat. A job goes to a data centre only when no house
+        can use its heat before its deadline.
       </p>
     </section>
   );
