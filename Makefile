@@ -112,7 +112,7 @@ CHARTS_OUT ?= $(HOME)/.cache/kachel/video/charts
 
 video-charts:
 	mkdir -p $(CHARTS_OUT) $(HOME)/.cache/kachel/tmp
-	for chart in month breakeven sensitivity; do \
+	for chart in month breakeven sensitivity payback; do \
 		TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background --factory-startup \
 			--python scripts/video/charts.py -- --chart $$chart \
 			--out $(CHARTS_OUT)/frames/$$chart --mp4 $(CHARTS_OUT)/$$chart.mp4 \
