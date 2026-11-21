@@ -109,7 +109,7 @@ def test_a_run_places_every_job_and_counts_moves() -> None:
     assert books["big"].datacentre_hours == 2
     assert books["big"].moved_at == 10
     assert books["big"].finished_at == 12
-    k = kpis(books, rows, H)
+    k = kpis(books, rows)
     assert k["jobs_moved_offsite"] == 1
     assert k["server_hours_in_houses"] == 10
     assert k["server_hours_in_datacentre"] == 2
@@ -120,10 +120,24 @@ def test_a_run_places_every_job_and_counts_moves() -> None:
 def test_the_fleet_uses_heat_a_single_house_cannot() -> None:
     sites = [site("cold", 1.6, n=2), site("warm", 0.0, n=2)]
     jobs = [job(f"j{i}", deadline=1, home="warm") for i in range(2)]
-    fleet = kpis(*run(sites, jobs, 0, 2)[:2], H)
-    home = kpis(*run(sites, jobs, 0, 2, routing="home")[:2], H)
+    fleet = kpis(*run(sites, jobs, 0, 2)[:2])
+    home = kpis(*run(sites, jobs, 0, 2, routing="home")[:2])
     assert fleet["compute_heat_used_pct"] == 100.0 and fleet["jobs_moved_offsite"] == 0
     assert home["compute_heat_used_pct"] == 0.0 and home["jobs_moved_offsite"] == 2
+
+
+def test_kpis_follow_the_jobs_that_arrived_in_the_window() -> None:
+    # One warm hour, then none. "late" arrives in the window and moves after it; "early"
+    # arrived before the window and ran in it. Only "late" is the window's job.
+    s = Site("a", 1, 0.0, H, (0.8, 0.8, 0.0, 0.0, 0.0, 0.0))
+    jobs = [job("early", deadline=6, arrival=0), job("late", hours=2, deadline=5, arrival=1)]
+    books, rows, _, _ = run([s], jobs, 0, 6)
+    k = kpis(books, rows, range(1, 2))
+    assert k["jobs"] == 1
+    assert books["late"].moved_at == 4
+    assert k["server_hours_in_houses"] == 1 and k["server_hours_in_datacentre"] == 1
+    assert k["compute_heat_used_pct"] == pytest.approx(50.0)
+    assert k["jobs_moved_offsite"] == 1
 
 
 def _p(jid: str, sid: str) -> Placement:

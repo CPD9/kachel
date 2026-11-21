@@ -210,16 +210,19 @@ def run(sites, jobs, start, end, routing="fleet", datacentre=True, soc=None):
     return books, rows, by_hour, soc
 
 
-def kpis(books, rows, heat_per_server, hours=None):
-    """Fleet KPIs. `hours` (a range) limits the heat figures to those hours; jobs are those that
-    arrived in it. Compute heat used = heat used in houses / heat of all compute, data centre too."""
+def kpis(books, rows, hours=None):
+    """Fleet KPIs for the jobs that arrived in `hours` (a range; None = all), wherever and
+    whenever they then ran. Their compute heat used = the heat their house hours made, less the
+    run's dumped share, over the heat of all their server-hours, data centre too. The house
+    figures (demand covered, heat dumped) are for the houses in those hours."""
     hs = set(hours) if hours is not None else None
     rs = [r for r in rows if hs is None or r["t"] in hs]
     bs = [b for b in books.values() if hs is None or b.job.arrival in hs]
-    used = sum(r["heat_used"] for r in rs)
-    house_sh = sum(r["running"] for r in rs)
-    dc_sh = sum(b.datacentre_hours for b in books.values() if b.moved_at is not None and (hs is None or b.moved_at in hs))
-    all_heat = (house_sh + dc_sh) * heat_per_server
+    produced = sum(r["heat_produced"] for r in rows)
+    kept = 1 - sum(r["dumped_kwh"] for r in rows) / produced if produced else 1.0
+    house_sh = sum(b.house_hours for b in bs)
+    dc_sh = sum(b.datacentre_hours for b in bs)
+    all_sh = house_sh + dc_sh
     demand = sum(r["demand_kwh"] for r in rs)
     served = sum(r["served_kwh"] for r in rs)
     deadline_jobs = [b for b in bs if b.job.deadline is not None]
@@ -228,7 +231,7 @@ def kpis(books, rows, heat_per_server, hours=None):
         "jobs": n,
         "server_hours_in_houses": house_sh,
         "server_hours_in_datacentre": dc_sh,
-        "compute_heat_used_pct": round(100 * used / all_heat, 1) if all_heat else 0.0,
+        "compute_heat_used_pct": round(100 * house_sh * kept / all_sh, 1) if all_sh else 0.0,
         "heat_dumped_kwh": round(sum(r["dumped_kwh"] for r in rs), 1),
         "house_heat_covered_pct": round(100 * served / demand, 1) if demand else 0.0,
         "jobs_moved_offsite": sum(b.moved_at is not None for b in bs),
