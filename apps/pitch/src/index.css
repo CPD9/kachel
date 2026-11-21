@@ -1,1 +1,41 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-page: #f5f6f8;
+  --color-clay: #ea580c;
+  --color-clay-dark: #c2410c;
+  --color-rust: #b4440f;
+  --color-surface: #ffffff;
+  --color-border: #e3e5e9;
+  --color-muted: #5b616b;
+  --color-ink: #111418;
+
+  /* The globe fading in behind the collapsed voice bar */
+  --animate-globe-in: globe-in 1200ms ease-out both;
+  /* The big chat box "shrinks" down into the voice bar at the bottom */
+  --animate-bar-in: bar-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes globe-in {
+    from {
+      opacity: 0;
+      transform: scale(1.08);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes bar-in {
+    from {
+      opacity: 0.4;
+      transform: translateY(-38vh) scale(1.5);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
