@@ -3,7 +3,6 @@ import {
   Calendar,
   Flame,
   Landmark,
-  LoaderCircle,
   MapPin,
   Ruler,
   ShowerHead,
@@ -13,7 +12,7 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /** Mock data for the demo building, as if looked up from public sources. */
 const BUILDING = {
@@ -29,7 +28,7 @@ const BUILDING = {
   tags: ["Plant room in basement", "Radiators", "Hot water"],
 };
 
-/** What we find out about the building, one after the other: a trait and where it comes from. */
+/** What we found out about the building: a trait and where it comes from. */
 const CHECKS = [
   {
     icon: Landmark,
@@ -40,9 +39,6 @@ const CHECKS = [
   { icon: Zap, title: "Strong grid connection", result: "Enough for 2 server racks" },
   { icon: Flame, title: "No district heating", result: "Not on Byfangweg · Kachel fills the gap" },
 ];
-/** Before the first check starts, then between each check finishing. */
-const CHECK_START_MS = 900;
-const CHECK_STEP_MS = 900;
 
 /** Basel's average temperature by month in °C (rough long-term means), and whether we heat. */
 const MONTHS = [
@@ -70,19 +66,8 @@ const card = "edge-card pointer-events-auto animate-card-in rounded-[26px] p-2 t
 const label =
   "flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-white/55 uppercase";
 
-/** How many CHECKS have finished; counts up from 0 on a timer. */
-function useChecksDone(): number {
-  const [done, setDone] = useState(0);
-  useEffect(() => {
-    if (done >= CHECKS.length) return;
-    const t = setTimeout(() => setDone(done + 1), done === 0 ? CHECK_START_MS : CHECK_STEP_MS);
-    return () => clearTimeout(t);
-  }, [done]);
-  return done;
-}
-
 /** Building photo, or a plain tinted block if the image isn't there. */
-function Photo({ checked }: { checked: boolean }) {
+function Photo() {
   const [failed, setFailed] = useState(false);
   return (
     <div className="relative h-32 overflow-hidden rounded-[20px] bg-gradient-to-br from-[#3a2a20] to-[#1b1d21]">
@@ -96,33 +81,18 @@ function Photo({ checked }: { checked: boolean }) {
           className="absolute inset-0 size-full object-cover object-[center_35%]"
         />
       )}
-      {checked ? (
-        <span
-          key="suitable"
-          className="absolute top-2 left-2 flex animate-pill-in items-center gap-1 rounded-full bg-clay px-2 py-0.5 text-[10px] font-semibold text-white"
-        >
-          <Sparkles size={11} /> Looks suitable
-        </span>
-      ) : (
-        <span
-          key="checking"
-          className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-semibold text-white/80 backdrop-blur-md"
-        >
-          <LoaderCircle size={11} className="animate-spin" /> Checking…
-        </span>
-      )}
+      <span className="absolute top-2 left-2 flex animate-pill-in items-center gap-1 rounded-full bg-clay px-2 py-0.5 text-[10px] font-semibold text-white">
+        <Sparkles size={11} /> Looks suitable
+      </span>
     </div>
   );
 }
 
 /**
- * Cards over the map once the home building is lit up: the building on the left, the checks
- * running on it top right, and once they're done, Basel's temperatures by month bottom right.
+ * Cards over the map once the home building is lit up: the building on the left, what we found
+ * out about it top right, and Basel's temperatures by month bottom right.
  */
 export function BuildingDetails() {
-  const done = useChecksDone();
-  const checked = done >= CHECKS.length;
-
   return (
     <div className="pointer-events-none absolute inset-0 font-sans">
       {/* Bottom left: the building */}
@@ -130,7 +100,7 @@ export function BuildingDetails() {
         className={`${card} absolute bottom-6 left-6 w-[300px]`}
         style={{ animationDelay: "100ms" }}
       >
-        <Photo checked={checked} />
+        <Photo />
         <div className="px-2 pt-3 pb-1.5">
           <p className={`${label} text-clay`}>
             <MapPin size={11} /> Your building
@@ -164,123 +134,98 @@ export function BuildingDetails() {
         </div>
       </article>
 
-      {/* Right column: checks on top, Basel's temperatures at the bottom once the checks are done */}
+      {/* Right column: checks on top, Basel's temperatures at the bottom */}
       <div className="absolute top-6 right-6 bottom-6 flex w-[280px] flex-col justify-between gap-3">
-        <article className={card} style={{ animationDelay: "400ms" }}>
+        <article className={card} style={{ animationDelay: "100ms" }}>
           <div className="px-2 pt-2 pb-1.5">
             <div className="flex items-center justify-between">
               <p className={label}>
-                <ScanSearch size={12} /> Checking your building
+                <ScanSearch size={12} /> Building checks
               </p>
               <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[10px] font-semibold text-white/70 tabular-nums">
-                {done}/{CHECKS.length}
+                {CHECKS.length}/{CHECKS.length}
               </span>
             </div>
 
             <ul className="mt-3 space-y-2.5">
-              {CHECKS.map(({ icon: Icon, title, result }, i) => {
-                const isDone = i < done;
-                const running = i === done;
-                return (
-                  <li key={title} className="flex items-center gap-2.5">
-                    {/* The trait's icon in a tile: dim while waiting, spinner while looking it up */}
-                    <span
-                      className={`grid size-8 shrink-0 place-items-center rounded-xl transition-colors duration-500 ${
-                        isDone ? "bg-clay/15 text-clay" : "bg-white/[0.06] text-white/30"
-                      }`}
-                    >
-                      {running ? (
-                        <LoaderCircle size={15} className="animate-spin text-clay" />
-                      ) : (
-                        <Icon
-                          key={isDone ? "done" : "wait"}
-                          size={15}
-                          className={isDone ? "animate-pill-in" : ""}
-                        />
-                      )}
-                    </span>
-                    <div className="min-w-0">
-                      <p
-                        className={`text-[11.5px] font-medium ${isDone || running ? "" : "text-white/40"}`}
-                      >
-                        {title}
-                      </p>
-                      <p className="text-[10.5px] text-white/55">
-                        {isDone ? result : running ? "Looking up…" : "Waiting"}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
+              {CHECKS.map(({ icon: Icon, title, result }) => (
+                <li key={title} className="flex items-center gap-2.5">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-clay/15 text-clay">
+                    <Icon size={15} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[11.5px] font-medium">{title}</p>
+                    <p className="text-[10.5px] text-white/55">{result}</p>
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
         </article>
 
-        {checked && (
-          <article className={card}>
-            <div className="px-2 pt-2 pb-1.5">
-              <p className={label}>
-                <Snowflake size={12} /> Weather in Basel
-              </p>
+        <article className={card} style={{ animationDelay: "100ms" }}>
+          <div className="px-2 pt-2 pb-1.5">
+            <p className={label}>
+              <Snowflake size={12} /> Weather in Basel
+            </p>
 
-              {/* Average temperature per month, orange where the heating is on */}
-              <div className="mt-3 flex h-24 items-end gap-1">
-                {MONTHS.map(({ m, temp, heating }, i) => {
-                  const now = i === new Date().getMonth();
-                  return (
-                    <div key={i} className="flex h-full flex-1 flex-col items-center gap-1">
-                      <div
-                        className="flex w-full flex-1 origin-bottom animate-[grow-up_700ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col items-center justify-end gap-0.5"
-                        style={{ animationDelay: `${150 + i * 40}ms` }}
-                      >
-                        <span
-                          className={`text-[8.5px] font-semibold tabular-nums ${heating ? "text-clay" : "text-white/45"}`}
-                        >
-                          {temp}°
-                        </span>
-                        <div
-                          className={`w-full rounded-t-[3px] ${
-                            heating ? (now ? "bg-clay" : "bg-clay/60") : "bg-white/20"
-                          } ${now ? "ring-1 ring-white/70" : ""}`}
-                          style={{ height: `${(temp / MAX_TEMP) * 100}%` }}
-                        />
-                      </div>
+            {/* Average temperature per month, orange where the heating is on */}
+            <div className="mt-3 flex h-24 items-end gap-1">
+              {MONTHS.map(({ m, temp, heating }, i) => {
+                const now = i === new Date().getMonth();
+                return (
+                  <div key={i} className="flex h-full flex-1 flex-col items-center gap-1">
+                    <div
+                      className="flex w-full flex-1 origin-bottom animate-[grow-up_700ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col items-center justify-end gap-0.5"
+                      style={{ animationDelay: `${150 + i * 40}ms` }}
+                    >
                       <span
-                        className={`text-[9px] font-semibold ${now ? "text-white" : "text-white/40"}`}
+                        className={`text-[8.5px] font-semibold tabular-nums ${heating ? "text-clay" : "text-white/45"}`}
                       >
-                        {m}
+                        {temp}°
                       </span>
+                      <div
+                        className={`w-full rounded-t-[3px] ${
+                          heating ? (now ? "bg-clay" : "bg-clay/60") : "bg-white/20"
+                        } ${now ? "ring-1 ring-white/70" : ""}`}
+                        style={{ height: `${(temp / MAX_TEMP) * 100}%` }}
+                      />
                     </div>
-                  );
-                })}
-              </div>
-              <div className="mt-2 flex gap-3 text-[10px] text-white/55">
-                <span className="flex items-center gap-1">
-                  <span className="size-2 rounded-sm bg-clay/60" /> Heating needed
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="size-2 rounded-sm bg-white/20" /> No heating
-                </span>
-                <span className="ml-auto">Ø °C</span>
-              </div>
-
-              <dl className="mt-3 space-y-1.5 text-[11.5px]">
-                {CLIMATE.map(({ icon: Icon, k, v }) => (
-                  <div key={k} className="flex items-center justify-between">
-                    <dt className={label}>
-                      <Icon size={12} /> {k}
-                    </dt>
-                    <dd className="font-semibold tabular-nums">{v}</dd>
+                    <span
+                      className={`text-[9px] font-semibold ${now ? "text-white" : "text-white/40"}`}
+                    >
+                      {m}
+                    </span>
                   </div>
-                ))}
-              </dl>
-              <p className="mt-2.5 flex items-start gap-1.5 rounded-xl bg-clay/15 px-2.5 py-1.5 text-[11px] font-medium text-clay">
-                <ShowerHead size={13} className="mt-px shrink-0" />
-                In summer, the server heat still goes into your hot water.
-              </p>
+                );
+              })}
             </div>
-          </article>
-        )}
+            <div className="mt-2 flex gap-3 text-[10px] text-white/55">
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-sm bg-clay/60" /> Heating needed
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-sm bg-white/20" /> No heating
+              </span>
+              <span className="ml-auto">Ø °C</span>
+            </div>
+
+            <dl className="mt-3 space-y-1.5 text-[11.5px]">
+              {CLIMATE.map(({ icon: Icon, k, v }) => (
+                <div key={k} className="flex items-center justify-between">
+                  <dt className={label}>
+                    <Icon size={12} /> {k}
+                  </dt>
+                  <dd className="font-semibold tabular-nums">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-2.5 flex items-start gap-1.5 rounded-xl bg-clay/15 px-2.5 py-1.5 text-[11px] font-medium text-clay">
+              <ShowerHead size={13} className="mt-px shrink-0" />
+              In summer, the server heat still goes into your hot water.
+            </p>
+          </div>
+        </article>
       </div>
     </div>
   );
