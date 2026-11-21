@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-page: #f5f6f8;
+  --color-clay: #ea580c;
+  --color-clay-dark: #c2410c;
+  --color-rust: #b4440f;
+  --color-surface: #ffffff;
+  --color-border: #e3e5e9;
+  --color-muted: #5b616b;
+  --color-ink: #111418;
+
+  /* The globe fading in behind the collapsed voice bar */
+  --animate-globe-in: globe-in 1200ms ease-out both;
+  /* The big chat box "shrinks" down into the voice bar at the bottom */
+  --animate-bar-in: bar-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* "Basel identified" / "Building identified" popping in over the map */
+  --animate-pill-in: pill-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  /* Short glowing screen border when a step lands */
+  --animate-edge-glow: edge-glow 3000ms ease-in-out both;
+
+  @keyframes edge-glow {
+    0% {
+      opacity: 0;
+    }
+    25% {
+      opacity: 0.35;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  /* Building cards sliding up over the map */
+  --animate-card-in: card-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pill-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes globe-in {
+    from {
+      opacity: 0;
+      transform: scale(1.08);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes bar-in {
+    from {
+      opacity: 0.4;
+      transform: translateY(-38vh) scale(1.5);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* The 3D house taking over from the map: fades and settles in */
+@keyframes house-in {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Bars in the heat chart (outside @theme, since it's used from an arbitrary animate-[…] class) */
+@keyframes grow-up {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Lets the border's colours turn around the screen */
+@property --glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes glow-spin {
+  to {
+    --glow-angle: 360deg;
+  }
+}
+
+@layer components {
+  /* Dark frosted glass for the cards over the map (like baselhack_2026_adobe's spatial-glass) */
+  .edge-card {
+    background: color-mix(in srgb, #30302e 62%, transparent);
+    backdrop-filter: blur(24px) saturate(1.6);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.55),
+      inset 0 0 0 1px rgb(255 255 255 / 0.18),
+      0 12px 32px -12px rgb(0 0 0 / 0.35);
+  }
+  /* Glowing screen border, like an assistant thinking: a thin rotating gradient line on every
+     edge, plus a blurred copy of it that glows a little way into the page. */
+  .edge-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .edge-glow::before,
+  .edge-glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    background: conic-gradient(from var(--glow-angle), #ea580c, #fbbf24, #f97316, #fb7185, #ea580c);
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    animation: glow-spin 2s linear infinite;
+  }
+  .edge-glow::after {
+    padding: 6px;
+    filter: blur(12px);
+    opacity: 0.3;
+  }
+}
+
+/* Warm air rising off the rack illustration */
+@keyframes heat-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+/* Server lights flickering */
+@keyframes led {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
