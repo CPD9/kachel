@@ -52,12 +52,19 @@ anything in a `VITE_` variable ends up in the browser, so that key never goes th
 
 ## Demo accounts (local stack only)
 
-The seed makes two accounts. Both exist only in your local database.
+The seed makes these accounts. All exist only in your local database.
 
-| Who        | Email               | Password      | Sign in to |
-| ---------- | ------------------- | ------------- | ---------- |
-| Demo host  | `host@kachel.test`  | `kachel-demo` | Host app   |
-| Demo buyer | `buyer@kachel.test` | `kachel-demo` | Console    |
+| Who        | Email                  | Password      | Sign in to    |
+| ---------- | ---------------------- | ------------- | ------------- |
+| Demo host  | `host@kachel.test`     | `kachel-demo` | Host app      |
+| Demo buyer | `buyer@kachel.test`    | `kachel-demo` | Console       |
+| Operator   | `operator@kachel.test` | `kachel-demo` | Operator view |
+
+Six more buyers are synthetic, each a kind of compute the fleet sells: game streaming
+(`play@`), 3D rendering (`render@`), an AI lab (`lab@`), a video studio (`studio@`),
+embeddings (`embed@`) and speech to text (`speech@`), all `@kachel.test` with the same password.
+Their jobs run on the synthetic fleet houses. The operator reads every house, server, job and
+buyer and changes none; that role is set in the account's app metadata, which no app can write.
 
 The apps offer these accounts on the sign-in screen only when they talk to a local stack.
 
