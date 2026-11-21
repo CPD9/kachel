@@ -1,11 +1,13 @@
 # Kachel: one entry point for setting up, running and checking the repo.
 AGENT := services/agent
+SCHED := services/scheduler
 
 .PHONY: bootstrap dev check check-js check-py check-readme heat-loop
 
 bootstrap:
 	pnpm install --frozen-lockfile
 	uv sync --project $(AGENT)
+	uv sync --project $(SCHED)
 
 dev:
 	pnpm dev
@@ -20,6 +22,7 @@ check-py:
 	uv run --project $(AGENT) ruff format --check $(AGENT)
 	uv run --project $(AGENT) ruff check $(AGENT)
 	uv run --project $(AGENT) pytest -q $(AGENT)
+	cd $(SCHED) && uv run ruff format --check && uv run ruff check && uv run pytest -q
 
 check-readme:
 	node --test scripts/*.test.mjs
