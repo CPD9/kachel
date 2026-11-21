@@ -4,6 +4,8 @@ Five minutes at FHNW Campus Dreispitz, Basel, during the 36-hour sprint on Basel
 goal. Key figures first, then the live part. Every figure on screen comes from the README
 table, which `scripts/readme-figures.mjs` writes from the scheduler's `kpis.json`.
 
+Charts, sources and open questions behind these figures: [the numbers behind Kachel](economics/README.md).
+
 ## 0:00 to 0:30: the line
 
 "Your AI heats your home."

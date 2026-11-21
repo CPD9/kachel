@@ -13,6 +13,7 @@ python demo_live.py --profile <case.csv> --date 2025-01-15 --speed 1
 python demo_live.py --profile <case.csv> --date 2025-07-15 --speed 2
 python demo_live.py --profile <case.csv> --date 2025-07-15 --force-full-tank-at 10   # the interrupted job
 python chat.py                                      # local AI chat with tools (needs Ollama)
+python economics.py                                 # charts, tables and sources in docs/economics
 ```
 
 Outputs land in `out/`: `kpis.json`, `sweep.csv`, `hourly.csv`, `measurements.json`, six plots (PNG + SVG).
