@@ -57,7 +57,7 @@ export function fakeData(over: Partial<ChatData> = {}): ChatData {
       tick: 7200,
       at: "2026-11-21T12:00:00+00:00",
       state: "PAUSED",
-      reason: "tank full / no heat sink: backlog paused",
+      reason: "paused by its signal file (demo switch, not the tank)",
     },
   ];
   return {

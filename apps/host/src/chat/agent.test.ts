@@ -7,7 +7,7 @@ describe("ask", () => {
   it("runs the tool the model asks for and answers from its values", async () => {
     const { model, sent } = scriptedModel([
       { toolCalls: [call("jobs", { server: 4 })], thinking: "Check server 4." },
-      { content: "Server 4 is paused: tank full / no heat sink: backlog paused." },
+      { content: "Server 4 is paused by its signal file (the demo switch), not the tank." },
     ]);
     const turn = await ask(model, fakeData(), [], "Why is server 4 paused?");
     expect(turn.cards.map((c) => c.tool)).toEqual(["jobs"]);
@@ -16,7 +16,7 @@ describe("ask", () => {
     expect(turn.thinking).toBe("Check server 4.");
     const toolMessage = sent[1]?.messages.at(-1);
     expect(toolMessage).toMatchObject({ role: "tool", tool_name: "jobs" });
-    expect(toolMessage?.content).toContain("tank full / no heat sink: backlog paused");
+    expect(toolMessage?.content).toContain("paused by its signal file (demo switch, not the tank)");
     expect(sent[0]?.tools.map((t) => t.name)).toEqual([
       "heat_now",
       "heat_today",
