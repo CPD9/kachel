@@ -24,7 +24,7 @@ A job runs only when its heat is useful.
 
 <p align="center"><img src="packages/ui/src/heat-loop.webp" width="360" alt="A basement server runs a job, its heat fills the hot-water tank and warms the house"></p>
 
-More renders, the videos and the charts are in [docs/media](docs/media/README.md).
+More renders, the videos and the charts are in [docs/media](docs/media/README.md). How the parts fit together is in [docs/architecture.md](docs/architecture.md).
 Every value the model assumes, with its unit and source, is in [docs/assumptions.md](docs/assumptions.md).
 
 ## Run it
