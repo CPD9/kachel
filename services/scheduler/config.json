@@ -1,0 +1,48 @@
+{
+  "_note": "Every number the model uses lives here. 'source' says where it comes from.",
+  "house": {
+    "tank_kwh": 35.0,
+    "hot_water_kwh_per_day": 12.0,
+    "hot_water_shape": "flat",
+    "source": "DigitalHeat case brief (reference house). hot_water_shape=flat is OUR assumption; overridden when the case CSV is passed with --profile."
+  },
+  "server": {
+    "power_kw": 1.0,
+    "heat_recovery": 0.8,
+    "idle_power_kw": 0.0,
+    "source": "Case brief. idle_power_kw=0 is OUR simplification: a paused server is assumed to draw nothing."
+  },
+  "prices": {
+    "electricity_chf_per_kwh": 0.277,
+    "heat_pump_cop": 2.5,
+    "compute_chf_per_server_hour": 0.5,
+    "source": "electricity: PLACEHOLDER = ElCom 2026 Swiss H4 median (27.7 Rp). REPLACE with IWB Basel H4 total from strompreis.elcom.admin.ch. COP: case brief. compute price: OUR assumption, shown only against the break-even."
+  },
+  "forecast": "persistence",
+  "jobs": {
+    "interactive": {
+      "label": "Interactive sessions (local AI chat, game streaming)",
+      "interruptible": false,
+      "deadline_h": 0,
+      "arrivals_server_h": { "18": 1, "19": 1, "20": 1, "21": 1 },
+      "when_heat_not_needed": "run_and_dump",
+      "source": "OUR scenario: one evening session block of 4 h per house and day."
+    },
+    "batch": {
+      "label": "Batch with deadline (transcription)",
+      "interruptible": true,
+      "deadline_h": 24,
+      "arrivals_server_h": { "6": 8 },
+      "when_heat_not_needed": "move",
+      "source": "OUR scenario: 8 server-hours arrive at 06:00, due 24 h later. Job size from measurements.json."
+    },
+    "opportunistic": {
+      "label": "Opportunistic backlog (embeddings)",
+      "interruptible": true,
+      "deadline_h": null,
+      "unlimited": true,
+      "when_heat_not_needed": "pause",
+      "source": "ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model."
+    }
+  }
+}
