@@ -1,7 +1,32 @@
-import { ArrowRight, Heater } from "lucide-react";
-import { useCallback, useState } from "react";
-import { Globe } from "./Globe";
+import { ArrowRight, Building2, Check, Heater, LoaderCircle, MapPin } from "lucide-react";
+import { type ReactNode, useCallback, useState } from "react";
+import { Globe, type Stage } from "./Globe";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
+
+/** Status pill over the globe: pops in, with a check once done or a spinner while loading. */
+function Pill({
+  icon,
+  label,
+  loading = false,
+}: {
+  icon?: ReactNode;
+  label: string;
+  loading?: boolean;
+}) {
+  return (
+    <span className="flex animate-pill-in items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/85 py-1.5 pr-3 pl-2 text-sm font-medium text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
+      {loading ? (
+        <LoaderCircle size={16} className="animate-spin text-clay" />
+      ) : (
+        <span className="grid size-6 place-items-center rounded-full bg-clay text-white">
+          {icon}
+        </span>
+      )}
+      <span className={loading ? "text-white/70" : ""}>{label}</span>
+      {!loading && <Check size={14} className="text-clay" strokeWidth={3} />}
+    </span>
+  );
+}
 
 const NAV = ["How it works", "For buildings", "For data centers", "Contact"];
 const SUGGESTIONS = ["How does it work?", "Is my building suitable?", "What does it cost?"];
@@ -26,6 +51,8 @@ export function App() {
   // What the presenter said; null while the landing page is still showing
   const [said, setSaid] = useState<string | null>(null);
   const send = useCallback((text: string) => setSaid(text), []);
+  // How far the globe has got: Basel in view, then the home building lit up
+  const [stage, setStage] = useState<Stage | null>(null);
 
   if (!token) {
     return (
@@ -42,11 +69,28 @@ export function App() {
     return (
       <main className="relative h-screen w-screen overflow-hidden bg-black font-sans">
         <div className="absolute inset-0 animate-globe-in">
-          {/* Later: fly to the hard-coded home location */}
-          <Globe token={token} />
+          <Globe token={token} onStage={setStage} />
         </div>
+        {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
+        {stage && <div key={stage} aria-hidden className="edge-glow animate-edge-glow" />}
+        {stage && (
+          <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
+            <Pill icon={<MapPin size={13} />} label="Basel identified" />
+            {stage === "building" ? (
+              <Pill key="found" icon={<Building2 size={13} />} label="Building identified" />
+            ) : (
+              <Pill key="finding" label="Finding your building…" loading />
+            )}
+          </div>
+        )}
         <div className="absolute inset-x-0 bottom-6 flex justify-center px-4">
-          <VoiceBar said={said} onEnd={() => setSaid(null)} />
+          <VoiceBar
+            said={said}
+            onEnd={() => {
+              setSaid(null);
+              setStage(null);
+            }}
+          />
         </div>
       </main>
     );

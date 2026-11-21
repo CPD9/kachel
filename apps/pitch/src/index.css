@@ -17,6 +17,33 @@
   --animate-globe-in: globe-in 1200ms ease-out both;
   /* The big chat box "shrinks" down into the voice bar at the bottom */
   --animate-bar-in: bar-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* "Basel identified" / "Building identified" popping in over the map */
+  --animate-pill-in: pill-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  /* Short glowing screen border when a step lands */
+  --animate-edge-glow: edge-glow 3000ms ease-in-out both;
+
+  @keyframes edge-glow {
+    0% {
+      opacity: 0;
+    }
+    25% {
+      opacity: 0.35;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes pill-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
   @keyframes globe-in {
     from {
@@ -37,5 +64,45 @@
       opacity: 1;
       transform: none;
     }
+  }
+}
+
+/* Lets the border's colours turn around the screen */
+@property --glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes glow-spin {
+  to {
+    --glow-angle: 360deg;
+  }
+}
+
+@layer components {
+  /* Glowing screen border, like an assistant thinking: a thin rotating gradient line on every
+     edge, plus a blurred copy of it that glows a little way into the page. */
+  .edge-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .edge-glow::before,
+  .edge-glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    background: conic-gradient(from var(--glow-angle), #ea580c, #fbbf24, #f97316, #fb7185, #ea580c);
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    animation: glow-spin 2s linear infinite;
+  }
+  .edge-glow::after {
+    padding: 6px;
+    filter: blur(12px);
+    opacity: 0.3;
   }
 }
