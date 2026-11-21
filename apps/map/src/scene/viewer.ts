@@ -1,5 +1,6 @@
 import {
   Cartesian3,
+  Cesium3DTile,
   Cesium3DTileFeature,
   Cesium3DTileset,
   Color,
@@ -62,6 +63,8 @@ export interface Scene {
   /** Shows these thermal networks, or hides the layer with null. */
   showNetworks(networks: readonly Network[] | null): void;
   showHomeServers(on: boolean): void;
+  /** Colours one building by its EGID, as a click does, in every tile that loads from now on. */
+  highlightBuilding(egid: number): void;
   destroy(): void;
 }
 
@@ -250,8 +253,26 @@ export async function createScene(
   const networks = networkLayer(viewer);
   const homeServers = homeServerLayer(viewer);
   let highlighted: Cesium3DTileFeature | null = null;
+  // A building chosen by EGID (the pitch app's hand-over): coloured in each tile the first time
+  // the tile is drawn (tiles already loaded too), until the first click takes the highlight over.
+  let chosenEgid: number | null = null;
+  let scanned = new WeakSet<object>();
+  const chosen: Cesium3DTileFeature[] = [];
+  const removeTileVisible = buildings.tileVisible.addEventListener((tile: Cesium3DTile) => {
+    const content = tile.content;
+    if (chosenEgid === null || scanned.has(content)) return;
+    scanned.add(content);
+    for (let i = 0; i < content.featuresLength; i++) {
+      const feature = content.getFeature(i);
+      if (Number(feature.getProperty("EGID")) !== chosenEgid) continue;
+      feature.color = HIGHLIGHT;
+      chosen.push(feature);
+    }
+  });
   clicks.setInputAction((event: ScreenSpaceEventHandler.PositionedEvent) => {
     const hit: unknown = scene.pick(event.position);
+    chosenEgid = null;
+    for (const feature of chosen.splice(0)) feature.color = Color.WHITE;
     if (highlighted !== null) highlighted.color = Color.WHITE;
     highlighted = hit instanceof Cesium3DTileFeature ? hit : null;
     if (highlighted !== null) highlighted.color = HIGHLIGHT;
@@ -315,8 +336,13 @@ export async function createScene(
       else networks.show(list);
     },
     showHomeServers: (on) => homeServers.setShown(on),
+    highlightBuilding: (egid) => {
+      chosenEgid = egid;
+      scanned = new WeakSet();
+    },
     destroy: () => {
       removeTick();
+      removeTileVisible();
       clicks.destroy();
       if (!viewer.isDestroyed()) viewer.destroy();
     },

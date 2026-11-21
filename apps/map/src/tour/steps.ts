@@ -35,14 +35,32 @@ export function tourHouse(): FleetHouse | null {
  * Looking north at a building from about 500 m south and 300 m up, and a little west, so it sits
  * right of centre, beside the card rather than behind it.
  */
-export function viewOf(house: FleetHouse): View {
+export function viewOf(at: { readonly lon: number; readonly lat: number }, name: string): View {
   return {
-    name: house.id,
-    lon: house.lon - 0.0035,
-    lat: house.lat - 0.0045,
+    name,
+    lon: at.lon - 0.0035,
+    lat: at.lat - 0.0045,
     height: 600,
     heading: 0,
     pitch: -28,
+  };
+}
+
+/**
+ * Closer, for the pitch app's hand-over: looking north at the building from about 250 m south,
+ * 70 m west and 150 m above the ground, so the one lit building stands out right of the card.
+ */
+export function closeViewOf(
+  at: { readonly lon: number; readonly lat: number },
+  name: string,
+): View {
+  return {
+    name,
+    lon: at.lon - 0.0009,
+    lat: at.lat - 0.0022,
+    height: 460,
+    heading: 0,
+    pitch: -36,
   };
 }
 
@@ -78,7 +96,7 @@ export function tourSteps(d: TourDeps): TourStep[] {
       caption: "One real building: its heat a year, from public data.",
       run: async (ctx) => {
         d.scene.setTime(at(-15));
-        await ctx.atMost(d.scene.flyTo(viewOf(house), 3), FLIGHT_CAP_MS);
+        await ctx.atMost(d.scene.flyTo(viewOf(house, house.id), 3), FLIGHT_CAP_MS);
         // The card's figures come from the federal APIs: ask while the tiles load.
         d.openBuilding(house);
         await ctx.atMost(d.scene.tilesLoaded(), tilesCap);

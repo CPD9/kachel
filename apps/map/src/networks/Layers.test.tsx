@@ -27,6 +27,7 @@ function fakeScene() {
     viewArea: () => ({ west: 7.5, south: 47.5, east: 7.7, north: 47.6 }),
     showNetworks: vi.fn(),
     showHomeServers: vi.fn(),
+    highlightBuilding: vi.fn(),
     destroy: vi.fn(),
   } satisfies Scene;
 }

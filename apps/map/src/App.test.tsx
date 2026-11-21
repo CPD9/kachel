@@ -18,6 +18,7 @@ function fakeScene(): Scene {
     viewArea: () => ({ west: 7.5, south: 47.5, east: 7.7, north: 47.6 }),
     showNetworks: vi.fn(),
     showHomeServers: vi.fn(),
+    highlightBuilding: vi.fn(),
     destroy: vi.fn(),
   };
 }
@@ -67,6 +68,32 @@ describe("map app", () => {
     // Stopping hands the live map back.
     expect(scene.playing()).toBe(true);
     expect(await screen.findByRole("button", { name: "Pause" })).toBeTruthy();
+  });
+
+  it("opens at a building with its card when handed an EGID (?egid=…&card=1)", async () => {
+    const register = {
+      egid: "442141",
+      strname_deinr: "Byfangweg 18",
+      gbauj: 1894,
+      gebf: 330,
+      genh1: 7582,
+      genw1: 7582,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          results: [{ geometry: { x: 7.582214, y: 47.55211 }, attributes: register }],
+        }),
+      })),
+    );
+    const scene = fakeScene();
+    render(<App start={() => Promise.resolve(scene)} startEgid={442141} />);
+    expect(await screen.findByRole("heading", { name: "Byfangweg 18" })).toBeTruthy();
+    expect(scene.flyTo).toHaveBeenCalledWith(expect.objectContaining({ name: "EGID 442141" }), 3);
+    expect(scene.highlightBuilding).toHaveBeenCalledWith(442141);
+    vi.unstubAllGlobals();
   });
 
   it("says so when the map cannot start", async () => {

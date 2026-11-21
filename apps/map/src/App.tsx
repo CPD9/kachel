@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BuildingCard } from "./building/BuildingCard";
-import { lookUp, type BuildingFacts } from "./building/geoadmin";
+import { locate, lookUp, type BuildingFacts } from "./building/geoadmin";
 import { latestOnly } from "./building/latest";
 import { swissTime } from "./clock";
 import { fleetHouse, type FleetHouse } from "./fleet/fleet";
@@ -10,6 +10,7 @@ import { NetworkCard } from "./networks/NetworkCard";
 import type { Network } from "./networks/thermal";
 import type { Scene } from "./scene/viewer";
 import { CREDITS } from "./sources";
+import { closeViewOf } from "./tour/steps";
 import { TourBar } from "./tour/TourBar";
 
 export type StartScene = (container: HTMLElement) => Promise<Scene>;
@@ -19,10 +20,13 @@ export function App({
   start,
   autoTour = false,
   tourCapMs,
+  startEgid,
 }: {
   start: StartScene;
   autoTour?: boolean;
   tourCapMs?: number | undefined;
+  /** Open at this building with its card (`?egid=…&card=1`, the pitch app's hand-over). */
+  startEgid?: number | undefined;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const [scene, setScene] = useState<Scene | null>(null);
@@ -80,6 +84,21 @@ export function App({
       if (picked?.kind === "network") setNetwork(picked.network);
     });
   }, [scene, openBuilding, closeCards]);
+
+  // The pitch app hands over here: find the building in the register, fly to it, open its card.
+  useEffect(() => {
+    if (scene === null || startEgid === undefined) return;
+    let gone = false;
+    void locate(startEgid).then((at) => {
+      if (gone || at === null) return;
+      scene.highlightBuilding(startEgid);
+      void scene.flyTo(closeViewOf(at, `EGID ${startEgid}`), 3);
+      openBuilding(startEgid, at.lon, at.lat);
+    });
+    return () => {
+      gone = true;
+    };
+  }, [scene, startEgid, openBuilding]);
 
   useEffect(() => {
     const el = container.current;

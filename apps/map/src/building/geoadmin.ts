@@ -170,6 +170,43 @@ export function registerUrl(egid: number): string {
   return `${API}/find?${q}`;
 }
 
+/** One GWR building with its point, in WGS84, for opening the map at it (`?egid=`). */
+export function locateUrl(egid: number): string {
+  const q = new URLSearchParams({
+    layer: GWR_LAYER,
+    searchText: String(egid),
+    searchField: "egid",
+    contains: "false",
+    returnGeometry: "true",
+    sr: "4326",
+  });
+  return `${API}/find?${q}`;
+}
+
+/** Where a GWR building stands, from its register point; null if the register has no answer. */
+export async function locate(
+  egid: number,
+  fetcher: Fetch = fetch,
+): Promise<{ lon: number; lat: number } | null> {
+  try {
+    const res = await fetcher(locateUrl(egid));
+    if (!res.ok) return null;
+    const body = await res.json();
+    const first =
+      typeof body === "object" && body !== null && "results" in body
+        ? (body as { results: unknown }).results
+        : null;
+    const geometry = Array.isArray(first)
+      ? (first[0] as { geometry?: { x?: unknown; y?: unknown } } | undefined)?.geometry
+      : undefined;
+    const lon = num(geometry?.x);
+    const lat = num(geometry?.y);
+    return lon === null || lat === null ? null : { lon, lat };
+  } catch {
+    return null;
+  }
+}
+
 /** Everything the card shows about one building. Missing pieces are null, never an error. */
 export interface BuildingFacts {
   readonly register: Register | null;

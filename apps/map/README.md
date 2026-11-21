@@ -11,6 +11,8 @@ pnpm --filter @kachel/map dev     # http://localhost:5175
 ```
 
 `?at=2026-11-21T16:15:00Z` opens the map paused at that moment (for screenshots and the demo).
+`?egid=442141&card=1` flies to that building (by its GWR number) and opens its card; the pitch
+intro (`apps/pitch`) hands over with it.
 Without it, the clock starts 20 minutes before today's sunset in Basel and a day passes in about
 five minutes.
 
