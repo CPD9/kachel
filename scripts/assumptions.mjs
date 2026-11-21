@@ -12,7 +12,7 @@ export const PAGE = "docs/assumptions.md";
 
 /** Sources, numbered as in docs/economics/README.md#sources. */
 const BRIEF = "[1] DigitalHeat case brief";
-const ELCOM = "[3] ElCom 2026 H4 median";
+const ELCOM = "[3] ElCom 2026 H4 median, a placeholder for Basel (IWB)";
 const FIELD_COP = "[4] Fraunhofer ISE field test";
 const PCSP = "[9] PCSP server prices 2026";
 const VRLA = "[10] VRLA Tech workstation 2026";

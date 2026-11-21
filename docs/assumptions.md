@@ -30,7 +30,7 @@ Note in config.json: Case brief. idle_power_kw=0 is OUR simplification: a paused
 
 | What                                                | Key                           | Value | Unit    | Source                                                                            |
 | --------------------------------------------------- | ----------------------------- | ----- | ------- | --------------------------------------------------------------------------------- |
-| Electricity price                                   | `electricity_chf_per_kwh`     | 0.277 | CHF/kWh | [3] ElCom 2026 H4 median                                                          |
+| Electricity price                                   | `electricity_chf_per_kwh`     | 0.277 | CHF/kWh | [3] ElCom 2026 H4 median, a placeholder for Basel (IWB)                           |
 | Heat pump efficiency (COP) the server heat replaces | `heat_pump_cop`               | 2.5   |         | [1] DigitalHeat case brief; field tests 2.6 to 4.9, [4] Fraunhofer ISE field test |
 | Price of a server-hour of compute                   | `compute_chf_per_server_hour` | 0.5   | CHF     | our guess                                                                         |
 
