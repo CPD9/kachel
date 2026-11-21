@@ -173,6 +173,12 @@ export function lookUp(picked: Picked, fetcher: Fetch = fetch): Promise<Building
     hectare: parseHectare(hectare[0]),
   }));
   cache.set(String(key), job);
+  // An empty answer may be a dropped connection: forget it, so the next click asks again.
+  void job.then((facts) => {
+    if (facts.register === null && facts.roof === null && facts.hectare === null) {
+      cache.delete(String(key));
+    }
+  });
   return job;
 }
 

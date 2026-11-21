@@ -87,6 +87,18 @@ describe("look-up", () => {
     const facts = await lookUp({ egid: 1, lon: 7.5, lat: 47.5 }, f);
     expect(facts).toEqual({ register: null, roof: null, hectare: null });
   });
+
+  it("asks again after an empty answer", async () => {
+    let calls = 0;
+    const f: Fetch = async () => {
+      calls++;
+      throw new Error("offline");
+    };
+    const picked = { egid: 2, lon: 7.5, lat: 47.5 };
+    await lookUp(picked, f);
+    await lookUp(picked, f);
+    expect(calls).toBe(6);
+  });
 });
 
 describe("heat estimate", () => {
