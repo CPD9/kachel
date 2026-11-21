@@ -6,4 +6,13 @@
   --color-paused: oklch(0.8 0.14 85);
   --color-ink: oklch(0.22 0.02 250);
   --color-paper: oklch(0.99 0.004 80);
+
+  /* The palette of the renders and charts (services/scheduler/heatsched/plots.py). */
+  --color-ember: #ff5a1f;
+  --color-amber: #ffb020;
+  --color-glacier: #1f6feb;
+  --color-mint: #19b38a;
+  --color-slate: #9aa0a8;
+  --color-grid: #e4dfd8;
+  --color-muted: #5b616b;
 }
