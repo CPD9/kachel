@@ -39,7 +39,7 @@ house can use their heat, and the backlog pauses when the tank is full.
 
 ![The host app with six servers: Server 4 runs its embeddings job](live-running.webp)
 
-![The same screen a moment later: Server 4's job is paused by its signal file](live-paused.webp)
+![The same screen a moment later: Server 4's job is paused by its signal file, the demo switch](live-paused.webp)
 
 The host app on the local stack. The agent follows a real embedding job on Server 4. When its
 signal file says pause, it stops the process and writes the change to Supabase, and the pill
