@@ -1,6 +1,6 @@
 # Kachel
 
-Your AI heats your shower.
+Your AI heats your home.
 
 <p align="center"><img src="packages/ui/src/heat-loop.svg" width="360" alt="A basement server runs a job, its heat fills the hot-water tank and warms the house"></p>
 
