@@ -12,6 +12,13 @@ export type NewJob = {
 const JOB_COLUMNS =
   "id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, created_at, updated_at";
 
+/** The buyer's session has ended, so the job cannot be theirs; they need to sign in again. */
+export class SignedOut extends Error {
+  constructor() {
+    super("Nobody is signed in.");
+  }
+}
+
 /** Writes a job as QUEUED and returns the row as the database stored it. */
 export type SubmitJob = (job: NewJob) => Promise<LiveJob>;
 
@@ -20,7 +27,7 @@ export function supabaseSubmit(db: KachelClient): SubmitJob {
   return async (job) => {
     const { data: session } = await db.auth.getSession();
     const buyer = session.session?.user.id;
-    if (!buyer) throw new Error("Nobody is signed in.");
+    if (!buyer) throw new SignedOut();
     const row: TablesInsert<"jobs"> = {
       buyer_id: buyer,
       label: job.label,

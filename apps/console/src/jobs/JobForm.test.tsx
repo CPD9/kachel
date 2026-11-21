@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../App";
 import { check, JobForm, MAX_SERVER_HOURS, type Fields } from "./JobForm";
-import type { NewJob } from "./submit";
+import { SignedOut, type NewJob } from "./submit";
 import { fakeAuth } from "../testing";
 
 const NOW = new Date("2026-11-21T12:00:00Z");
@@ -84,6 +84,16 @@ describe("JobForm", () => {
     const status = await screen.findByRole("status");
     expect(status.textContent).toMatch(/could not be submitted/);
     expect(status.textContent).not.toMatch(/duplicate key/);
+  });
+
+  it("asks the buyer to sign in again when the session has ended", async () => {
+    const submit = () => Promise.reject(new SignedOut());
+    render(<JobForm submit={submit} now={() => NOW} />);
+    fill("Type", "opportunistic");
+    fill("Name", "Embed the archive");
+    fill("Size, server-hours", "12");
+    fireEvent.click(screen.getByRole("button", { name: "Submit job" }));
+    expect((await screen.findByRole("status")).textContent).toMatch(/sign in again/);
   });
 });
 
