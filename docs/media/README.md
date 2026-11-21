@@ -40,6 +40,11 @@ turns Paused under a second later (agent run with `--tick 0.2`; the default is 1
 turns back.
 [Video, 27 s](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
 
+![The console signed in as the demo buyer: the submit form and the live table of jobs](app-console.png)
+
+The console, where a buyer submits jobs and sees where each one runs and the heat it has
+given. Both app screenshots come from `pnpm screenshots` (scripts/screenshots.mjs).
+
 ## The numbers
 
 ![Heat from servers and backup, month by month, with utilisation](chart-month.webp)
