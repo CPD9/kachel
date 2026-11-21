@@ -5,6 +5,7 @@ import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
 import { HouseView } from "./HouseView";
 import { NeighbourDetails, NeighbourSwitch } from "./NeighbourDetails";
 import { NEIGHBOURS } from "./neighbours";
+import { SimulationView, useSimulation } from "./SimulationView";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
 
 /** Status pill over the globe: pops in, with a check once done or a spinner while loading. */
@@ -77,6 +78,7 @@ export function App() {
 
   // "a" on the result page: on to the neighbours who could use the rack (like adobe's mall)
   const [gamer, setGamer] = useState(false);
+  const [sim, setSim] = useState(false);
   // Which neighbour is picked, switched with the bar at the top
   const [who, setWho] = useState(0);
   const [atGamer, setAtGamer] = useState(false);
@@ -87,8 +89,24 @@ export function App() {
   const backFromGamer = useCallback(() => {
     setGamer(false);
     setAtGamer(false);
+    setSim(false);
     setInside(true);
   }, []);
+
+  // "a" over the neighbours: the weather and earnings simulation over the whole block
+  const simulation = useSimulation();
+  const endSim = useCallback(() => setSim(false), []);
+  useEffect(() => {
+    if (!atGamer || sim) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey)
+        return;
+      if (e.key.toLowerCase() === "a") setSim(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [atGamer, sim]);
 
   useEffect(() => {
     if (stage !== "building" || inside || gamer) return;
@@ -123,13 +141,14 @@ export function App() {
             inside={inside}
             neighbour={gamer ? who : null}
             onArrive={() => setAtGamer(true)}
-            onPick={setWho}
+            onPick={sim ? simulation.toggle : setWho}
+            sim={sim ? simulation.view : null}
           />
         </div>
         {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
         {stage && (
           <div
-            key={atGamer ? `neighbour-${who}` : stage}
+            key={sim ? "sim" : atGamer ? `neighbour-${who}` : stage}
             aria-hidden
             className="edge-glow animate-edge-glow"
           />
@@ -138,10 +157,11 @@ export function App() {
         {stage === "building" && (houseShown || houseMounted) && (
           <HouseView visible={houseShown} onExit={() => setInside(false)} onNext={toGamer} />
         )}
-        {atGamer && NEIGHBOURS[who] && (
+        {atGamer && sim && <SimulationView s={simulation} onBack={endSim} />}
+        {atGamer && !sim && NEIGHBOURS[who] && (
           <NeighbourDetails key={who} n={NEIGHBOURS[who]} onBack={backFromGamer} />
         )}
-        {gamer && (
+        {gamer && !sim && (
           <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
             {atGamer ? (
               <NeighbourSwitch i={who} onSwitch={setWho} />
@@ -171,6 +191,7 @@ export function App() {
               setInside(false);
               setGamer(false);
               setAtGamer(false);
+              setSim(false);
               setHouseMounted(false);
             }}
           />

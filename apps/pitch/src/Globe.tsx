@@ -1,7 +1,9 @@
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Flame, Plus, Zap } from "lucide-react";
 import { HOME, NEIGHBOURS } from "./neighbours";
+import type { SimView } from "./simulation";
 
 /** One full turn every this many seconds. */
 const SECONDS_PER_REVOLUTION = 120;
@@ -38,6 +40,18 @@ function neighbourCamera([lng, lat]: [number, number]) {
     bearing: (Math.atan2(dx, dy) * 180) / Math.PI,
   };
 }
+/** The simulation: pulled back over HOME and every neighbour, slowly orbiting. */
+const OVERVIEW_CAMERA = {
+  center: [
+    (HOME[0] + NEIGHBOURS.reduce((s, n) => s + n.at[0], 0)) / (NEIGHBOURS.length + 1),
+    (HOME[1] + NEIGHBOURS.reduce((s, n) => s + n.at[1], 0)) / (NEIGHBOURS.length + 1),
+  ] as [number, number],
+  zoom: 15.9,
+  pitch: 55,
+  bearing: -20,
+};
+/** Degrees per frame while orbiting. */
+const ORBIT_SPEED = 0.03;
 const NEIGHBOUR_FLY_MS = 3000;
 const SWITCH_FLY_MS = 1800;
 const RISE_MS = 1400;
@@ -48,6 +62,27 @@ const BUILDINGS = "3d-buildings";
 const HOME_BUILDING = "home-building";
 const HOME_COLOR = "#ea580c";
 const EXTRUDED: mapboxgl.FilterSpecification = ["==", ["get", "extrude"], "true"];
+const FOG: mapboxgl.FogSpecification = {
+  color: "rgb(10, 20, 30)",
+  "high-color": "rgb(20, 30, 50)",
+  "horizon-blend": 0.1,
+  "space-color": "rgb(5, 5, 12)",
+  "star-intensity": 0.4,
+};
+
+/** The sky in the simulation: icy blue when it's cold, a warm haze in summer. */
+function weatherFog(temp: number): mapboxgl.FogSpecification {
+  const k = Math.min(1, Math.max(0, (temp + 10) / 40));
+  const mix = (a: number[], b: number[]) =>
+    `rgb(${a.map((x, i) => Math.round(x + ((b[i] ?? x) - x) * k)).join(", ")})`;
+  return {
+    color: mix([30, 52, 88], [92, 50, 20]),
+    "high-color": mix([40, 70, 120], [120, 70, 30]),
+    "horizon-blend": 0.2,
+    "space-color": "rgb(5, 5, 12)",
+    "star-intensity": 0.15,
+  };
+}
 
 /** Grey 3D buildings from zoom 15, under the labels. */
 function add3dBuildings(map: mapboxgl.Map) {
@@ -156,7 +191,10 @@ function exclude(map: mapboxgl.Map, id: string | number, on: boolean) {
 type Raised = {
   /** Building heights by neighbour index, for the roof tags. */
   heights: Record<number, number>;
-  select: (i: number) => void;
+  /** HOME's building height, for its tag in the simulation. */
+  home: number;
+  /** Light up these neighbours; the rest stay dim. */
+  select: (on: number[]) => void;
   /** Look again for neighbours whose building hadn't loaded; true if any was found. */
   resolve: () => boolean;
   cleanup: () => void;
@@ -170,7 +208,17 @@ type Raised = {
 function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
   const ids = new Map<number, string | number>();
   const heights: Record<number, number> = {};
-  let current = selected;
+  let current = new Set([selected]);
+  const homeId = findBuildingId(map, HOME);
+  const homeFeature =
+    homeId === undefined
+      ? undefined
+      : map
+          .querySourceFeatures("composite", {
+            sourceLayer: "building",
+            filter: ["==", ["id"], homeId],
+          })
+          .at(0);
 
   const resolve = () => {
     let found = false;
@@ -196,7 +244,7 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
     map.setFilter(NEIGHBOUR_BUILDINGS, ["in", ["id"], ["literal", all]]);
     const pairs = [...ids].flatMap(([i, id]) => {
       const n = NEIGHBOURS[i];
-      return n ? [id, i === current ? n.color : n.dim] : [];
+      return n ? [id, current.has(i) ? n.color : n.dim] : [];
     });
     map.setPaintProperty(
       NEIGHBOUR_BUILDINGS,
@@ -210,7 +258,7 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
       type: "FeatureCollection",
       features: NEIGHBOURS.map((n, i) => ({
         type: "Feature",
-        properties: { on: i === current, color: n.color },
+        properties: { on: current.has(i), color: n.color },
         geometry: { type: "LineString", coordinates: [HOME, n.at] },
       })),
     });
@@ -280,8 +328,9 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
 
   return {
     heights,
-    select: (i) => {
-      current = i;
+    home: Number(homeFeature?.properties?.["height"] ?? 12),
+    select: (on) => {
+      current = new Set(on);
       paint();
     },
     resolve,
@@ -371,6 +420,77 @@ function Beacon({ i }: { i: number }) {
   );
 }
 
+/** In the simulation: each neighbour's live load, or a button to sign them up. */
+function SimChip({
+  i,
+  kw,
+  signed,
+  onToggle,
+}: {
+  i: number;
+  kw: number;
+  signed: boolean;
+  onToggle: (i: number) => void;
+}) {
+  const n = NEIGHBOURS[i];
+  if (!n) return null;
+  const Icon = n.icon;
+  return (
+    <button
+      onClick={() => onToggle(i)}
+      title={signed ? `Take ${n.name} out` : `Sign ${n.name} up`}
+      className="group flex animate-pill-in flex-col items-center font-sans"
+    >
+      <span
+        className={`flex items-center gap-1.5 rounded-full border py-1 pr-2.5 pl-1 text-[11px] font-semibold whitespace-nowrap shadow-[0_4px_16px_rgba(0,0,0,0.5)] backdrop-blur-md transition-transform group-hover:scale-105 ${
+          signed
+            ? "border-white/15 bg-[#1b1d21]/90 text-white"
+            : "border-dashed border-white/25 bg-[#1b1d21]/60 text-white/55"
+        }`}
+      >
+        <span
+          className="grid size-5 place-items-center rounded-full"
+          style={{ background: signed ? n.color : n.dim }}
+        >
+          <Icon size={11} />
+        </span>
+        {signed ? (
+          <>
+            <Zap size={10} className="text-amber-300" />
+            <span className="tabular-nums">{kw.toFixed(1)} kW</span>
+          </>
+        ) : (
+          <>
+            <Plus size={11} /> Sign up
+          </>
+        )}
+      </span>
+      <span className="h-3 w-px bg-white/30" />
+    </button>
+  );
+}
+
+/** In the simulation: the rack at HOME and the heat it gives off right now. */
+function HomeTag({ kw, temp }: { kw: number; temp: number }) {
+  return (
+    <div className="pointer-events-none flex animate-pill-in flex-col items-center font-sans">
+      <span className="flex items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/90 py-1.5 pr-3.5 pl-1.5 text-sm font-medium whitespace-nowrap text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
+        <span className="grid size-6 place-items-center rounded-full bg-clay">
+          <Flame size={13} />
+        </span>
+        Your rack
+        <span className="text-clay tabular-nums">{kw.toFixed(1)} kW of heat</span>
+        <span className="text-white/45 tabular-nums">· {temp.toFixed(0)} °C outside</span>
+      </span>
+      <span className="h-5 w-px bg-gradient-to-b from-clay to-transparent" />
+      <span className="relative flex size-3">
+        <span className="absolute inset-0 animate-ping rounded-full bg-clay" />
+        <span className="size-3 rounded-full bg-clay ring-2 ring-white/70" />
+      </span>
+    </div>
+  );
+}
+
 /** A small pin on the other neighbours' roofs: click to switch to them. */
 function Pin({ i, onPick }: { i: number; onPick: (i: number) => void }) {
   const n = NEIGHBOURS[i];
@@ -433,6 +553,7 @@ export function Globe({
   neighbour = null,
   onArrive,
   onPick,
+  sim = null,
 }: {
   token: string;
   onStage?: (stage: Stage) => void;
@@ -442,8 +563,10 @@ export function Globe({
   neighbour?: number | null;
   /** The neighbours' buildings have risen: time for the cards. */
   onArrive?: () => void;
-  /** A neighbour's roof pin was clicked. */
+  /** A neighbour's roof pin was clicked (in the simulation: sign them up or out). */
   onPick?: (i: number) => void;
+  /** The weather and earnings simulation, shown over every neighbour at once. */
+  sim?: SimView | null;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -458,9 +581,12 @@ export function Globe({
   });
   const away = neighbour !== null;
   // Set once the neighbours' buildings have risen, for the roof tags
-  const [roofs, setRoofs] = useState<{ map: mapboxgl.Map; heights: Record<number, number> } | null>(
-    null,
-  );
+  const [roofs, setRoofs] = useState<{
+    map: mapboxgl.Map;
+    heights: Record<number, number>;
+    home: number;
+  } | null>(null);
+  const simOn = sim !== null;
   const raisedRef = useRef<Raised | null>(null);
 
   useEffect(() => {
@@ -523,13 +649,7 @@ export function Globe({
     };
 
     map.on("style.load", () => {
-      map.setFog({
-        color: "rgb(10, 20, 30)",
-        "high-color": "rgb(20, 30, 50)",
-        "horizon-blend": 0.1,
-        "space-color": "rgb(5, 5, 12)",
-        "star-intensity": 0.4,
-      });
+      map.setFog(FOG);
     });
     map.on("mousedown", pause);
     map.on("dragstart", pause);
@@ -573,7 +693,7 @@ export function Globe({
     // Further neighbours' tiles load as the camera moves: look for them on every idle
     const onLater = () => {
       if (raisedRef.current?.resolve())
-        setRoofs({ map, heights: { ...raisedRef.current.heights } });
+        setRoofs({ map, heights: { ...raisedRef.current.heights }, home: raisedRef.current.home });
     };
     // Building tiles may still be loading: try on the next few idles, then show the cards anyway
     let tries = 0;
@@ -581,7 +701,7 @@ export function Globe({
       const raised = raiseNeighbours(map, neighbourRef.current ?? 0);
       if (raised) {
         raisedRef.current = raised;
-        setRoofs({ map, heights: { ...raised.heights } });
+        setRoofs({ map, heights: { ...raised.heights }, home: raised.home });
         map.on("idle", onLater);
       } else if (++tries < 3) return void map.once("idle", onIdle);
       onArriveRef.current?.();
@@ -598,18 +718,113 @@ export function Globe({
     };
   }, [away]);
 
-  // Switching between neighbours once there: recolour and fly over
+  // Which buildings are lit: the picked neighbour, or everyone signed up in the simulation
+  const signedKey = sim?.signed.map((on) => (on ? 1 : 0)).join("") ?? "";
+  useEffect(() => {
+    if (!raisedRef.current || neighbour === null) return;
+    raisedRef.current.select(
+      simOn ? [...signedKey].flatMap((on, i) => (on === "1" ? [i] : [])) : [neighbour],
+    );
+  }, [neighbour, simOn, signedKey]);
+
+  // Switching neighbours flies over; the simulation pulls back over the whole block and orbits
   useEffect(() => {
     const map = mapRef.current;
     const n = neighbour === null ? undefined : NEIGHBOURS[neighbour];
-    if (!map || !n || neighbour === null || !raisedRef.current) return;
-    raisedRef.current.select(neighbour);
-    map.flyTo({ ...neighbourCamera(n.at), duration: SWITCH_FLY_MS, essential: true });
-  }, [neighbour]);
+    if (!map || !n || !raisedRef.current) return;
+    if (!simOn) {
+      map.flyTo({ ...neighbourCamera(n.at), duration: SWITCH_FLY_MS, essential: true });
+      return;
+    }
+    map.flyTo({ ...OVERVIEW_CAMERA, duration: NEIGHBOUR_FLY_MS, essential: true });
+    let frame = 0;
+    let stopped = false;
+    const orbit = () => {
+      if (stopped) return;
+      map.setBearing(map.getBearing() + ORBIT_SPEED);
+      frame = requestAnimationFrame(orbit);
+    };
+    // Once landed and the new tiles are in, start orbiting; grabbing the map stops it
+    const start = () => {
+      if (!stopped) frame = requestAnimationFrame(orbit);
+    };
+    const onLand = () => map.once("idle", start);
+    const stop = () => {
+      stopped = true;
+      cancelAnimationFrame(frame);
+    };
+    map.once("moveend", onLand);
+    map.on("mousedown", stop);
+    map.on("wheel", stop);
+    map.on("touchstart", stop);
+    return () => {
+      stop();
+      map.off("moveend", onLand);
+      map.off("idle", start);
+      map.off("mousedown", stop);
+      map.off("wheel", stop);
+      map.off("touchstart", stop);
+    };
+  }, [neighbour, simOn]);
+
+  // The simulated weather on the map: falling snow, rain, and a sky tinted by the temperature
+  const weather = sim?.weather ?? null;
+  const temp = sim ? Math.round(sim.temp) : null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || weather === null || temp === null) return;
+    // Snow and rain are still experimental in Mapbox GL: never let them break the map
+    const safely = (f: () => void) => {
+      try {
+        f();
+      } catch {
+        // No weather effects then
+      }
+    };
+    safely(() =>
+      map.setSnow(
+        weather === "snow"
+          ? { density: 0.85, intensity: 1, vignette: 0.5, "vignette-color": "#9cc3ff" }
+          : null,
+      ),
+    );
+    safely(() =>
+      map.setRain(
+        weather === "rain"
+          ? {
+              density: 0.7,
+              intensity: 0.9,
+              opacity: 0.6,
+              vignette: 0.5,
+              "vignette-color": "#1e3a5f",
+            }
+          : null,
+      ),
+    );
+    map.setFog(weatherFog(temp));
+  }, [weather, temp]);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !simOn) return;
+    return () => {
+      try {
+        map.setSnow(null);
+        map.setRain(null);
+      } catch {
+        // Never set
+      }
+      map.setFog(FOG);
+    };
+  }, [simOn]);
 
   return (
     <div className="relative h-full w-full">
       <div ref={container} className="h-full w-full" />
+      {roofs && sim && (
+        <OnRoof map={roofs.map} at={HOME} height={roofs.home} front>
+          <HomeTag kw={sim.rack} temp={sim.temp} />
+        </OnRoof>
+      )}
       {roofs &&
         neighbour !== null &&
         NEIGHBOURS.map((n, i) => {
@@ -617,7 +832,14 @@ export function Globe({
           if (height === undefined) return null;
           return (
             <OnRoof key={n.id} map={roofs.map} at={n.at} height={height} front={i === neighbour}>
-              {i === neighbour ? (
+              {sim ? (
+                <SimChip
+                  i={i}
+                  kw={sim.kw[i] ?? 0}
+                  signed={sim.signed[i] ?? false}
+                  onToggle={(j) => onPick?.(j)}
+                />
+              ) : i === neighbour ? (
                 <Beacon key={`tag-${n.id}`} i={i} />
               ) : (
                 <Pin key={`pin-${n.id}`} i={i} onPick={(j) => onPick?.(j)} />
