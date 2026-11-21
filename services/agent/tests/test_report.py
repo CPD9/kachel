@@ -57,7 +57,7 @@ def test_a_pause_writes_the_job_its_server_and_a_run() -> None:
                 "tick": 3,
                 "run": False,
                 "state": "PAUSED",
-                "reason": "tank full / no heat sink: backlog paused",
+                "reason": "paused by its signal file (demo switch, not the tank)",
             },
         ),
     ]

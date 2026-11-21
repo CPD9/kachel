@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { StatePill } from "./StatePill";
 
 describe("StatePill", () => {
-  it("says why a paused job is paused", () => {
+  it("labels a paused job without guessing why", () => {
     render(<StatePill state="PAUSED" />);
-    expect(screen.getByText("Paused: no heat sink").dataset["state"]).toBe("PAUSED");
+    expect(screen.getByText("Paused").dataset["state"]).toBe("PAUSED");
   });
 });

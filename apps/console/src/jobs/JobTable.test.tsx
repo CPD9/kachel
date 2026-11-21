@@ -134,7 +134,7 @@ describe("JobTable", () => {
     render(<JobTable feed={feed} />);
     await screen.findByText("Embeddings backlog, part 3");
     await push({ ...job, state: "PAUSED", updated_at: "2026-11-21T10:00:05+00:00" });
-    expect(screen.getByText("Paused: no heat sink")).toBeTruthy();
+    expect(screen.getByText("Paused")).toBeTruthy();
     await push({ ...job, state: "RUNNING", updated_at: "2026-11-21T10:00:09+00:00" });
     expect(screen.getByText("Running")).toBeTruthy();
   });

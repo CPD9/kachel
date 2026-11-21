@@ -50,14 +50,14 @@ export function fakeData(over: Partial<ChatData> = {}): ChatData {
       tick: 0,
       at: "2026-11-21T12:00:00+00:00",
       state: "RUNNING",
-      reason: "heat needed",
+      reason: "running on its signal file (demo switch)",
     },
     {
       job_id: "job-4",
       tick: 7200,
       at: "2026-11-21T12:00:00+00:00",
       state: "PAUSED",
-      reason: "tank full / no heat sink: backlog paused",
+      reason: "paused by its signal file (demo switch, not the tank)",
     },
   ];
   return {

@@ -39,7 +39,7 @@ describe("chat tools", () => {
     const r = await runTool("jobs", { server: 4 }, fakeData());
     expect(value(r, "Server 4")).toBe("PAUSED");
     expect(value(r, "Server 4: job")).toBe("Embeddings backlog, part 3 (PAUSED)");
-    expect(value(r, "Server 4: why")).toBe("tank full / no heat sink: backlog paused");
+    expect(value(r, "Server 4: why")).toBe("paused by its signal file (demo switch, not the tank)");
     expect(r?.facts.some((f) => f.label.startsWith("Server 1"))).toBe(false);
   });
 
