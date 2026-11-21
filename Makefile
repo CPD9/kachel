@@ -60,3 +60,24 @@ endef
 heat-loop:
 	$(call heat-loop-render,house,1080x900,720:600,heat-loop)
 	$(call heat-loop-render,wide,1440x480,960:320,heat-loop-wide)
+
+# Pitch video segments (see scripts/video/). Renders with Blender 5.2 on the GPU,
+# one Cycles job at a time, and writes MP4s and contact sheets to $(VIDEO_OUT).
+VIDEO_OUT ?= $(HOME)/.cache/kachel/video
+SCHED_OUT ?= services/scheduler/out
+VIDEO_SAMPLES ?= 64
+VIDEO_BLEND := scripts/video/assets/plantroom.blend
+VIDEO_BLENDER = TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(VIDEO_BLEND)
+
+.PHONY: video-scheduler
+
+video-scheduler:
+	test -f $(SCHED_OUT)/hourly.csv || (cd services/scheduler && uv run python run_year.py)
+	mkdir -p $(VIDEO_OUT)/work/scheduler $(HOME)/.cache/kachel/tmp
+	scripts/video/gpu_wait.sh
+	$(VIDEO_BLENDER) --python scripts/video/scheduler.py -- \
+		--csv $(SCHED_OUT)/hourly.csv --out $(VIDEO_OUT)/work/scheduler --samples $(VIDEO_SAMPLES)
+	uv run --no-project --with pillow python scripts/video/compose.py \
+		--frames $(VIDEO_OUT)/work/scheduler --csv $(SCHED_OUT)/hourly.csv \
+		--mp4 $(VIDEO_OUT)/03-scheduler.mp4 --sheet $(VIDEO_OUT)/03-scheduler-sheet.png
+
