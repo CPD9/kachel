@@ -84,7 +84,12 @@ describe.skipIf(!url || !anonKey || !serviceKey)("Realtime on servers, jobs and 
       for (const [table, write] of writes) {
         const start = performance.now();
         await write();
-        const got = await hear(heard, (h) => h.table === table, WITHIN_MS);
+        // Only the row this write produced counts: a late warm-up event must not pass for it.
+        const got = await hear(
+          heard,
+          (h) => h.table === table && h.at >= start && h.row["state"] !== "PAUSED",
+          WITHIN_MS,
+        );
         expect(got, `${table}: no change within ${WITHIN_MS} ms`).toBeDefined();
         const delay = (got?.at ?? Infinity) - start;
         console.log(`Realtime: ${table} change heard after ${Math.round(delay)} ms`);
