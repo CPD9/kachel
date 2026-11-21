@@ -104,6 +104,8 @@ with check (
   and site_id is null
   and server_id is null
   and pid is null
+  and items_done = 0
+  and active_cpu_s = 0
 );
 
 -- job_runs: whoever may read the job may read its runs.

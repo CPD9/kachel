@@ -3,7 +3,7 @@
 -- Database CI job runs it on every push. Everything is rolled back at the end.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(44);
+select plan(45);
 
 -- Seed: host 01 owns site 100 with servers 201-206; buyer 02 owns jobs 301-305
 -- (301-304 on servers 201-204, 305 still queued). Here: host 03 with site 101 and server 211,
@@ -132,6 +132,10 @@ select throws_ok(
     values ('00000000-0000-4000-8000-000000000002', 'batch', 'x', true,
             '00000000-0000-4000-8000-000000000201')$$,
   '42501', null, 'buyer cannot pick a server for a queued job');
+select throws_ok(
+  $$insert into public.jobs (buyer_id, kind, label, interruptible, items_done, active_cpu_s)
+    values ('00000000-0000-4000-8000-000000000002', 'batch', 'x', true, 1000, 60)$$,
+  '42501', null, 'buyer cannot send progress for a new job (the agent does)');
 select throws_ok(
   $$insert into public.job_runs (job_id, tick, run, state)
     values ('00000000-0000-4000-8000-000000000301', 1, true, 'RUNNING')$$,
