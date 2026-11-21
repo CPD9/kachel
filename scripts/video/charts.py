@@ -695,9 +695,12 @@ def chart_payback(data):
         capex, upkeep = float(r["capex_chf"]), float(r["upkeep_chf_per_year"])
         rate, life = float(r["discount_rate"]), float(r["lifetime_years"])
         cash = float(r["net_chf_before_hardware"]) - upkeep
+        # As in economics.py: the servers' resale at the end of their life, discounted, comes off
+        # the capex, so payback and NPV both count it.
+        capex -= float(r.get("resale_chf") or 0) * (1 + rate) ** -life
 
         def cumulative(y, capex=capex, cash=cash, rate=rate):
-            """Discounted cash after y years, less what was paid up front."""
+            """Discounted cash after y years, less what was paid up front net of the resale."""
             return -capex + cash * (1 - (1 + rate) ** -y) / rate
 
         if abs(cumulative(life) - float(r["npv_chf"])) > 2:
@@ -709,7 +712,7 @@ def chart_payback(data):
 
     header(
         "Paying back the hardware",
-        f"Discounted cash per house with {n} servers, CHF, over each case's lifetime",
+        f"Discounted cash per house with {n} servers, CHF, over each case's lifetime, resale counted",
     )
     longest = max(life for _, life, _ in curves.values())
     lows = [-float(r["capex_chf"]) for r in cases.values()]
