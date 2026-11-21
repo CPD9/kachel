@@ -3,7 +3,7 @@ import { Sourced } from "@kachel/ui";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { DayChart } from "./DayChart";
 import { chooseDay, dayMoney, hourAt, local, toDays, toPrices } from "./day";
-import { celsius, clock, kwh, longDate, shortDate } from "./format";
+import { celsius, clock, kwh, longDate, mediumDate, shortDate } from "./format";
 import { Money } from "./Money";
 import { TankGauge } from "./TankGauge";
 
@@ -187,7 +187,7 @@ export function House({ feed, now = systemClock }: { feed: HouseFeed; now?: () =
                   data-replay
                   className="rounded-full bg-amber px-2.5 py-0.5 text-xs font-semibold text-ink"
                 >
-                  Replay of {shortDate(day.date)} {day.date.slice(0, 4)}
+                  Replay of {mediumDate(day.date)}
                 </span>
               )}
             </h2>

@@ -25,5 +25,10 @@ export const shortDate = (date: string) =>
   new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: ZONE }).format(
     new Date(`${date}T12:00:00Z`),
   );
+/** 13 Jan 2025 */
+export const mediumDate = (date: string) =>
+  new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: ZONE }).format(
+    new Date(`${date}T12:00:00Z`),
+  );
 /** 14:00 */
 export const clock = (hour: number) => `${String(hour).padStart(2, "0")}:00`;
