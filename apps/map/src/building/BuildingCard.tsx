@@ -2,6 +2,7 @@ import { formatEnergy, heatEstimate } from "./estimate";
 import type { BuildingFacts } from "./geoadmin";
 import { ASSUMPTIONS_URL, formatChf, kachelEstimate } from "./kachel";
 import { MonthSlider } from "./MonthSlider";
+import { describeSolar, SOLAR_RADIUS_M } from "./solar";
 
 const NETWORK_THRESHOLD_MWH = 700;
 
@@ -52,8 +53,8 @@ export function BuildingCard({
 }
 
 function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
-  const { register, roof, hectare } = facts;
-  if (register === null && roof === null && hectare === null) {
+  const { register, roof, hectare, osmSolar } = facts;
+  if (register === null && roof === null && hectare === null && osmSolar === null) {
     return <p>No published data found for this building.</p>;
   }
   const estimate =
@@ -131,6 +132,18 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
           <Source>Estimate. Source: SFOE Sonnendach.</Source>
         </section>
       )}
+
+      <section className="mt-3">
+        <h3 className="font-medium">Solar already there</h3>
+        <p>
+          {osmSolar === null
+            ? "OpenStreetMap's Overpass service did not answer just now; click the building again later."
+            : describeSolar(osmSolar) === "none"
+              ? `None mapped within ${SOLAR_RADIUS_M} m. OpenStreetMap is incomplete, so there may still be some.`
+              : `Mapped within ${SOLAR_RADIUS_M} m: ${describeSolar(osmSolar)}.`}
+        </p>
+        <Source>Source: © OpenStreetMap contributors (ODbL), via Overpass.</Source>
+      </section>
 
       {hectare !== null && (
         <section className="mt-3">

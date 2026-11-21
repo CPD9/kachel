@@ -31,9 +31,15 @@ function fakeFetch(): Fetch & { calls: string[] } {
     calls.push(url);
     const body = url.includes("/find?")
       ? { results: [{ attributes: GWR }] }
-      : url.includes("solarenergie")
-        ? { results: [{ attributes: ROOF }, { attributes: { ...ROOF, stromertrag: 7898 } }] }
-        : { results: [{ attributes: HECTARE }] };
+      : url.includes("overpass")
+        ? {
+            elements: [
+              { tags: { "generator:source": "solar", "generator:method": "photovoltaic" } },
+            ],
+          }
+        : url.includes("solarenergie")
+          ? { results: [{ attributes: ROOF }, { attributes: { ...ROOF, stromertrag: 7898 } }] }
+          : { results: [{ attributes: HECTARE }] };
     return { ok: true, json: async () => body };
   });
   return Object.assign(f, { calls });
@@ -75,7 +81,8 @@ describe("look-up", () => {
     const picked = { egid: 441428, lon: 7.5754, lat: 47.5608 };
     const facts = await lookUp(picked, f);
     await lookUp(picked, f);
-    expect(f.calls).toHaveLength(3);
+    expect(f.calls).toHaveLength(4);
+    expect(facts.osmSolar?.photovoltaic).toBe(1);
     expect(facts.register?.egid).toBe(441428);
     expect(facts.hectare?.totalMwh).toBe(4561.6);
   });
@@ -85,7 +92,37 @@ describe("look-up", () => {
       throw new Error("offline");
     };
     const facts = await lookUp({ egid: 1, lon: 7.5, lat: 47.5 }, f);
-    expect(facts).toEqual({ register: null, roof: null, hectare: null });
+    expect(facts).toEqual({ register: null, roof: null, hectare: null, osmSolar: null });
+  });
+
+  it("asks Overpass again on its own when it was busy", async () => {
+    const calls: string[] = [];
+    let busy = true;
+    const f: Fetch = async (url) => {
+      calls.push(url);
+      if (url.includes("overpass")) return { ok: !busy, json: async () => ({ elements: [] }) };
+      return { ok: true, json: async () => ({ results: [{ attributes: GWR }] }) };
+    };
+    const picked = { egid: 4, lon: 7.5, lat: 47.5 };
+    expect((await lookUp(picked, f)).osmSolar).toBeNull();
+    busy = false;
+    expect((await lookUp(picked, f)).osmSolar).toEqual({ photovoltaic: 0, thermal: 0, other: 0 });
+    expect(calls.filter((u) => u.includes("overpass"))).toHaveLength(2);
+    expect(calls.filter((u) => u.includes("geo.admin"))).toHaveLength(3);
+  });
+
+  it("does not wait for Overpass beyond its time limit", async () => {
+    vi.useFakeTimers();
+    const f: Fetch = async (url) =>
+      url.includes("overpass")
+        ? new Promise(() => undefined)
+        : { ok: true, json: async () => ({ results: [{ attributes: GWR }] }) };
+    const job = lookUp({ egid: 3, lon: 7.5, lat: 47.5 }, f);
+    await vi.advanceTimersByTimeAsync(6000);
+    const facts = await job;
+    vi.useRealTimers();
+    expect(facts.register?.egid).toBe(441428);
+    expect(facts.osmSolar).toBeNull();
   });
 
   it("asks again after an empty answer", async () => {
@@ -97,7 +134,7 @@ describe("look-up", () => {
     const picked = { egid: 2, lon: 7.5, lat: 47.5 };
     await lookUp(picked, f);
     await lookUp(picked, f);
-    expect(calls).toBe(6);
+    expect(calls).toBe(8);
   });
 });
 

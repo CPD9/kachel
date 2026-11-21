@@ -1,4 +1,5 @@
 import { BUILD_PERIOD, ENERGY_SOURCE, sourceKind, type SourceKind } from "./codes";
+import { parseSolar, solarUrl, type OsmSolar } from "./solar";
 
 /**
  * Lookups on api3.geo.admin.ch, the federal geodata API (free, "fair use"; see apps/map/README.md).
@@ -138,6 +139,8 @@ export interface BuildingFacts {
   readonly register: Register | null;
   readonly roof: RoofEstimate | null;
   readonly hectare: Hectare | null;
+  /** Solar already mapped in OpenStreetMap around the building; null if Overpass did not answer. */
+  readonly osmSolar: OsmSolar | null;
 }
 
 export interface Picked {
@@ -146,13 +149,40 @@ export interface Picked {
   readonly lat: number;
 }
 
-const cache = new Map<string, Promise<BuildingFacts>>();
+/** How long the card waits for Overpass before showing everything else. */
+export const SOLAR_WAIT_MS = 6000;
 
-/** Looks a building up in the three layers at once. Cached by EGID, or by position without one. */
-export function lookUp(picked: Picked, fetcher: Fetch = fetch): Promise<BuildingFacts> {
-  const key = picked.egid ?? `${picked.lon.toFixed(5)},${picked.lat.toFixed(5)}`;
-  const hit = cache.get(String(key));
+type Official = Omit<BuildingFacts, "osmSolar">;
+const official = new Map<string, Promise<Official>>();
+const solar = new Map<string, Promise<OsmSolar | null>>();
+
+/**
+ * Caches a job under a key, and forgets it again when its answer counts as a failure,
+ * so that the next click asks again.
+ */
+function cached<T>(
+  store: Map<string, Promise<T>>,
+  key: string,
+  make: () => Promise<T>,
+  failed: (value: T) => boolean,
+): Promise<T> {
+  const hit = store.get(key);
   if (hit !== undefined) return hit;
+  const job = make();
+  store.set(key, job);
+  void job.then((value) => {
+    if (failed(value)) store.delete(key);
+  });
+  return job;
+}
+
+/**
+ * Looks a building up in the three federal layers and in OpenStreetMap. Cached by EGID, or by
+ * position without one. An empty federal answer (perhaps a dropped connection) and a missing
+ * Overpass answer (Overpass is often busy) are each asked again on the next click, on their own.
+ */
+export function lookUp(picked: Picked, fetcher: Fetch = fetch): Promise<BuildingFacts> {
+  const key = String(picked.egid ?? `${picked.lon.toFixed(5)},${picked.lat.toFixed(5)}`);
   const get = async (url: string): Promise<Attributes[]> => {
     try {
       const res = await fetcher(url);
@@ -161,28 +191,41 @@ export function lookUp(picked: Picked, fetcher: Fetch = fetch): Promise<Building
       return [];
     }
   };
-  const job = Promise.all([
-    picked.egid !== null
-      ? get(registerUrl(picked.egid))
-      : get(identifyUrl(GWR_LAYER, picked.lon, picked.lat, 20)),
-    get(identifyUrl(SOLAR_ROOF_LAYER, picked.lon, picked.lat, 4)),
-    get(identifyUrl(HEAT_DEMAND_LAYER, picked.lon, picked.lat, 0)),
-  ]).then(([gwr, roofs, hectare]) => ({
-    register: gwr[0] === undefined ? null : parseRegister(gwr[0]),
-    roof: parseRoofs(roofs),
-    hectare: parseHectare(hectare[0]),
-  }));
-  cache.set(String(key), job);
-  // An empty answer may be a dropped connection: forget it, so the next click asks again.
-  void job.then((facts) => {
-    if (facts.register === null && facts.roof === null && facts.hectare === null) {
-      cache.delete(String(key));
-    }
-  });
-  return job;
+  const facts = cached(
+    official,
+    key,
+    () =>
+      Promise.all([
+        picked.egid !== null
+          ? get(registerUrl(picked.egid))
+          : get(identifyUrl(GWR_LAYER, picked.lon, picked.lat, 20)),
+        get(identifyUrl(SOLAR_ROOF_LAYER, picked.lon, picked.lat, 4)),
+        get(identifyUrl(HEAT_DEMAND_LAYER, picked.lon, picked.lat, 0)),
+      ]).then(([gwr, roofs, hectare]) => ({
+        register: gwr[0] === undefined ? null : parseRegister(gwr[0]),
+        roof: parseRoofs(roofs),
+        hectare: parseHectare(hectare[0]),
+      })),
+    (f) => f.register === null && f.roof === null && f.hectare === null,
+  );
+  const osm = cached(
+    solar,
+    key,
+    // Overpass is often busy: give it six seconds, so it never holds up the heat figures.
+    () =>
+      Promise.race([
+        fetcher(solarUrl(picked.lon, picked.lat))
+          .then(async (res) => (res.ok ? parseSolar(await res.json()) : null))
+          .catch(() => null),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), SOLAR_WAIT_MS)),
+      ]),
+    (s) => s === null,
+  );
+  return Promise.all([facts, osm]).then(([f, osmSolar]) => ({ ...f, osmSolar }));
 }
 
 /** For tests. */
 export function clearCache(): void {
-  cache.clear();
+  official.clear();
+  solar.clear();
 }
