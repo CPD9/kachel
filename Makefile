@@ -91,7 +91,7 @@ SETUP_SAMPLES ?= 32
 VIDEO_BLEND := scripts/video/assets/plantroom.blend
 VIDEO_BLENDER = TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(VIDEO_BLEND)
 
-.PHONY: video-setup video-scheduler video-daynight video-daynight-bern video-film video-glb
+.PHONY: video-setup video-scheduler video-daynight video-daynight-bern video-film video-film-2min video-glb
 
 video-setup:
 	mkdir -p $(VIDEO_OUT)/work/setup $(HOME)/.cache/kachel/tmp
@@ -167,6 +167,10 @@ video-film:
 		$(VIDEO_OUT)/daynight-january.mp4 $(VIDEO_OUT)/02-setup.mp4 $(VIDEO_OUT)/03-scheduler.mp4 \
 		$(CHARTS_OUT)/month.mp4 $(CHARTS_OUT)/breakeven.mp4 $(CHARTS_OUT)/sensitivity.mp4 \
 		$(CHARTS_OUT)/payback.mp4 $(VIDEO_OUT)/release/live-demo.mp4 $(VIDEO_OUT)/daynight-july.mp4
+
+# The two-minute pitch cut in talk-track order, plus a 720p copy (see scripts/video/cut_2min.sh).
+video-film-2min:
+	scripts/video/cut_2min.sh $(VIDEO_OUT) $(CHARTS_OUT) $(VIDEO_OUT)/kachel-film-2min.mp4
 
 # The plant room meshes as they appear in the video, for three.js.
 video-glb:
