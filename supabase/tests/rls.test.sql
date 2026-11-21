@@ -182,9 +182,10 @@ select set_config('request.jwt.claims',
                     'app_metadata', json_build_object('kachel_role', 'operator'))::text, true);
 set local role authenticated;
 select is((select count(*) from public.sites), 14::bigint, 'operator reads every site');
-select is((select count(*) from public.servers), (select count(*) from public.servers where true),
-  'operator reads every server');
-select ok((select count(*) from public.jobs) >= 26, 'operator reads every buyer''s jobs');
+-- 6 in the reference house, 60 in the twelve fleet houses, and server 211.
+select is((select count(*) from public.servers), 67::bigint, 'operator reads every server');
+-- 25 from the seed, job 311 and the one the buyer submitted above.
+select is((select count(*) from public.jobs), 27::bigint, 'operator reads every buyer''s jobs');
 select is((select count(distinct buyer_id) from public.jobs), 8::bigint,
   'operator sees the jobs of all eight buyers');
 select is((select count(*) from public.buyers), 7::bigint, 'operator reads every buyer');
