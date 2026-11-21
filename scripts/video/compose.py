@@ -185,7 +185,7 @@ def hud(r, ctx):
     d.text(
         (ix + 14, iy + ih + 50), rad, font=F["small"], fill=HOT if space > 0 else DIM
     )
-    hw = f"Shower {num(min(demand, ctx['hot_water']))} kWh"
+    hw = f"Hot water {num(min(demand, ctx['hot_water']))} kWh"
     d.text(
         (ix + iw - 14 - d.textlength(hw, font=F["small"]), iy + ih + 50),
         hw,
