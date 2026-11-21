@@ -19,7 +19,7 @@ import { card, label } from "./ui";
 const BUILDING = {
   name: "Byfangweg 18",
   address: "4051 Basel",
-  image: "/byfangweg-18.png",
+  image: "/byfangweg-18-aerial.jpg",
   kind: "Townhouse · 2 floors + attic",
   facts: [
     { icon: Calendar, k: "Built", v: "19th century" },
@@ -75,12 +75,17 @@ function Photo() {
           src={BUILDING.image}
           alt={BUILDING.name}
           onError={() => setFailed(true)}
-          className="absolute inset-0 size-full object-cover object-[center_35%]"
+          className="absolute inset-0 size-full object-cover object-center"
         />
       )}
       <span className="absolute top-2 left-2 flex animate-pill-in items-center gap-1 rounded-full bg-clay px-2 py-0.5 text-[10px] font-semibold text-white">
         <Sparkles size={11} /> Looks suitable
       </span>
+      {!failed && (
+        <span className="absolute right-2 bottom-1 text-[9px] text-white/70">
+          Aerial photo © swisstopo (SWISSIMAGE)
+        </span>
+      )}
     </div>
   );
 }
