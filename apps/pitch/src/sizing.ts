@@ -45,14 +45,30 @@ export const FUELS: Record<Fuel, { name: string; price: number; co2: number }> =
   heatpump: { name: "Heat pump", price: 0.09, co2: 0.03 },
   electric: { name: "Electric", price: 0.3, co2: 0.1 },
 };
-/** What Kachel heat costs: the computing customers pay for most of the electricity. */
-export const KACHEL_PRICE = 0.05;
-/** One-off cost of connecting the rack to the heating and hot water. */
-export const INSTALL_COST = 6500;
-/** Yearly rise of today's heating price in the projection. */
-const PRICE_RISE = 0.03;
-/** How many years the projection runs. */
-export const YEARS = 10;
+/** The assumptions behind the money side, adjustable on the result page. */
+export type Params = {
+  /** What a kWh of heat costs today, in CHF. */
+  heatPrice: number;
+  /** What Kachel heat costs: the computing customers pay for most of the electricity. */
+  kachelPrice: number;
+  /** Yearly rise of today's heating price, e.g. 0.03 for 3 %. */
+  priceRise: number;
+  /** One-off cost of connecting the rack to the heating and hot water, in CHF. */
+  installCost: number;
+  /** Cantonal subsidy for leaving fossil heating, taken off the install cost, in CHF. */
+  subsidy: number;
+  /** How many years the projection runs. */
+  years: number;
+};
+
+export const defaultParams = (fuel: Fuel): Params => ({
+  heatPrice: FUELS[fuel].price,
+  kachelPrice: 0.05,
+  priceRise: 0.03,
+  installCost: 6500,
+  subsidy: fuel === "oil" || fuel === "gas" ? 2000 : 0,
+  years: 10,
+});
 
 /** The biggest set-up, for homes that need more than any single rack. */
 const TWIN_XL: Rack = {
@@ -85,7 +101,7 @@ export type Result = {
   cumulative: number[];
 };
 
-export function size(a: Answers): Result {
+export function size(a: Answers, p: Params = defaultParams(a.fuel)): Result {
   const spaceHeat = AREA * DEMAND_PER_M2[a.windows] * EMITTER_FACTOR[a.emitters];
   const hotWater = a.hotWater ? a.residents * HOT_WATER_PER_PERSON : 0;
   const demand = spaceHeat + hotWater;
@@ -94,11 +110,12 @@ export function size(a: Answers): Result {
   // Servers run all year, but some heat lands when nobody needs it: cap what counts
   const coverage = Math.min(0.92, (rack.kw * FULL_LOAD_HOURS * 0.95) / demand);
   const covered = demand * coverage;
-  const fuel = FUELS[a.fuel];
-  const savingsPerYear = covered * Math.max(0, fuel.price - KACHEL_PRICE);
-  const cumulative = [-INSTALL_COST];
-  for (let y = 1; y <= YEARS; y++) {
-    const yearly = covered * Math.max(0, fuel.price * (1 + PRICE_RISE) ** (y - 1) - KACHEL_PRICE);
+  const net = Math.max(0, p.installCost - p.subsidy);
+  const savingsPerYear = covered * Math.max(0, p.heatPrice - p.kachelPrice);
+  const cumulative = [-net];
+  for (let y = 1; y <= p.years; y++) {
+    const yearly =
+      covered * Math.max(0, p.heatPrice * (1 + p.priceRise) ** (y - 1) - p.kachelPrice);
     cumulative.push((cumulative[y - 1] ?? 0) + yearly);
   }
   return {
@@ -109,8 +126,8 @@ export function size(a: Answers): Result {
     rack,
     coverage,
     savingsPerYear,
-    paybackYears: savingsPerYear > 0 ? INSTALL_COST / savingsPerYear : Infinity,
-    co2Tonnes: (covered * fuel.co2) / 1000,
+    paybackYears: savingsPerYear > 0 ? net / savingsPerYear : Infinity,
+    co2Tonnes: (covered * FUELS[a.fuel].co2) / 1000,
     cumulative,
   };
 }

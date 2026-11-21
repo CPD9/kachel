@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  CalendarRange,
   ArrowRight,
   Check,
   Columns2,
@@ -8,29 +9,32 @@ import {
   Fan,
   Flame,
   Heater,
+  Landmark,
   Layers,
   Leaf,
   PiggyBank,
   RotateCcw,
   Server,
   ShowerHead,
+  SlidersHorizontal,
   Square,
   Timer,
   TrendingUp,
   Users,
   Waves,
+  Wrench,
   Zap,
 } from "lucide-react";
-import type { ComponentType, ReactNode } from "react";
+import { type ComponentType, type ReactNode, useState } from "react";
 import {
   type Answers,
   type Emitters,
   type Fuel,
   FUELS,
-  INSTALL_COST,
+  defaultParams,
+  type Params,
   type Result,
   type Windows,
-  YEARS,
   size,
 } from "./sizing";
 import { lightCard as card, lightLabel as label } from "./ui";
@@ -198,39 +202,270 @@ function Stat({ icon: Icon, value, name }: { icon: Icon; value: string; name: st
   return (
     <div className="rounded-2xl bg-black/[0.035] px-2.5 py-2">
       <Icon size={13} className="text-clay" />
-      <p className="mt-1 text-[15px] leading-tight font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 text-[13px] leading-tight font-semibold tabular-nums">{value}</p>
       <p className="text-[10.5px] text-muted">{name}</p>
     </div>
   );
 }
 
-/** The recommended rack, and how it covers the home's heat. */
-function RackCard({
-  r,
+/** One assumption as a slider: name and value on top, the slider and its range below. */
+function Slider({
+  icon: Icon,
+  name,
+  value,
+  min,
+  max,
+  step,
+  format,
+  onChange,
+}: {
+  icon: Icon;
+  name: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  format: (v: number) => string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="block rounded-2xl px-2 py-1.5 hover:bg-black/[0.025]">
+      <span className="flex items-center justify-between text-[11.5px]">
+        <span className="flex items-center gap-1.5 font-medium">
+          <Icon size={13} className="text-ink/50" /> {name}
+        </span>
+        <span className="font-semibold text-clay tabular-nums">{format(value)}</span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="mt-1 h-1.5 w-full cursor-pointer accent-clay"
+      />
+      <span className="flex justify-between text-[9.5px] text-muted tabular-nums">
+        <span>{format(min)}</span>
+        <span>{format(max)}</span>
+      </span>
+    </label>
+  );
+}
+
+const rappen = (v: number) => `${Math.round(v * 100)} Rp/kWh`;
+const percent = (v: number) => `${(v * 100).toFixed(1).replace(/\.0$/, "")} %`;
+
+/** Top left: the answers given, and the assumptions behind the money, all adjustable. */
+function AssumptionsCard({
   answers,
+  params,
+  onParam,
+  onReset,
   onRestart,
 }: {
-  r: Result;
   answers: Answers;
+  params: Params;
+  onParam: <K extends keyof Params>(k: K, v: Params[K]) => void;
+  onReset: () => void;
   onRestart: () => void;
 }) {
-  const kWh = (x: number) => `${Math.round(x / 100) / 10}k kWh`;
+  const chips = [
+    WINDOWS.find((o) => o.value === answers.windows)?.name,
+    EMITTERS.find((o) => o.value === answers.emitters)?.name,
+    FUELS[answers.fuel].name,
+    `${answers.residents} residents`,
+    answers.hotWater ? "Hot water" : "No hot water",
+  ];
   return (
     <article className={`${card} absolute top-6 left-6 w-[300px]`}>
       <div className="px-2 pt-2">
-        <p className={`${label} text-clay`}>
-          <Server size={11} /> Best fit for your home
+        <div className="flex items-center justify-between">
+          <p className={label}>
+            <SlidersHorizontal size={12} /> Your numbers
+          </p>
+          <button
+            onClick={onReset}
+            className="flex items-center gap-1 text-[11px] font-medium text-muted hover:text-ink"
+          >
+            <RotateCcw size={11} /> Reset
+          </button>
+        </div>
+        <p className="mt-1 text-[11.5px] text-muted">
+          Move the sliders, the projection on the right follows.
         </p>
-        <h3 className="mt-1 text-[19px] leading-tight font-semibold">{r.rack.name}</h3>
-        <p className="mt-0.5 text-[11.5px] text-muted">
-          {r.rack.kw} kW heat · {r.rack.servers} servers · {r.rack.size}
-        </p>
+      </div>
+
+      <div className="mt-2 space-y-0.5 border-t border-black/[0.06] pt-1.5">
+        <Slider
+          icon={Flame}
+          name={`Heat today (${FUELS[answers.fuel].name.toLowerCase()})`}
+          value={params.heatPrice}
+          min={0.05}
+          max={0.4}
+          step={0.01}
+          format={rappen}
+          onChange={(v) => onParam("heatPrice", v)}
+        />
+        <Slider
+          icon={Server}
+          name="Kachel heat"
+          value={params.kachelPrice}
+          min={0}
+          max={0.15}
+          step={0.01}
+          format={rappen}
+          onChange={(v) => onParam("kachelPrice", v)}
+        />
+        <Slider
+          icon={TrendingUp}
+          name="Energy prices rise"
+          value={params.priceRise}
+          min={0}
+          max={0.08}
+          step={0.005}
+          format={(v) => `${percent(v)} / yr`}
+          onChange={(v) => onParam("priceRise", v)}
+        />
+        <Slider
+          icon={Wrench}
+          name="Installation"
+          value={params.installCost}
+          min={2000}
+          max={15000}
+          step={500}
+          format={chf}
+          onChange={(v) => onParam("installCost", v)}
+        />
+        <Slider
+          icon={Landmark}
+          name="Subsidy (Basel-Stadt)"
+          value={params.subsidy}
+          min={0}
+          max={6000}
+          step={500}
+          format={chf}
+          onChange={(v) => onParam("subsidy", v)}
+        />
+        <Slider
+          icon={CalendarRange}
+          name="Look ahead"
+          value={params.years}
+          min={5}
+          max={25}
+          step={1}
+          format={(v) => `${v} years`}
+          onChange={(v) => onParam("years", v)}
+        />
+      </div>
+
+      <div className="mt-2 border-t border-black/[0.06] px-2 pt-2.5">
+        <p className={label}>Your answers</p>
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {chips.map((c) => (
+            <span
+              key={c}
+              className="rounded-full bg-black/[0.05] px-2 py-0.5 text-[10.5px] font-medium text-ink/70"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+      </div>
+      <button
+        onClick={onRestart}
+        className="mt-3 mb-1 flex w-full items-center justify-center gap-1.5 rounded-full bg-black/[0.05] py-2 text-[12px] font-medium hover:bg-black/10"
+      >
+        <ArrowLeft size={13} /> Change answers
+      </button>
+    </article>
+  );
+}
+
+/** Top right, compact: money saved over the years, follows the sliders. */
+function ProjectionCard({ r }: { r: Result }) {
+  const years = r.cumulative.length - 1;
+  const max = Math.max(...r.cumulative, 1);
+  const min = Math.min(...r.cumulative, 0);
+  const span = max - min || 1;
+  const payback = r.paybackYears === Infinity ? "—" : `${r.paybackYears.toFixed(1)} yrs`;
+  return (
+    <article
+      className={`${card} absolute top-6 right-6 w-[300px]`}
+      style={{ animationDelay: "120ms" }}
+    >
+      <div className="flex items-start justify-between px-2 pt-2">
+        <div>
+          <p className={label}>
+            <TrendingUp size={12} /> Saved in {years} years
+          </p>
+          <h3 className="mt-1 text-[22px] leading-tight font-semibold tabular-nums">
+            {chf(r.cumulative[years] ?? 0)}
+          </h3>
+        </div>
+        <span className="mt-1 rounded-full bg-clay/10 px-2 py-0.5 text-[10.5px] font-semibold text-clay">
+          after install
+        </span>
+      </div>
+
+      {/* Money saved so far, year by year: grey below the line while paying off the install */}
+      <div className="mx-2 mt-2 flex h-14 gap-[3px]">
+        {r.cumulative.map((v, y) => (
+          <div key={y} className="flex flex-1 flex-col">
+            <div className="flex items-end" style={{ flexBasis: `${(max / span) * 100}%` }}>
+              {v > 0 && (
+                <div
+                  className="w-full rounded-t-[2px] bg-clay transition-[height] duration-300"
+                  style={{ height: `${(v / max) * 100}%` }}
+                />
+              )}
+            </div>
+            <div className="border-t border-black/15" />
+            <div className="flex items-start" style={{ flexBasis: `${(-min / span) * 100}%` }}>
+              {v < 0 && (
+                <div
+                  className="w-full rounded-b-[2px] bg-black/20 transition-[height] duration-300"
+                  style={{ height: `${(v / min) * 100}%` }}
+                />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2.5 grid grid-cols-3 gap-1 px-1 pb-1">
+        <Stat icon={PiggyBank} value={chf(r.savingsPerYear)} name="per year" />
+        <Stat icon={Timer} value={payback} name="payback" />
+        <Stat icon={Leaf} value={`${r.co2Tonnes.toFixed(1)} t`} name="CO₂ / yr" />
+      </div>
+    </article>
+  );
+}
+
+/** Bottom right: the rack we recommend, and how it covers the home's heat. */
+function ProductCard({ r, answers }: { r: Result; answers: Answers }) {
+  const kWh = (x: number) => `${Math.round(x / 100) / 10}k kWh`;
+  return (
+    <article
+      className={`${card} absolute right-6 bottom-6 w-[300px]`}
+      style={{ animationDelay: "220ms" }}
+    >
+      <div className="flex items-start justify-between px-2 pt-2">
+        <div>
+          <p className={`${label} text-clay`}>
+            <Server size={11} /> We recommend
+          </p>
+          <h3 className="mt-1 text-[19px] leading-tight font-semibold">{r.rack.name}</h3>
+          <p className="mt-0.5 text-[11.5px] text-muted">
+            {r.rack.kw} kW · {r.rack.servers} servers · {r.rack.size}
+          </p>
+        </div>
       </div>
 
       {/* The rack itself, simple: a column of server slots glowing warm */}
       <div className="mx-2 mt-3 flex items-end gap-3 rounded-2xl bg-[#1b1d21] p-3">
-        <div className="grid w-16 gap-[3px] rounded-md bg-black/60 p-1.5">
-          {Array.from({ length: Math.min(r.rack.servers, 12) }, (_, i) => (
+        <div className="grid w-14 gap-[3px] rounded-md bg-black/60 p-1.5">
+          {Array.from({ length: Math.min(r.rack.servers, 10) }, (_, i) => (
             <span
               key={i}
               className="h-1.5 animate-pulse rounded-[2px] bg-gradient-to-r from-clay to-amber-400"
@@ -242,97 +477,25 @@ function RackCard({
           <p className="text-[22px] leading-none font-semibold text-white tabular-nums">
             {Math.round(r.coverage * 100)}%
           </p>
-          of your yearly heat comes from the servers. Your {FUELS[answers.fuel].name.toLowerCase()}{" "}
-          stays as backup for the coldest days.
+          of your yearly heat from the servers. Your {FUELS[answers.fuel].name.toLowerCase()} stays
+          as backup.
         </div>
       </div>
 
-      <dl className="mt-3 space-y-1.5 px-2 text-[11.5px]">
-        <div className="flex justify-between">
-          <dt className="text-muted">Space heating</dt>
+      <dl className="mt-2.5 grid grid-cols-3 gap-1 px-2 pb-1 text-[10.5px]">
+        <div>
+          <dt className="text-muted">Heating</dt>
           <dd className="font-semibold tabular-nums">{kWh(r.spaceHeat)}</dd>
         </div>
-        <div className="flex justify-between">
+        <div>
           <dt className="text-muted">Hot water</dt>
           <dd className="font-semibold tabular-nums">{r.hotWater ? kWh(r.hotWater) : "—"}</dd>
         </div>
-        <div className="flex justify-between border-t border-black/[0.06] pt-1.5">
+        <div>
           <dt className="text-muted">Peak load</dt>
           <dd className="font-semibold tabular-nums">{r.peakKw.toFixed(1)} kW</dd>
         </div>
       </dl>
-
-      <button
-        onClick={onRestart}
-        className="mt-3 mb-1 flex w-full items-center justify-center gap-1.5 rounded-full bg-black/[0.05] py-2 text-[12px] font-medium hover:bg-black/10"
-      >
-        <RotateCcw size={13} /> Change answers
-      </button>
-    </article>
-  );
-}
-
-/** Savings, payback, CO₂ and money saved over ten years. */
-function ProjectionCard({ r }: { r: Result }) {
-  const max = Math.max(...r.cumulative);
-  const min = Math.min(...r.cumulative, 0);
-  const span = max - min || 1;
-  const payback = r.paybackYears === Infinity ? "—" : `${r.paybackYears.toFixed(1)} yrs`;
-  return (
-    <article
-      className={`${card} absolute top-6 right-6 w-[300px]`}
-      style={{ animationDelay: "120ms" }}
-    >
-      <div className="px-2 pt-2">
-        <p className={label}>
-          <TrendingUp size={12} /> Financial projection
-        </p>
-        <h3 className="mt-1 text-[19px] leading-tight font-semibold tabular-nums">
-          {chf(r.cumulative[YEARS] ?? 0)}
-        </h3>
-        <p className="mt-0.5 text-[11.5px] text-muted">
-          saved over {YEARS} years, after installation
-        </p>
-      </div>
-
-      {/* Money saved so far, year by year: below the line while paying off the install */}
-      <div className="mx-2 mt-3 flex h-28 gap-1">
-        {r.cumulative.map((v, y) => (
-          <div key={y} className="flex flex-1 flex-col">
-            <div className="flex items-end" style={{ flexBasis: `${(max / span) * 100}%` }}>
-              {v > 0 && (
-                <div
-                  className="w-full origin-bottom animate-[grow-up_700ms_cubic-bezier(0.22,1,0.36,1)_both] rounded-t-[3px] bg-clay"
-                  style={{ height: `${(v / max) * 100}%`, animationDelay: `${y * 50}ms` }}
-                />
-              )}
-            </div>
-            <div className="border-t border-black/15" />
-            <div className="flex items-start" style={{ flexBasis: `${(-min / span) * 100}%` }}>
-              {v < 0 && (
-                <div
-                  className="w-full rounded-b-[3px] bg-black/20"
-                  style={{ height: `${(v / min) * 100}%` }}
-                />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mx-2 mt-1 flex justify-between text-[9.5px] font-semibold text-muted">
-        <span>Today</span>
-        <span>Year {YEARS}</span>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-1.5 px-1">
-        <Stat icon={PiggyBank} value={chf(r.savingsPerYear)} name="saved per year" />
-        <Stat icon={Timer} value={payback} name="to pay back" />
-        <Stat icon={Leaf} value={`${r.co2Tonnes.toFixed(1)} t`} name="CO₂ avoided / yr" />
-        <Stat icon={Server} value={chf(INSTALL_COST)} name="one-off install" />
-      </div>
-      <p className="mx-1 mt-2 mb-1 rounded-xl bg-clay/10 px-2.5 py-1.5 text-[11px] font-medium text-clay">
-        Computing customers pay for the servers' power, so your heat costs about a third of today's.
-      </p>
     </article>
   );
 }
@@ -359,7 +522,12 @@ export function Assessment({
   const set = <K extends keyof Answers>(k: K, v: Answers[K]) => onAnswers({ ...answers, [k]: v });
   const current: Step = STEPS[step] ?? "Result";
   const done = current === "Result";
-  const result = size(answers);
+  // Slider changes, kept per fuel: picking another fuel starts from its own prices again
+  const [tuned, setTuned] = useState<{ fuel: Fuel; params: Params } | null>(null);
+  const params = tuned?.fuel === answers.fuel ? tuned.params : defaultParams(answers.fuel);
+  const setParam = <K extends keyof Params>(k: K, v: Params[K]) =>
+    setTuned({ fuel: answers.fuel, params: { ...params, [k]: v } });
+  const result = size(answers, params);
 
   return (
     <div className="pointer-events-none absolute inset-0 font-sans">
@@ -367,8 +535,15 @@ export function Assessment({
 
       {done ? (
         <>
-          <RackCard r={result} answers={answers} onRestart={() => setStep(0)} />
+          <AssumptionsCard
+            answers={answers}
+            params={params}
+            onParam={setParam}
+            onReset={() => setTuned(null)}
+            onRestart={() => setStep(0)}
+          />
           <ProjectionCard r={result} />
+          <ProductCard r={result} answers={answers} />
         </>
       ) : (
         <>

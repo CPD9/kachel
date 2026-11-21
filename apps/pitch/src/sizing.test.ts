@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { RACKS, size } from "./sizing";
+import { defaultParams, RACKS, size } from "./sizing";
 
 const base = {
   windows: "double",
@@ -29,4 +29,13 @@ it("starts the projection at minus the install cost and pays back over time", ()
   const r = size(base);
   expect(r.cumulative[0]).toBeLessThan(0);
   expect(r.cumulative.at(-1)).toBeGreaterThan(0);
+});
+
+it("follows the adjustable assumptions", () => {
+  const p = defaultParams(base.fuel);
+  expect(size(base, { ...p, subsidy: 4000 }).paybackYears).toBeLessThan(size(base, p).paybackYears);
+  expect(size(base, { ...p, heatPrice: 0.25 }).savingsPerYear).toBeGreaterThan(
+    size(base, p).savingsPerYear,
+  );
+  expect(size(base, { ...p, years: 20 }).cumulative).toHaveLength(21);
 });
