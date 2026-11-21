@@ -268,7 +268,7 @@ def main():
                     t = (j + 1) / (fade + 1)
                     cl, cr = Image.blend(prev[0], lim, t), Image.blend(prev[1], rim, t)
                 hour_t = int(r["hour"]) + (s * per + j) / HOUR
-                img = assemble(cl, cr, r, ctx, hour_t, n)
+                img = assemble(cl, cr, r, ctx, hour_t, n, 60 * s // steps)
                 ff.stdin.write(img.tobytes())
                 n += 1
                 if s == 0 and j == per - 1 and int(r["hour"]) in (0, 7, 9, 13, 17, 21):
