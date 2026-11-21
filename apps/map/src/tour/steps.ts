@@ -1,3 +1,4 @@
+import type { NotIn3D } from "../building/BuildingCard";
 import { beforeSunset } from "../clock";
 import { BASEL, ORIGIN, SWITZERLAND_VIEW, type View } from "../places";
 import type { Scene } from "../scene/viewer";
@@ -16,8 +17,8 @@ export interface TourBuilding {
 export interface TourDeps {
   readonly scene: Scene;
   openBuilding(building: TourBuilding): void;
-  /** Tells the card the building is newer than swisstopo's 3D data (true), or not (false). */
-  setNotIn3D(on: boolean): void;
+  /** Tells the card the building is newer than swisstopo's 3D data, and what stands in for it. */
+  setNotIn3D(shown: NotIn3D): void;
   closeCards(): void;
   setNetworksOn(on: boolean): void;
   setServersOn(on: boolean): void;
@@ -36,7 +37,8 @@ const TILES_CAP_MS = 8000;
  * class 1263 (schools), 6 storeys, 14,436 m² heated floor, 3,735 m² footprint, low-temperature
  * district heating. It opened in August 2026, after swissBUILDINGS3D's survey (the blocks around
  * it date from 2021, when the plot was a building site), so the tiles have no building here and
- * Sonnendach has no roof for it: the card shows our period estimate, and the map a marker.
+ * Sonnendach has no roof for it: the card shows our period estimate, and the map our block model
+ * (scene/campus.ts), or a marker if the model did not load.
  */
 export const TOUR_BUILDING: TourBuilding = {
   name: "FHNW Campus Dreispitz",
@@ -46,7 +48,7 @@ export const TOUR_BUILDING: TourBuilding = {
   storeys: 6,
 };
 
-/** Metres a storey for the marker's height: an illustration, the register gives storeys only. */
+/** Metres a storey for the fallback marker's height: the register gives storeys only. */
 const STOREY_M = 4;
 
 /**
@@ -106,10 +108,12 @@ export function tourSteps(d: TourDeps): TourStep[] {
         d.openBuilding(building);
         d.scene.highlightBuilding(building.egid);
         await ctx.atMost(d.scene.tilesLoaded(), tilesCap);
-        // Coloured if the 3D data has it; otherwise an orange pin where the register puts it.
-        const missing = d.scene.highlightedCount() === 0;
+        // Coloured if the 3D data has it; otherwise our block model, coloured too; and if that
+        // did not load, an orange pin where the register puts the building.
+        const inTiles = d.scene.highlightedCount() > 0;
+        const shown: NotIn3D = inTiles ? false : d.scene.ownModel(building.egid) ? "model" : "pin";
         d.scene.showMarker(
-          missing
+          shown === "pin"
             ? {
                 lon: building.lon,
                 lat: building.lat,
@@ -117,7 +121,7 @@ export function tourSteps(d: TourDeps): TourStep[] {
               }
             : null,
         );
-        d.setNotIn3D(missing);
+        d.setNotIn3D(shown);
         ctx.show();
         await ctx.dwell(7000);
       },

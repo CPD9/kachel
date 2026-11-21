@@ -29,6 +29,7 @@ function fakeScene() {
     showHomeServers: vi.fn(),
     highlightBuilding: vi.fn(() => 0),
     highlightedCount: () => 0,
+    ownModel: () => false,
     showMarker: vi.fn(),
     destroy: vi.fn(),
   } satisfies Scene;

@@ -4,7 +4,7 @@ import type { Scene } from "../scene/viewer";
 import { TOUR_BUILDING, tourSteps } from "./steps";
 import { createTour } from "./tour";
 
-function fakeScene(tiles: Promise<void>, inTiles = 0): Scene {
+function fakeScene(tiles: Promise<void>, inTiles = 0, ownModel = false): Scene {
   return {
     time: () => new Date(),
     playing: () => true,
@@ -18,6 +18,7 @@ function fakeScene(tiles: Promise<void>, inTiles = 0): Scene {
     showHomeServers: vi.fn(),
     highlightBuilding: vi.fn(() => 0),
     highlightedCount: () => inTiles,
+    ownModel: () => ownModel,
     showMarker: vi.fn(),
     destroy: vi.fn(),
   };
@@ -29,7 +30,29 @@ describe("tour steps", () => {
     expect(TOUR_BUILDING.name).toBe("FHNW Campus Dreispitz");
   });
 
-  it("marks the campus on the map and tells the card when the 3D data lacks it", async () => {
+  it("stands our block model in for the campus when the 3D data lacks it", async () => {
+    const scene = fakeScene(Promise.resolve(), 0, true);
+    const setNotIn3D = vi.fn();
+    await createTour(
+      tourSteps({
+        scene,
+        openBuilding: vi.fn(),
+        setNotIn3D,
+        closeCards: vi.fn(),
+        setNetworksOn: vi.fn(),
+        setServersOn: vi.fn(),
+      }),
+      () => undefined,
+      async () => undefined,
+    ).start();
+    // The model is coloured with the card open; no pin.
+    expect(scene.highlightBuilding).toHaveBeenCalledWith(243058419);
+    expect(vi.mocked(scene.showMarker).mock.calls.some(([m]) => m !== null)).toBe(false);
+    expect(setNotIn3D).toHaveBeenCalledWith("model");
+    expect(setNotIn3D.mock.calls.at(-1)).toEqual([false]);
+  });
+
+  it("falls back to a pin when the block model did not load", async () => {
     const scene = fakeScene(Promise.resolve());
     const setNotIn3D = vi.fn();
     const openBuilding = vi.fn();
@@ -53,7 +76,7 @@ describe("tour steps", () => {
       lat: 47.537456,
       heightM: 24,
     });
-    expect(setNotIn3D).toHaveBeenCalledWith(true);
+    expect(setNotIn3D).toHaveBeenCalledWith("pin");
     // The next stop takes the marker and the note away again.
     expect(vi.mocked(scene.showMarker).mock.calls.at(-1)).toEqual([null]);
     expect(setNotIn3D.mock.calls.at(-1)).toEqual([false]);
@@ -75,7 +98,8 @@ describe("tour steps", () => {
       async () => undefined,
     ).start();
     expect(vi.mocked(scene.showMarker).mock.calls.some(([m]) => m !== null)).toBe(false);
-    expect(setNotIn3D).not.toHaveBeenCalledWith(true);
+    expect(setNotIn3D).not.toHaveBeenCalledWith("pin");
+    expect(setNotIn3D).not.toHaveBeenCalledWith("model");
   });
 
   it("flies Basel, opens the building, switches both layers on, ends on Switzerland", async () => {

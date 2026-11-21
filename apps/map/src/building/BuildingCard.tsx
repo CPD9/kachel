@@ -44,12 +44,19 @@ function Source({ children }: { children: string }) {
   return <p className="mt-1 text-xs text-paper/60">{children}</p>;
 }
 
+/**
+ * A building newer than swisstopo's 3D data: false if the tiles have it, else what stands in for
+ * it on the map, our block model or the register's pin.
+ */
+export type NotIn3D = false | "model" | "pin";
+
 /** A clicked building: its estimated heat and energy use, and the published facts behind them. */
 export function BuildingCard({
   facts,
   month,
   fleet = null,
   notIn3D = false,
+  onInside,
   onClose,
 }: {
   facts: BuildingFacts | "loading";
@@ -57,8 +64,10 @@ export function BuildingCard({
   month: number;
   /** The synthetic fleet house placed on this building, if any. */
   fleet?: FleetHouse | null;
-  /** The building is newer than swisstopo's 3D data: the map shows a marker instead. */
-  notIn3D?: boolean;
+  /** The building is newer than swisstopo's 3D data, and what the map shows instead. */
+  notIn3D?: NotIn3D;
+  /** Opens the building's inside (the plant room and our renders); no button without it. */
+  onInside?: (() => void) | undefined;
   onClose: () => void;
 }) {
   return (
@@ -79,11 +88,26 @@ export function BuildingCard({
           {`Fleet simulation: here this building gets ${fleet.servers} servers, as synthetic house ${fleet.id}, one of ${FLEET.length} in Basel and Bern. An illustration: the building and the published figures below are real, the fleet is not.`}
         </p>
       )}
-      {notIn3D && (
+      {notIn3D === "pin" && (
         <p className="mr-8 mb-2 rounded border border-heat px-2 py-1 text-xs text-paper/80">
           Building newer than swisstopo&apos;s 3D data: the orange pin shows where the building
           register puts it.
         </p>
+      )}
+      {notIn3D === "model" && (
+        <p className="mr-8 mb-2 rounded border border-heat px-2 py-1 text-xs text-paper/80">
+          Building newer than swisstopo&apos;s 3D data. In orange, our block model; shape and
+          orientation assumed until survey data exists.
+        </p>
+      )}
+      {onInside !== undefined && (
+        <button
+          type="button"
+          onClick={onInside}
+          className="mb-3 rounded bg-heat px-3 py-1 text-sm font-medium text-ink"
+        >
+          Inside: the plant room
+        </button>
       )}
       {facts === "loading" ? (
         <p>Looking the building up…</p>
