@@ -118,7 +118,8 @@ export async function createScene(
       requestVertexNormals: true,
       credit: new Credit("© swisstopo"),
     }),
-    Cesium3DTileset.fromUrl(SWISS_BUILDINGS, { maximumScreenSpaceError: 8 }),
+    // Cesium's default detail (screen-space error 16): polite to swisstopo's servers.
+    Cesium3DTileset.fromUrl(SWISS_BUILDINGS),
   ]);
   if (viewer.isDestroyed()) throw new Error("The map closed while it was loading.");
   viewer.terrainProvider = terrain;
