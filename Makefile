@@ -61,6 +61,7 @@ fleet:
 	cd $(SCHED) && uv run python run_fleet.py
 
 check-readme:
+	python3 scripts/pitch/voiceover.py --check
 	node --test scripts/*.test.mjs
 	pnpm readme:check
 
