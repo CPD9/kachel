@@ -30,7 +30,7 @@ is always live.
 
 ![The host app with six servers: Server 4 runs its embeddings job](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/live-running.webp)
 
-![The same screen a moment later: Server 4's job is paused, no heat sink](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/live-paused.webp)
+![The same screen a moment later: Server 4's job is paused by its signal file](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/live-paused.webp)
 
 **Talking to the house.** `services/scheduler/chat.py` is a command-line chat with a small local
 model (through Ollama) that can read the house's figures and rerun the year. It is not in the

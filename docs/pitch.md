@@ -113,7 +113,7 @@ Server 4 with `--tick 0.2` (command in `services/agent/.env.example`), signal fi
 
 If the stack is not up, Duc plays
 [live-demo.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
-(27 s) and Peter says the same lines over it.
+(30 s) and Peter says the same lines over it.
 
 ### 3:32–4:35, slide 2
 
