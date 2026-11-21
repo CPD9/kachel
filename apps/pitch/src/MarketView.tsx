@@ -4,11 +4,8 @@ import {
   Cable,
   Check,
   Cpu,
-  Flame,
-  Leaf,
   MemoryStick,
   Radio,
-  ShowerHead,
   Snowflake,
   Sparkles,
   Star,
@@ -38,7 +35,6 @@ import { card, label } from "./ui";
 
 const VIOLET = REMOTE_COLOR;
 const HEAT_COLOR: Record<HeatNeed, string> = { high: "#f97316", medium: "#fbbf24", low: "#64748b" };
-const SHOWER_KWH = 2;
 
 const chf = (x: number) =>
   `CHF ${x >= 100 ? Math.round(x).toLocaleString("de-CH") : x.toFixed(x < 10 ? 2 : 0)}`;
@@ -603,7 +599,7 @@ export function MarketHouses({ m }: { m: Market }) {
 
       {/* Right: the picked house */}
       {q && !q.miss && (
-        <div className="absolute top-[68px] right-6 bottom-6 flex w-[310px] flex-col gap-3 overflow-y-auto [scrollbar-width:none]">
+        <div className="absolute top-6 right-6 bottom-6 flex w-[310px] flex-col gap-3 overflow-y-auto [scrollbar-width:none]">
           <article key={q.offer.id} className={card} style={{ animationDelay: "200ms" }}>
             <div
               className="relative h-28 overflow-hidden rounded-[20px]"
@@ -704,35 +700,6 @@ export function MarketHouses({ m }: { m: Market }) {
                   $ kachel run --at {q.offer.id}.bs.kachel.ch
                 </p>
               )}
-            </div>
-          </article>
-
-          <article
-            key={`${q.offer.id}-heat`}
-            className={`${card} mt-auto`}
-            style={{ animationDelay: "350ms" }}
-          >
-            <div className="px-2 pt-2 pb-1.5">
-              <p className={label}>
-                <Flame size={12} /> Your heat goes to
-              </p>
-              <p className="mt-1 text-[14px] leading-snug font-semibold">{q.offer.heatsWhat}</p>
-              <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-                {[
-                  { icon: Flame, v: `${Math.round(q.heatKwh)}`, u: "kWh heat" },
-                  { icon: ShowerHead, v: `${Math.round(q.heatKwh / SHOWER_KWH)}`, u: "showers" },
-                  { icon: Leaf, v: `${Math.round(q.co2)}`, u: "kg CO₂ saved" },
-                ].map(({ icon: Icon, v, u }) => (
-                  <div key={u} className="rounded-2xl bg-white/[0.06] px-2 py-1.5">
-                    <Icon size={12} className="text-clay" />
-                    <p className="mt-0.5 text-[14px] font-semibold tabular-nums">{v}</p>
-                    <p className="text-[9.5px] text-white/55">{u}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-2 text-[10.5px] text-white/50">
-                {needs.once ? "From this one job." : "Every month, from your job alone."}
-              </p>
             </div>
           </article>
         </div>

@@ -71,6 +71,8 @@ const REMOTE_TAG_AT: [number, number] = (() => {
 const BUILDINGS = "3d-buildings";
 const HOME_BUILDING = "home-building";
 const HOME_COLOR = "#ea580c";
+/** The city's plain grey buildings. */
+const BUILDING_COLOR = "#3a3a3c";
 const EXTRUDED: mapboxgl.FilterSpecification = ["==", ["get", "extrude"], "true"];
 const FOG: mapboxgl.FogSpecification = {
   color: "rgb(10, 20, 30)",
@@ -109,7 +111,7 @@ function add3dBuildings(map: mapboxgl.Map) {
       type: "fill-extrusion",
       minzoom: 15,
       paint: {
-        "fill-extrusion-color": "#3a3a3c",
+        "fill-extrusion-color": BUILDING_COLOR,
         "fill-extrusion-height": [
           "interpolate",
           ["linear"],
@@ -207,6 +209,8 @@ type Raised = {
   select: (on: number[]) => void;
   /** Look again for neighbours whose building hadn't loaded; true if any was found. */
   resolve: () => boolean;
+  /** Blend the neighbours back into the city (plain grey, no lines), or light them up again. */
+  hide: (hidden: boolean) => void;
   cleanup: () => void;
 };
 
@@ -219,6 +223,7 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
   const ids = new Map<number, string | number>();
   const heights: Record<number, number> = {};
   let current = new Set([selected]);
+  let hidden = false;
   const homeId = findBuildingId(map, HOME);
   const homeFeature =
     homeId === undefined
@@ -259,10 +264,15 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
     map.setPaintProperty(
       NEIGHBOUR_BUILDINGS,
       "fill-extrusion-color",
-      pairs.length
-        ? (["match", ["id"], ...pairs, "#555"] as mapboxgl.ExpressionSpecification)
-        : "#555",
+      hidden
+        ? BUILDING_COLOR
+        : pairs.length
+          ? (["match", ["id"], ...pairs, "#555"] as mapboxgl.ExpressionSpecification)
+          : "#555",
     );
+    for (const layer of [LINK, `${LINK}-glow`, `${LINK}-others`])
+      if (map.getLayer(layer))
+        map.setLayoutProperty(layer, "visibility", hidden ? "none" : "visible");
     const source = map.getSource<mapboxgl.GeoJSONSource>(LINK);
     source?.setData({
       type: "FeatureCollection",
@@ -330,6 +340,10 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
       paint();
     },
     resolve,
+    hide: (on) => {
+      hidden = on;
+      paint();
+    },
     cleanup: () => {
       for (const layer of [NEIGHBOUR_BUILDINGS, LINK, `${LINK}-glow`, `${LINK}-others`])
         if (map.getLayer(layer)) map.removeLayer(layer);
@@ -905,6 +919,11 @@ export function Globe({
       map.off("touchstart", stop);
     };
   }, [neighbour, simOn, marketOn]);
+
+  // Looking for compute, the neighbours are out of the picture: no colours, no lines
+  useEffect(() => {
+    raisedRef.current?.hide(marketOn);
+  }, [marketOn, roofs]);
 
   // Looking for compute: frame every house in Basel, then fly to the picked one
   const houses = market?.houses ?? false;
