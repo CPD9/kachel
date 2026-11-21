@@ -17,28 +17,30 @@ flowchart LR
   end
 
   supa[("Supabase<br/>sites, servers, jobs, heat_state<br/>Realtime on")]
-  host["Host app<br/>apps/host<br/>their house and servers"]
-  console["Console app<br/>apps/console<br/>the buyer's jobs"]
-  fleet["Fleet scheduler (next)<br/>routes each job to a home<br/>whose heat is useful now"]
-  outlook["District heating and solar (next)<br/>summer heat sink, own power<br/>issues #66 and #27"]
+  host["Host app<br/>apps/host<br/>the house, its heat and money"]
+  console["Console app<br/>apps/console<br/>submit and follow jobs"]
+  fleet["Fleet model<br/>make fleet<br/>each job to a home whose heat is useful"]
+  outlook["District heating as a summer heat sink (next, #66)"]
 
   agent -- "job and server state" --> supa
+  fleet -- "one hour of a fleet day<br/>(fleet_write.py)" --> supa
+  console -- "submit a job (QUEUED)" --> supa
   supa -- "Realtime" --> host
   supa -- "Realtime" --> console
-  console -. "submit a job (next, #14)" .-> fleet
-  fleet -. "job" .-> sched
   tank -. "heat the house cannot use" .-> outlook
 ```
 
 What each box is in the repo:
 
-| Box                         | Where                                            | State                                                         |
-| --------------------------- | ------------------------------------------------ | ------------------------------------------------------------- |
-| House scheduler             | `services/scheduler/heatsched/scheduler.py`      | Built. Moves a deadline job off site when it has no heat sink |
-| Agent                       | `services/agent`                                 | Built. Follows a run/pause signal file and writes to Supabase |
-| Supabase and Realtime       | `supabase/migrations`, `packages/db/src/live.ts` | Built. Realtime on `servers`, `jobs` and `heat_state`         |
-| Host app                    | `apps/host`                                      | Built. Shows each server and its job live                     |
-| Console app                 | `apps/console`                                   | Built. Lists jobs and their state; submit form is next (#14)  |
-| Fleet scheduler             | none yet                                         | Next. Today each home decides alone                           |
-| District heating and solar  | issues #66 and #27                               | Next. The outlook for summer heat and cheaper power           |
-| Scheduler writes the signal | `services/scheduler`, `services/agent`           | Next. On stage the signal file is written by hand             |
+| Box                         | Where                                            | State                                                                                   |
+| --------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| House scheduler             | `services/scheduler/heatsched/scheduler.py`      | Built. Moves a deadline job off site when it has no heat sink                           |
+| Fleet model                 | `services/scheduler/heatsched/fleet.py`          | Built as a model on synthetic houses (#86, #95); `fleet_write.py` fills Supabase (#100) |
+| Solar and battery           | `services/scheduler/heatsched/solar.py`          | Built. Roof PV and a battery in the yearly balance (#91)                                |
+| Agent                       | `services/agent`                                 | Built. Follows a run/pause signal file and writes to Supabase                           |
+| Supabase and Realtime       | `supabase/migrations`, `packages/db/src/live.ts` | Built. Realtime on `servers`, `jobs` and `heat_state`; row level security on all        |
+| Host app                    | `apps/host`                                      | Built. Shows the house, each server and its job live                                    |
+| Console app                 | `apps/console`                                   | Built. Submits jobs (#85) and lists them with their state                               |
+| Scheduler writes the signal | `services/scheduler`, `services/agent`           | Next. On stage the signal file is written by hand                                       |
+| Live routing                | none yet                                         | Next. A submitted job waits as QUEUED; nothing places it live yet                       |
+| District heating            | issue #66                                        | Next. A summer heat sink for heat the houses cannot use                                 |
