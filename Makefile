@@ -44,10 +44,11 @@ check-db:
 	@if pnpm exec supabase status >/dev/null 2>&1; then pnpm exec supabase test db; \
 	else echo "check-db: local Supabase is not running (make dev); skipped, CI runs it."; fi
 
-# 50 synthetic houses as one fleet on the January and July days, on the saved Basel 2025 weather:
-# where every job ran, each house's heat by the hour and the KPIs (out/fleet_*.csv, fleet_kpis.json).
+# Synthetic fleets on the January and July days, on the saved 2025 weather: 50 houses in Basel, 50 in
+# Bern, and both as one fleet. Where every job ran, each house's heat by the hour and the KPIs
+# (out/fleet_*.csv and fleet_*kpis.json).
 fleet:
-	cd $(SCHED) && uv run python run_fleet.py --weather tests/data/weather_basel_2025.csv
+	cd $(SCHED) && uv run python run_fleet.py
 
 check-readme:
 	node --test scripts/*.test.mjs

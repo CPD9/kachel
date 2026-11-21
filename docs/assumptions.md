@@ -80,28 +80,40 @@ Note in config.json: ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-l
 
 ## Fleet (synthetic, make fleet)
 
-| What                                       | Key                                  | Value          | Unit         | Source                                     |
-| ------------------------------------------ | ------------------------------------ | -------------- | ------------ | ------------------------------------------ |
-| Houses in the fleet                        | `houses`                             | 50             |              | our guess                                  |
-| Random seed that draws the houses and jobs | `seed`                               | 2025           |              | our guess                                  |
-| City whose weather every house gets        | `city`                               | Basel          |              | Open-Meteo archive, Basel 2025 (CC BY 4.0) |
-| Latitude range of the houses               | `latitude`                           | 47.54 to 47.58 | °N           | our guess                                  |
-| Longitude range of the houses              | `longitude`                          | 7.56 to 7.63   | °E           | our guess                                  |
-| Servers per house                          | `servers_per_house`                  | 2 to 8         |              | our guess                                  |
-| Hot-water tank                             | `tank_kwh`                           | 20 to 50       | kWh          | our guess                                  |
-| Space heating, times the reference house   | `space_heating_scale`                | 0.4 to 1.6     |              | our guess                                  |
-| Hot water a day                            | `hot_water_kwh_per_day`              | 6 to 18        | kWh          | our guess                                  |
-| Interactive jobs a day, per house          | `interactive_jobs_per_house_per_day` | 4              |              | our guess                                  |
-| Interactive jobs start from, until before  | `interactive_hours_of_day`           | 17 to 23       | h            | our guess                                  |
-| Batch jobs a day, per house                | `batch_jobs_per_house_per_day`       | 4              |              | our guess                                  |
-| Size of a batch job                        | `batch_hours`                        | 2 to 6         | server-hours | our guess                                  |
-| Batch deadline after arrival               | `batch_deadline_h`                   | 8 to 24        | h            | our guess                                  |
-| Backlog jobs a day, per house              | `backlog_jobs_per_house_per_day`     | 12             |              | our guess                                  |
-| Size of a backlog job                      | `backlog_hours`                      | 1 to 4         | server-hours | our guess                                  |
-| Backlog deadline after arrival             | `backlog_deadline_h`                 | 48             | h            | our guess                                  |
-| Days run before the shown day              | `warmup_days`                        | 2              |              | our guess                                  |
+| What                                      | Key                                  | Value                             | Unit         | Source                               |
+| ----------------------------------------- | ------------------------------------ | --------------------------------- | ------------ | ------------------------------------ |
+| Houses per city                           | `houses`                             | 50                                |              | our guess                            |
+| Random seed that draws the jobs           | `seed`                               | 2025                              |              | our guess                            |
+| Basel: weather file                       | `weather`                            | tests/data/weather_basel_2025.csv |              | Open-Meteo archive, 2025 (CC BY 4.0) |
+| Basel: random seed that draws the houses  | `seed`                               | 2025                              |              | our guess                            |
+| Basel: house id prefix                    | `id_prefix`                          | house                             |              | our guess                            |
+| Basel: house name prefix                  | `name_prefix`                        | Synthetic house                   |              | our guess                            |
+| Basel: latitude range of the houses       | `latitude`                           | 47.54 to 47.58                    | °N           | our guess                            |
+| Basel: longitude range of the houses      | `longitude`                          | 7.56 to 7.63                      | °E           | our guess                            |
+| Bern: weather file                        | `weather`                            | tests/data/weather_bern_2025.csv  |              | Open-Meteo archive, 2025 (CC BY 4.0) |
+| Bern: random seed that draws the houses   | `seed`                               | 3011                              |              | our guess                            |
+| Bern: house id prefix                     | `id_prefix`                          | bern                              |              | our guess                            |
+| Bern: house name prefix                   | `name_prefix`                        | Synthetic Bern house              |              | our guess                            |
+| Bern: latitude range of the houses        | `latitude`                           | 46.93 to 46.97                    | °N           | our guess                            |
+| Bern: longitude range of the houses       | `longitude`                          | 7.4 to 7.47                       | °E           | our guess                            |
+| Run fleet: one fleet of                   | `fleet`                              | Basel                             |              | our guess                            |
+| Run fleet_bern: one fleet of              | `fleet_bern`                         | Bern                              |              | our guess                            |
+| Run fleet_basel_bern: one fleet of        | `fleet_basel_bern`                   | Basel and Bern                    |              | our guess                            |
+| Servers per house                         | `servers_per_house`                  | 2 to 8                            |              | our guess                            |
+| Hot-water tank                            | `tank_kwh`                           | 20 to 50                          | kWh          | our guess                            |
+| Space heating, times the reference house  | `space_heating_scale`                | 0.4 to 1.6                        |              | our guess                            |
+| Hot water a day                           | `hot_water_kwh_per_day`              | 6 to 18                           | kWh          | our guess                            |
+| Interactive jobs a day, per house         | `interactive_jobs_per_house_per_day` | 4                                 |              | our guess                            |
+| Interactive jobs start from, until before | `interactive_hours_of_day`           | 17 to 23                          | h            | our guess                            |
+| Batch jobs a day, per house               | `batch_jobs_per_house_per_day`       | 4                                 |              | our guess                            |
+| Size of a batch job                       | `batch_hours`                        | 2 to 6                            | server-hours | our guess                            |
+| Batch deadline after arrival              | `batch_deadline_h`                   | 8 to 24                           | h            | our guess                            |
+| Backlog jobs a day, per house             | `backlog_jobs_per_house_per_day`     | 12                                |              | our guess                            |
+| Size of a backlog job                     | `backlog_hours`                      | 1 to 4                            | server-hours | our guess                            |
+| Backlog deadline after arrival            | `backlog_deadline_h`                 | 48                                | h            | our guess                            |
+| Days run before the shown day             | `warmup_days`                        | 2                                 |              | our guess                            |
 
-Note in config.json: OUR synthetic scenario for make fleet (heatsched/fleet_scenario.py): every house is made up, drawn evenly from these ranges with this seed, on the real Basel 2025 weather. space_heating_scale multiplies the reference house's space heating. Unlike the one-house model, the backlog is finite and due within backlog_deadline_h, so work the houses cannot take shows up as moved to a data centre.
+Note in config.json: OUR synthetic scenario for make fleet (heatsched/fleet_scenario.py): every house is made up, drawn evenly from these ranges with its city's seed, on the real 2025 weather of its city (Basel or Bern). houses is per city. Each run is one fleet of the cities listed; the job stream uses the fleet seed. space_heating_scale multiplies the reference house's space heating. Unlike the one-house model, the backlog is finite and due within backlog_deadline_h, so work the houses cannot take shows up as moved to a data centre.
 
 ## Hardware
 
