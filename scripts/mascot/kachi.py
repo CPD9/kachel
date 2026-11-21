@@ -65,16 +65,19 @@ CORE_Y = 0.37  # half depth
 CORE_Z0 = 0.20  # top of the plinth
 CORE_Z1 = 1.28  # bottom of the crown
 TILE = 0.035  # how far tiles stand proud of the core
-BEAD_R = 0.05  # corner bead radius
+CORNER_R = 0.15  # radius of the rounded corner tiles
 FRONT = -(CORE_Y + TILE)  # the tiled front surface
-SHOULDER_Z = 0.58
+SHOULDER_Z = 0.61
+# Centres of the rounded corners, in plan.
+CORNER_X = CORE_X + TILE - CORNER_R
+CORNER_Y = CORE_Y + TILE - CORNER_R
 SHARP = math.radians(40)  # edges sharper than this stay hard-shaded
 
 
 def bulge(z):
     """Barrel the body a little: wider at the belly than at crown and plinth."""
     t = min(1.0, max(0.0, (z - 0.1) / 1.3))
-    return 1 + 0.09 * math.sin(math.pi * t)
+    return 1 + 0.12 * math.sin(math.pi * t) ** 1.5
 
 
 def barrel(bm):
@@ -128,11 +131,14 @@ def materials():
         "tile_a": principled("Glaze green", "#2C6B50", rough=0.22, coat=0.6),
         "tile_b": principled("Glaze green dark", "#245C44", rough=0.22, coat=0.6),
         "tile_c": principled("Glaze green light", "#34775A", rough=0.22, coat=0.6),
-        "cream": principled("Glaze cream", "#D9BC8C", rough=0.25, coat=0.5),
+        "trim": principled("Glaze terracotta", "#A8532E", rough=0.22, coat=0.6),
+        "honey": principled("Glaze honey", "#B9802F", rough=0.22, coat=0.6),
         "grout": principled("Grout", "#1D2622", rough=0.8),
         "iron": principled("Iron", "#2B2D30", rough=0.45, metal=0.6),
         "hose": principled("Arm hose", "#33373C", rough=0.4, coat=0.2),
-        "mitt": principled("Mitt terracotta", "#C8643C", rough=0.35, coat=0.4),
+        "mitt": principled("Mitt orange", "#D8582A", rough=0.45, coat=0.25),
+        "rubber": principled("Cuff rubber", "#26282B", rough=0.6),
+        "feet": principled("Feet terracotta", "#7E3A20", rough=0.3, coat=0.5),
         "glass": principled("Visor glass", "#101416", rough=0.12, coat=1.0),
         "led": principled("LED amber", "#3A2408", rough=0.4, emit=AMBER, strength=6.0),
         "ember": principled("Ember", "#4A1A08", rough=0.6, emit=EMBER, strength=8.0),
@@ -314,97 +320,132 @@ TO_FRONT = Matrix.Rotation(math.radians(90), 4, "X")
 
 
 def tiles(group, mats, rng):
-    """Glazed tiles on the front, sides and back, with gaps for face and firebox."""
+    """Glazed tiles on the front, sides and back, rounded tiles on the corners."""
     gap = 0.008
     rows = 5
     row_h = (CORE_Z1 - CORE_Z0) / rows
     shades = [mats["tile_a"], mats["tile_b"], mats["tile_c"]]
-    inner_x = CORE_X - BEAD_R + 0.005
-    inner_y = CORE_Y - BEAD_R + 0.005
 
     def tile(centre, size):
-        group.add(box(size, centre, bevel=0.03, segments=3), rng.choice(shades))
+        group.add(box(size, centre, bevel=0.03, segments=2), rng.choice(shades))
 
-    # Front: four columns; the visor takes the top two rows, the firebox the
-    # middle two columns of the bottom two rows.
-    cols = 4
-    col_w = 2 * inner_x / cols
     for r in range(rows):
         z0 = CORE_Z0 + r * row_h
-        if z0 + row_h > 0.84:
-            continue
-        for c in range(cols):
-            if r < 2 and c in (1, 2):
-                continue
-            x = -inner_x + (c + 0.5) * col_w
-            tile(
-                (x, -CORE_Y - TILE / 2, z0 + row_h / 2),
-                (col_w - gap, TILE, row_h - gap),
-            )
-    # Back: three columns, all rows.
-    back_w = 2 * inner_x / 3
-    for r in range(rows):
-        for c in range(3):
-            x = -inner_x + (c + 0.5) * back_w
-            z = CORE_Z0 + (r + 0.5) * row_h
-            tile((x, CORE_Y + TILE / 2, z), (back_w - gap, TILE, row_h - gap))
-    # Sides: three columns, all rows.
-    side_w = 2 * inner_y / 2
-    for sx in (-1, 1):
-        for r in range(rows):
-            for c in range(2):
-                y = -inner_y + (c + 0.5) * side_w
-                z = CORE_Z0 + (r + 0.5) * row_h
+        zc = z0 + row_h / 2
+        # Corner tiles: rounded columns, one per row, bevelled top and bottom.
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                col = cylinder(
+                    CORNER_R,
+                    row_h - gap,
+                    (sx * CORNER_X, sy * CORNER_Y, zc),
+                    segments=24,
+                )
+                edges = [
+                    e
+                    for e in col.edges
+                    if len(e.link_faces) == 2 and e.calc_face_angle(0) > 0.5
+                ]
+                bmesh.ops.bevel(
+                    col,
+                    geom=edges,
+                    offset=0.025,
+                    segments=2,
+                    profile=0.5,
+                    affect="EDGES",
+                )
+                group.add(col, rng.choice(shades))
+        # Front: the visor takes the top, the firebox the middle of the bottom two rows.
+        if z0 + row_h <= 0.84:
+            if r < 2:
+                spans = [(-CORNER_X, -0.235), (0.235, CORNER_X)]
+            else:
+                spans = [
+                    (
+                        -CORNER_X + i * 2 * CORNER_X / 3,
+                        -CORNER_X + (i + 1) * 2 * CORNER_X / 3,
+                    )
+                    for i in range(3)
+                ]
+            for x0, x1 in spans:
                 tile(
-                    (sx * (CORE_X + TILE / 2), y, z), (TILE, side_w - gap, row_h - gap)
+                    ((x0 + x1) / 2, -CORE_Y - TILE / 2, zc),
+                    (x1 - x0 - gap, TILE, row_h - gap),
+                )
+        # Back: three tiles a row.
+        for i in range(3):
+            x0 = -CORNER_X + i * 2 * CORNER_X / 3
+            x1 = x0 + 2 * CORNER_X / 3
+            tile(
+                ((x0 + x1) / 2, CORE_Y + TILE / 2, zc),
+                (x1 - x0 - gap, TILE, row_h - gap),
+            )
+        # Sides: two tiles a row.
+        for sx in (-1, 1):
+            for y0, y1 in ((-CORNER_Y, 0.0), (0.0, CORNER_Y)):
+                tile(
+                    (sx * (CORE_X + TILE / 2), (y0 + y1) / 2, zc),
+                    (TILE, y1 - y0 - gap, row_h - gap),
                 )
 
 
+def plan_slab(hx, hy, radius, z0, z1, bevel):
+    """A rounded-rectangle slab in plan, from z0 to z1."""
+    depth = (z1 - z0) / 2 - bevel
+    return slab_mesh(
+        rounded_rect(hx, hy, radius, n=10),
+        depth,
+        bevel,
+        Matrix.Translation((0, 0, (z0 + z1) / 2)),
+    )
+
+
 def body(group, mats, rng):
-    # Grout core, slightly inside the tiles.
+    # Grout core, rounded to sit inside the corner tiles.
     group.add(
-        box(
-            (2 * CORE_X, 2 * CORE_Y, CORE_Z1 - CORE_Z0),
-            (0, 0, (CORE_Z0 + CORE_Z1) / 2),
-            bevel=0.02,
-        ),
+        plan_slab(CORE_X, CORE_Y, CORNER_R - TILE + 0.005, CORE_Z0, CORE_Z1, 0.0),
         mats["grout"],
     )
     tiles(group, mats, rng)
-    # Corner beads.
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            group.add(
-                cylinder(
-                    BEAD_R,
-                    CORE_Z1 - CORE_Z0,
-                    (sx * CORE_X, sy * CORE_Y, (CORE_Z0 + CORE_Z1) / 2),
-                    segments=20,
-                ),
-                mats["cream"],
+    # Plinth, and a crown that steps in as it rises, like a stove's.
+    ox, oy = CORE_X + TILE, CORE_Y + TILE
+    group.add(
+        plan_slab(ox + 0.04, oy + 0.04, CORNER_R + 0.04, 0.10, CORE_Z0 + 0.01, 0.03),
+        mats["trim"],
+    )
+    for i, (out, h) in enumerate(
+        ((0.05, 0.07), (0.02, 0.06), (-0.04, 0.05), (-0.11, 0.05))
+    ):
+        z0 = (
+            CORE_Z1
+            - 0.005
+            + sum(
+                hh
+                for _, hh in ((0.05, 0.07), (0.02, 0.06), (-0.04, 0.05), (-0.11, 0.05))[
+                    :i
+                ]
             )
-    # Plinth and crown, stepped like a stove's.
-    group.add(
-        box((1.10, 0.88, 0.10), (0, 0, 0.15), bevel=0.03, segments=3), mats["cream"]
-    )
-    group.add(
-        box((1.16, 0.94, 0.08), (0, 0, CORE_Z1 + 0.04), bevel=0.03, segments=3),
-        mats["cream"],
-    )
-    group.add(
-        box((1.04, 0.82, 0.06), (0, 0, CORE_Z1 + 0.11), bevel=0.025, segments=3),
-        mats["cream"],
-    )
-    # Bun feet.
+        )
+        group.add(
+            plan_slab(ox + out, oy + out, CORNER_R + out, z0, z0 + h + 0.005, 0.022),
+            mats["trim" if i % 2 == 0 else "honey"],
+        )
+    top = CORE_Z1 + 0.225
+    # Two stubby feet, toes peeking out in front.
     for sx in (-1, 1):
-        for sy in (-1, 1):
-            group.add(
-                sphere(0.075, (sx * 0.36, sy * 0.26, 0.075), scale=(1, 1, 0.8)),
-                mats["iron"],
-            )
+        group.add(
+            sphere(
+                0.13,
+                (sx * 0.26, -0.3, 0.075),
+                scale=(1.0, 1.6, 0.66),
+                segments=24,
+                rings=14,
+            ),
+            mats["feet"],
+        )
     # A small flue on top, worn like a jaunty hat.
     tilt = Matrix.Rotation(math.radians(-9), 4, "Y")
-    base = Vector((0.2, 0.05, CORE_Z1 + 0.14))
+    base = Vector((0.16, 0.05, top - 0.02))
     group.add(
         cylinder(0.07, 0.16, base + tilt @ Vector((0, 0, 0.08)), matrix=tilt),
         mats["iron"],
@@ -414,16 +455,16 @@ def body(group, mats, rng):
         mats["iron"],
     )
     # Status LEDs on the crown, the server giving itself away.
-    for i, x in enumerate((0.30, 0.36, 0.42)):
+    for i, x in enumerate((0.22, 0.28, 0.34)):
         group.add(
-            sphere(0.013, (x, -0.47, CORE_Z1 + 0.04), segments=10, rings=6),
+            sphere(0.013, (x, -(oy + 0.05), CORE_Z1 + 0.035), segments=10, rings=6),
             mats["status" if i < 2 else "led"],
         )
 
 
 def visor(group, mats):
     """Dark glass face screen with a cream bead frame."""
-    hx, z0, z1 = 0.405, 0.84, 1.255
+    hx, z0, z1 = 0.35, 0.84, 1.255
     zc = (z0 + z1) / 2
     hz = (z1 - z0) / 2
     m = Matrix.Translation((0, FRONT + 0.012, zc)) @ TO_FRONT
@@ -432,12 +473,12 @@ def visor(group, mats):
         (x, FRONT - 0.002, zc + z)
         for x, z in rounded_rect(hx + 0.012, hz + 0.012, 0.08)
     ]
-    group.add(curve_mesh(frame, 0.02, cyclic=True), mats["cream"])
+    group.add(curve_mesh(frame, 0.018, cyclic=True), mats["trim"])
 
 
 def firebox(group, mats):
     """The belly: an ember-lit window behind iron bars, framed in cream."""
-    hx, z0, z1 = 0.19, 0.25, 0.60
+    hx, z0, z1 = 0.18, 0.25, 0.60
     zc = (z0 + z1) / 2
     hz = (z1 - z0) / 2
     m = Matrix.Translation((0, -CORE_Y + 0.004, zc)) @ TO_FRONT
@@ -482,7 +523,7 @@ def firebox(group, mats):
     frame = [
         (x, FRONT - 0.004, zc + z) for x, z in rounded_rect(hx + 0.02, hz + 0.02, 0.07)
     ]
-    group.add(curve_mesh(frame, 0.024, cyclic=True), mats["cream"])
+    group.add(curve_mesh(frame, 0.02, cyclic=True), mats["trim"])
 
 
 # ---------------------------------------------------------------- arms
@@ -490,11 +531,17 @@ def firebox(group, mats):
 
 def arm_chain(side):
     """Shoulder, elbow and wrist of an arm in the rest pose."""
+    f = bulge(SHOULDER_Z)
+    a = math.radians(-28)
     shoulder = Vector(
-        (side * ((CORE_X + TILE) * bulge(SHOULDER_Z) + 0.03), -0.02, SHOULDER_Z)
+        (
+            side * (CORNER_X * f + (CORNER_R * f + 0.02) * math.cos(a)),
+            -CORNER_Y * f + (CORNER_R * f + 0.02) * math.sin(a),
+            SHOULDER_Z,
+        )
     )
-    elbow = shoulder + Vector((side * 0.08, 0, -0.205))
-    wrist = elbow + Vector((side * 0.04, -0.01, -0.17))
+    elbow = shoulder + Vector((side * 0.09, 0, -0.19))
+    wrist = elbow + Vector((side * 0.06, -0.01, -0.15))
     return shoulder, elbow, wrist
 
 
@@ -521,7 +568,7 @@ def arm(group, mats, side):
         d = (path[min(i + 1, len(path) - 1)] - path[max(i - 1, 0)]).normalized()
         a = d.orthogonal().normalized()
         b = d.cross(a)
-        r = 0.056 - 0.008 * run / total + 0.005 * math.cos(run * 2 * math.pi / 0.034)
+        r = 0.072 - 0.01 * run / total + 0.006 * math.cos(run * 2 * math.pi / 0.04)
         ring = [
             bm.verts.new(
                 p
@@ -544,65 +591,75 @@ def arm(group, mats, side):
         bm, mats["hose"], {upper: weights_u, lower: weights_l}, sharp=math.radians(80)
     )
     # Shoulder cap on the body.
-    group.add(sphere(0.08, shoulder, scale=(0.8, 1, 1)), mats["cream"])
+    group.add(sphere(0.095, shoulder, scale=(0.8, 1, 1)), mats["trim"])
     # Oven-mitt hand with a thumb, pointing along the forearm.
     d = (wrist - elbow).normalized()
-    hand_c = wrist + d * 0.07
+    hand_c = wrist + d * 0.09
     rot = d.to_track_quat("Z", "Y").to_matrix().to_4x4()
-    mitt = sphere(0.085, (0, 0, 0), scale=(0.95, 0.8, 1.15))
+    mitt = sphere(0.11, (0, 0, 0), scale=(1.0, 0.62, 1.2))
     bmesh.ops.transform(mitt, matrix=Matrix.Translation(hand_c) @ rot, verts=mitt.verts)
     group.add(mitt, mats["mitt"], {lower: [1.0] * len(mitt.verts)})
-    thumb = sphere(0.037, (0, 0, 0), scale=(0.9, 0.9, 1.3), segments=12, rings=8)
-    thumb_c = hand_c + Vector((-side * 0.05, -0.04, 0.0)) + d * -0.012
+    thumb = sphere(0.048, (0, 0, 0), scale=(0.9, 0.9, 1.3), segments=12, rings=8)
+    thumb_c = hand_c + Vector((-side * 0.065, -0.05, 0.0)) + d * -0.015
     tilt = Matrix.Rotation(math.radians(side * 35), 4, "Y")
     bmesh.ops.transform(
         thumb, matrix=Matrix.Translation(thumb_c) @ tilt, verts=thumb.verts
     )
     group.add(thumb, mats["mitt"], {lower: [1.0] * len(thumb.verts)})
-    cuff = cylinder(0.066, 0.034, (0, 0, 0), segments=20)
+    cuff = cylinder(0.085, 0.044, (0, 0, 0), segments=20)
     bmesh.ops.transform(
         cuff, matrix=Matrix.Translation(wrist + d * 0.005) @ rot, verts=cuff.verts
     )
-    group.add(cuff, mats["cream"], {lower: [1.0] * len(cuff.verts)})
+    group.add(cuff, mats["rubber"], {lower: [1.0] * len(cuff.verts)})
 
 
 # ---------------------------------------------------------------- scarf
 
 
 def scarf(group, mats):
-    """Supply and return pipes wound round the neck, knotted at a brass union."""
-    f = bulge(0.75)
-    r_corner = 0.11
-    hx, hy = CORE_X * f + r_corner, CORE_Y * f + r_corner
-    pipe_r = 0.04
-    knot = Vector((0.30, -hy - 0.025, 0.735))
-
-    def loop(z, phase):
+    """Supply and return pipes twisted round the neck, knotted at a brass
+    union on the left shoulder, with the two ends flaring out from there."""
+    z_neck = 0.795
+    f = bulge(z_neck)
+    radius = CORNER_R * f + 0.074
+    pipe_r = 0.042
+    twist_r = 0.04
+    # The neck line, a rounded rectangle round the corner tiles, sagging a
+    # little at the front like a scarf.
+    outline = rounded_rect(CORNER_X * f + radius, CORNER_Y * f + radius, radius, n=12)
+    dense = []
+    for i in range(len(outline)):
+        a, b = Vector(outline[i]), Vector(outline[(i + 1) % len(outline)])
+        steps = max(1, int((b - a).length / 0.02))
+        dense += [a.lerp(b, k / steps) for k in range(steps)]
+    hy = CORNER_Y * f + radius
+    centre = [
+        Vector((p.x, p.y, z_neck - 0.045 * max(0.0, -p.y / hy) ** 3)) for p in dense
+    ]
+    # Start the loop at the knot: on the front right corner, over the shoulder.
+    start = min(
+        range(len(centre)),
+        key=lambda i: (centre[i] - Vector((-0.62, -0.5, z_neck))).length,
+    )
+    centre = centre[start:] + centre[:start]
+    n = len(centre)
+    turns = 2
+    for colour, phase in (("supply", 0.0), ("return", math.pi)):
         pts = []
-        outline = rounded_rect(hx, hy, r_corner, n=10)
-        dense = []
-        for i in range(len(outline)):
-            a, b = Vector(outline[i]), Vector(outline[(i + 1) % len(outline)])
-            steps = max(1, int((b - a).length / 0.02))
-            for s in range(steps):
-                dense.append(a.lerp(b, s / steps))
-        for p in dense:
-            ang = math.atan2(p.y, p.x)
-            drape = 0.035 * max(0.0, -p.y / hy) ** 3
-            pts.append((p.x, p.y, z + 0.008 * math.sin(3 * ang + phase) - drape))
-        return pts
-
-    group.add(
-        curve_mesh(loop(0.80, 0.0), pipe_r, cyclic=True, resolution=3), mats["supply"]
-    )
-    group.add(
-        curve_mesh(loop(0.716, 0.0), pipe_r, cyclic=True, resolution=3), mats["return"]
-    )
+        for i, c in enumerate(centre):
+            t = (centre[(i + 1) % n] - centre[i - 1]).normalized()
+            out = Vector((t.y, -t.x, 0)).normalized()
+            ang = 2 * math.pi * turns * i / n + phase
+            pts.append(
+                c + twist_r * (math.cos(ang) * out + math.sin(ang) * Vector((0, 0, 1)))
+            )
+        group.add(curve_mesh(pts, pipe_r, cyclic=True, resolution=3), mats[colour])
+    knot = centre[0] + Vector((-0.01, -0.01, 0.0))
 
     def tail(points):
         """Catmull-Rom through a few control points."""
         ctrl = [Vector(p) for p in points]
-        ctrl = [ctrl[0]] + ctrl + [ctrl[-1]]
+        ctrl = [ctrl[0], *ctrl, ctrl[-1]]
         out = []
         for i in range(1, len(ctrl) - 2):
             p0, p1, p2, p3 = ctrl[i - 1 : i + 3]
@@ -620,39 +677,37 @@ def scarf(group, mats):
         out.append(ctrl[-2])
         return out
 
+    # The ends flare out and back over the shoulder, as if caught by a draught.
+    # The ends go back over the shoulder and flare apart down the side.
     red = tail(
         [
             knot,
-            knot + Vector((0.07, -0.06, -0.08)),
-            knot + Vector((0.13, -0.09, -0.22)),
-            knot + Vector((0.17, -0.07, -0.34)),
+            knot + Vector((-0.07, 0.06, 0.05)),
+            knot + Vector((-0.12, 0.22, 0.02)),
+            knot + Vector((-0.24, 0.36, -0.08)),
+            knot + Vector((-0.32, 0.46, -0.22)),
         ]
     )
     blue = tail(
         [
             knot,
-            knot + Vector((0.0, -0.08, -0.09)),
-            knot + Vector((0.03, -0.11, -0.23)),
-            knot + Vector((0.04, -0.10, -0.31)),
+            knot + Vector((-0.06, 0.08, -0.02)),
+            knot + Vector((-0.12, 0.2, -0.1)),
+            knot + Vector((-0.2, 0.26, -0.25)),
+            knot + Vector((-0.24, 0.27, -0.4)),
         ]
     )
     group.add(curve_mesh(red, pipe_r, resolution=3), mats["supply"])
     group.add(curve_mesh(blue, pipe_r, resolution=3), mats["return"])
     # Brass union over the knot and hex nuts on the pipe ends.
-    group.add(
-        sphere(0.07, knot + Vector((0, -0.01, 0)), scale=(1.1, 0.9, 1.0)), mats["brass"]
-    )
+    group.add(sphere(0.072, knot, scale=(1.1, 0.9, 1.0)), mats["brass"])
     for pts in (red, blue):
         end, before = pts[-1], pts[-3]
         d = (end - before).normalized()
         rot = d.to_track_quat("Z", "Y").to_matrix().to_4x4()
         group.add(
             cylinder(
-                0.047,
-                0.045,
-                (0, 0, 0),
-                segments=6,
-                matrix=Matrix.Translation(end) @ rot,
+                0.05, 0.045, (0, 0, 0), segments=6, matrix=Matrix.Translation(end) @ rot
             ),
             mats["brass"],
             sharp=math.radians(30),
@@ -844,15 +899,15 @@ def pose_arm(rig_obj, side, out=0.0, fwd=0.0, bend=0.0, lift=0.0):
 
 EXPRESSIONS = {
     # shape keys, glow, arms (out, fwd, bend, lift) for left then right
-    "neutral": ({"Smirk": 0.35}, 0.6, (10, 10, 25, 0), (10, 10, 25, 0)),
-    "happy": ({"Happy": 1.0, "Grin": 1.0}, 0.85, (115, 10, 0, 45), (12, 10, 30, 0)),
+    "neutral": ({"Smirk": 0.35}, 0.5, (12, 15, 35, 0), (10, 35, 45, 0)),
+    "happy": ({"Happy": 1.0, "Grin": 1.0}, 0.85, (58, 10, 0, 88), (15, 35, 40, 0)),
     "determined": (
         {"Determined": 1.0, "Flat": 0.6, "Smirk": 0.5},
         1.0,
-        (85, 5, 0, 90),
-        (15, 30, 70, 0),
+        (58, 10, 30, 78),
+        (10, 55, 50, 0),
     ),
-    "sleepy": ({"Sleepy": 1.0, "Flat": 1.0}, 0.12, (2, 4, 8, 0), (2, 4, 8, 0)),
+    "sleepy": ({"Sleepy": 1.0, "Flat": 1.0}, 0.06, (8, 10, 15, 0), (8, 25, 25, 0)),
 }
 
 
@@ -945,7 +1000,7 @@ def scene_setup(size, samples, device):
 
 
 def aim_camera(cam, angle):
-    dist, target = 4.3, Vector((0, 0, 0.76))
+    dist, target = 4.8, Vector((0, 0, 0.74))
     a = math.radians(angle)
     cam.location = target + Vector((dist * math.sin(a), -dist * math.cos(a), 0.55))
     cam.rotation_euler = (target - cam.location).to_track_quat("-Z", "Y").to_euler()
@@ -978,17 +1033,17 @@ def build(seed=11):
     # The glow: ember and eyes brighten with heat output, and a warm light
     # in front of the firebox spills onto the floor.
     ember = mats["ember"].node_tree.nodes["Principled BSDF"].inputs["Emission Strength"]
-    glow_driver(ember, "default_value", rig_obj, "0.3 + 1.0 * glow")
+    glow_driver(ember, "default_value", rig_obj, "0.1 + 2.6 * glow")
     coal = mats["coal"].node_tree.nodes["Principled BSDF"].inputs["Emission Strength"]
-    glow_driver(coal, "default_value", rig_obj, "0.3 + 1.4 * glow")
+    glow_driver(coal, "default_value", rig_obj, "0.08 + 2.6 * glow")
     eyes = mats["led"].node_tree.nodes["Principled BSDF"].inputs["Emission Strength"]
     glow_driver(eyes, "default_value", rig_obj, "0.7 + 0.4 * glow")
     light = bpy.data.lights.new("Ember glow", "POINT")
     light.color = lin(EMBER)[:3]
     light.shadow_soft_size = 0.15
-    glow_driver(light, "energy", rig_obj, "2 + 40 * glow")
+    glow_driver(light, "energy", rig_obj, "1 + 160 * glow ** 2")
     light_obj = bpy.data.objects.new("Ember glow", light)
-    light_obj.location = (0, -0.62, 0.42)
+    light_obj.location = (0, -0.8, 0.42)
     light_obj.parent = rig_obj
     bpy.context.scene.collection.objects.link(light_obj)
 
@@ -1001,8 +1056,22 @@ def build(seed=11):
     return face_obj, rig_obj
 
 
-def composite(src, dst, paper=PAPER):
-    """Lay a transparent render over the paper colour and save it."""
+def blur(img, radius):
+    """Three box blurs, close to a Gaussian, along both image axes."""
+    for axis in (0, 1):
+        for _ in range(3):
+            pad = [(0, 0)] * img.ndim
+            pad[axis] = (radius + 1, radius)
+            c = np.cumsum(np.pad(img, pad, mode="edge"), axis=axis)
+            hi = np.take(c, range(2 * radius + 1, c.shape[axis]), axis=axis)
+            lo = np.take(c, range(c.shape[axis] - 2 * radius - 1), axis=axis)
+            img = (hi - lo) / (2 * radius + 1)
+    return img
+
+
+def composite(src, dst, glow=0.5, paper=PAPER):
+    """Lay a transparent render over the paper colour, add a warm bloom round
+    the ember and the LEDs that grows with the glow, and save it."""
     img = bpy.data.images.load(str(src))
     w, h = img.size
     px = np.empty(w * h * 4, dtype=np.float32)
@@ -1014,6 +1083,14 @@ def composite(src, dst, paper=PAPER):
     a = px[..., 3:4]
     px[..., :3] = px[..., :3] * a + bg * (1 - a)
     px[..., 3] = 1.0
+    rgb = px[..., :3]
+    hot = np.clip((rgb[..., 0] - 0.8) * 5, 0, 1) * np.clip(
+        (0.45 - rgb[..., 2]) * 4, 0, 1
+    )
+    hot *= np.clip((rgb[..., 0] - rgb[..., 2] - 0.5) * 3, 0, 1)
+    ember = np.array([1.0, 0.42, 0.14], dtype=np.float32)
+    halo = blur(hot[..., None] * ember, max(2, w // 60)) * (0.3 + 2.2 * glow**2)
+    px[..., :3] = 1 - (1 - rgb) * (1 - np.clip(halo, 0, 1))
     save_pixels(px, dst)
     bpy.data.images.remove(img)
     return px
@@ -1083,7 +1160,9 @@ def main():
         raw = out / f".raw-{name}.png"
         scene.render.filepath = str(raw)
         bpy.ops.render.render(write_still=True)
-        rendered[name] = composite(raw, out / f"kachi-{name}.png")
+        rendered[name] = composite(
+            raw, out / f"kachi-{name}.png", glow=EXPRESSIONS[expression][1]
+        )
         raw.unlink()
         print(f"kachi: wrote {out / f'kachi-{name}.png'}")
     if len(rendered) == len(STILLS):
