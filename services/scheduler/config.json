@@ -34,7 +34,7 @@
       "deadline_h": 24,
       "arrivals_server_h": { "6": 8 },
       "when_heat_not_needed": "move",
-      "source": "OUR scenario: 8 server-hours arrive at 06:00, due 24 h later. Job size from measurements.json."
+      "source": "Whisper large-v3 speech to text, the MLPerf Inference speech benchmark since v5.1. Interruptible per recording. Deadline 24 h: OpenAI Batch API completion window. Size: 24.7 GPU-s per audio hour (Open ASR Leaderboard RTFx 145.51 on A100), at most 2.75 Wh at 400 W TDP, about 360 audio hours per 1 kW server-hour. 8 server-hours at 06:00 is OUR scenario. Sources: docs/assumptions.md"
     },
     "opportunistic": {
       "label": "Opportunistic backlog (embeddings)",
@@ -42,7 +42,7 @@
       "deadline_h": null,
       "unlimited": true,
       "when_heat_not_needed": "pause",
-      "source": "ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model."
+      "source": "ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model. Job size measured on our machine: 0.113 Wh and 34.2 CPU-s per 200,000 items, about 8,840 jobs per 1 kW server-hour (docs/measurements.md)."
     }
   },
   "hardware": {
