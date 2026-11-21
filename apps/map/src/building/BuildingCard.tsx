@@ -1,10 +1,16 @@
 import { formatEnergy, heatEstimate } from "./estimate";
+import { FLEET, type FleetHouse } from "../fleet/fleet";
 import type { BuildingFacts } from "./geoadmin";
 import { ASSUMPTIONS_URL, formatChf, kachelEstimate } from "./kachel";
 import { MonthSlider } from "./MonthSlider";
 import { describeSolar, SOLAR_RADIUS_M } from "./solar";
 
 const NETWORK_THRESHOLD_MWH = 700;
+/**
+ * Above this, heat per m² of heated floor is unusual even for an old, unrenovated building
+ * (our rule of thumb), so the card flags the SFOE estimate for a second look.
+ */
+export const HIGH_KWH_PER_M2 = 300;
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -23,11 +29,14 @@ function Source({ children }: { children: string }) {
 export function BuildingCard({
   facts,
   month,
+  fleet = null,
   onClose,
 }: {
   facts: BuildingFacts | "loading";
   /** The month on the map's clock, 0 for January: where the month slider starts. */
   month: number;
+  /** The synthetic fleet house placed on this building, if any. */
+  fleet?: FleetHouse | null;
   onClose: () => void;
 }) {
   return (
@@ -43,6 +52,11 @@ export function BuildingCard({
       >
         ×
       </button>
+      {fleet !== null && (
+        <p className="mr-8 mb-2 rounded border border-heat/50 px-2 py-1 text-xs text-paper/80">
+          {`Fleet simulation: here this building gets ${fleet.servers} servers, as synthetic house ${fleet.id}, one of ${FLEET.length} in Basel and Bern. An illustration: the building and the published figures below are real, the fleet is not.`}
+        </p>
+      )}
       {facts === "loading" ? (
         <p>Looking the building up…</p>
       ) : (
@@ -79,7 +93,11 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
             {estimate.perSquareMetre !== null && (
               <Row
                 label="Per m² heated floor"
-                value={`${Math.round(estimate.perSquareMetre)} kWh`}
+                value={
+                  estimate.perSquareMetre > HIGH_KWH_PER_M2
+                    ? `${Math.round(estimate.perSquareMetre)} kWh, high, check`
+                    : `${Math.round(estimate.perSquareMetre)} kWh`
+                }
               />
             )}
             <Row
@@ -171,12 +189,12 @@ function WithKachel({ heatKwh }: { heatKwh: number }) {
   const k = kachelEstimate(heatKwh);
   return (
     <section className="mt-3 rounded-md border border-heat/50 p-3">
-      <h3 className="font-medium text-heat">With Kachel, estimated</h3>
+      <h3 className="font-medium text-heat">If Kachel heated the whole building, estimated</h3>
       {k === null ? (
         <p>Too little heat for one 1 kW server.</p>
       ) : (
         <dl className="mt-1 space-y-0.5">
-          <Row label="Home servers, 1 kW each" value={`about ${k.servers}`} />
+          <Row label="Servers needed, 1 kW each" value={`about ${k.servers}`} />
           <Row
             label="Server heat used"
             value={`${formatEnergy(k.heatFromServersKwh)} (${Math.round(k.sharePct)}%)`}

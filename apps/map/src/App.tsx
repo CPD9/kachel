@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BuildingCard } from "./building/BuildingCard";
 import { lookUp, type BuildingFacts } from "./building/geoadmin";
 import { swissTime } from "./clock";
+import { fleetHouse, type FleetHouse } from "./fleet/fleet";
 import { Layers } from "./networks/Layers";
 import { Places } from "./Places";
 import { NetworkCard } from "./networks/NetworkCard";
@@ -20,6 +21,7 @@ export function App({ start }: { start: StartScene }) {
   const [playing, setPlaying] = useState(true);
   const [building, setBuilding] = useState<BuildingFacts | "loading" | null>(null);
   const [network, setNetwork] = useState<Network | null>(null);
+  const [house, setHouse] = useState<FleetHouse | null>(null);
 
   useEffect(() => {
     if (scene === null) return;
@@ -31,6 +33,7 @@ export function App({ start }: { start: StartScene }) {
         setBuilding(null);
         return;
       }
+      setHouse(fleetHouse(picked.building.egid));
       setBuilding("loading");
       void lookUp(picked.building).then((facts) => {
         if (call === latest) setBuilding(facts);
@@ -106,6 +109,7 @@ export function App({ start }: { start: StartScene }) {
         <BuildingCard
           facts={building}
           month={(time ?? new Date()).getMonth()}
+          fleet={house}
           onClose={() => setBuilding(null)}
         />
       )}
