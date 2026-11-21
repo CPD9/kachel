@@ -39,13 +39,13 @@ house can use their heat, and the backlog pauses when the tank is full.
 
 ![The host app with six servers: Server 4 runs its embeddings job](live-running.webp)
 
-![The same screen a moment later: Server 4's job is paused, no heat sink](live-paused.webp)
+![The same screen a moment later: Server 4's job is paused by its signal file, the demo switch](live-paused.webp)
 
 The host app on the local stack. The agent follows a real embedding job on Server 4. When its
 signal file says pause, it stops the process and writes the change to Supabase, and the pill
 turns Paused under a second later (agent run with `--tick 0.2`; the default is 1 s). On run it
 turns back.
-[Video, 27 s](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
+[Video, 30 s](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
 
 ![The console signed in as the demo buyer: the submit form and the live table of jobs](app-console.png)
 
