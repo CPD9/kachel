@@ -79,6 +79,18 @@ describe("JobTable", () => {
     expect(labels[0]?.textContent).toMatch(/Evening chat session/);
   });
 
+  it("orders jobs created together by label", async () => {
+    const together = { ...queued, id: "j303", label: "Batch A", created_at: queued.created_at };
+    const { feed } = fakeFeed([queued, together]);
+    render(<JobTable feed={feed} />);
+    await screen.findByText("Batch A");
+    const labels = screen.getAllByRole("row").slice(1);
+    expect(labels.map((r) => r.querySelector("td")?.textContent)).toEqual([
+      "Batch A",
+      "Evening chat session",
+    ]);
+  });
+
   it("updates a job's pill as it pauses and resumes, without a reload", async () => {
     const { feed, push } = fakeFeed([job]);
     render(<JobTable feed={feed} />);

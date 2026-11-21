@@ -45,7 +45,11 @@ export function JobTable({ feed }: { feed: JobFeed }) {
     );
   }
 
-  const rows = [...jobs.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  // Newest first; jobs created together (as in the seed) by label, so the order is the same
+  // on every load.
+  const rows = [...jobs.values()].sort(
+    (a, b) => b.created_at.localeCompare(a.created_at) || a.label.localeCompare(b.label),
+  );
   return (
     <section aria-labelledby="jobs" className="px-6 py-4">
       <h2 id="jobs" className="text-lg font-semibold">
