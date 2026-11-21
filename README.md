@@ -28,7 +28,7 @@ Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase
 | `packages/config`    | Shared ESLint and TypeScript settings                           |
 | `services/agent`     | Python agent on the server box: pauses and resumes the real job |
 | `services/scheduler` | Python scheduler: hourly decisions, yearly balance, live demo   |
-| `supabase`           | Local Supabase config                                           |
+| `supabase`           | Local Supabase config and schema migrations                     |
 | `scripts`            | Repository checks                                               |
 
 ## Team
