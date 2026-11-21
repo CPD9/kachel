@@ -35,13 +35,17 @@ def credit(img, text):
     return Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
 
 
-def title(img, text):
+def title(img, text, sub=""):
     layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
     f = c.F["date"]
-    tw = d.textlength(text, font=f)
-    d.rounded_rectangle((40, 40, 40 + tw + 56, 120), 14, fill=(16, 19, 24, 200))
+    tw = max(d.textlength(text, font=f), d.textlength(sub, font=c.F["sub"]))
+    d.rounded_rectangle(
+        (40, 40, 40 + tw + 56, 120 + (50 if sub else 0)), 14, fill=(16, 19, 24, 200)
+    )
     d.text((68, 56), text, font=f, fill=c.INK)
+    if sub:
+        d.text((68, 112), sub, font=c.F["sub"], fill=c.DIM)
     return Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
 
 
@@ -112,7 +116,7 @@ def main():
                 img = credit(img, text)
             late = not a.title_last or n >= total - a.title_last * c.FPS
             if a.title and k >= a.title_part and late:
-                img = title(img, a.title)
+                img = title(img, a.title, a.subtitle)
             ff.stdin.write(img.tobytes())
             if n in picks:
                 sheet.append(img.resize((640, 360), Image.LANCZOS))

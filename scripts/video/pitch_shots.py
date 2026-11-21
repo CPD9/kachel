@@ -19,6 +19,8 @@ Shots:
                 casings ghosted; a concept (4 s)
     tower       shot 12b, first half: rising up the tallest tower at dusk (4 s; frames only)
     plantfloor  shot 12b, second half: a plant floor with rows of racks and tanks (4 s)
+    chain       shot 12 as one chain: rack heat, heat pump booster, "lifted" pipe, ORC skid
+                (7.5 s; on assets/orc_skid.blend)
     xray        shot 4, right half after the setup: the X-ray pass, device by device (11 s)
     seasons     shot 4, left half: Basel orbiting from the snow day to midsummer, sun, snow
                 and windows from the date and data (15.5 s, portrait half frame)
@@ -1050,6 +1052,131 @@ def xray_tube_cyl(name, a, b, r, m, coll):
     return xray.tube(name, [a, b], r, m, coll, 16)
 
 
+def heatpump_unit(coll, origin, ghost, refr, mats_):
+    """The heat pump of shot 12 at `origin`: ghosted casing, compressor, condenser, valve,
+    evaporator fins and the refrigerant loop (violet)."""
+    import xray
+
+    ox, oy, oz = origin
+    steel, fins, copper = mats_
+
+    def at(p):
+        return (p[0] + ox, p[1] + oy, p[2] + oz)
+
+    block("HP_Casing", (1.1, 0.5, 1.0), at((0, 0, 0.55)), ghost, coll)
+    block("HP_Base", (1.14, 0.54, 0.05), at((0, 0, 0.03)), steel, coll)
+    for k in range(24):
+        block(
+            f"HP_Fin{k}",
+            (0.004, 0.08, 0.8),
+            at((-0.48 + 0.04 * k, 0.17, 0.55)),
+            fins,
+            coll,
+        )
+    xray.tube(
+        "HP_Compressor",
+        [at((-0.3, -0.05, 0.08)), at((-0.3, -0.05, 0.42))],
+        0.11,
+        steel,
+        coll,
+        24,
+    )
+    block("HP_Condenser", (0.16, 0.08, 0.3), at((0.3, -0.1, 0.35)), copper, coll)
+    block("HP_Valve", (0.05, 0.05, 0.08), at((0.05, -0.12, 0.75)), steel, coll)
+    loop = [(-0.3, -0.05, 0.43), (-0.3, -0.05, 0.6), (0.3, -0.1, 0.6), (0.3, -0.1, 0.52),
+            (0.3, -0.1, 0.2), (0.3, -0.1, 0.12), (0.05, -0.12, 0.12), (0.05, -0.12, 0.75),
+            (-0.45, 0.12, 0.85), (0.45, 0.12, 0.85), (0.45, 0.12, 0.25), (-0.45, 0.12, 0.25),
+            (-0.3, -0.05, 0.3)]  # fmt: skip
+    xray.tube("HP_Loop", xray.dense([at(p) for p in loop]), 0.012, refr, coll)
+
+
+def shot_chain(a):
+    """Shot 12 as one connected chain (case owner's note, issue #159): server heat leaves the
+    rack in the red pipe, a heat pump lifts its temperature (X-ray, violet refrigerant), the
+    hotter water runs on in a deeper orange pipe marked "lifted", into the ORC skid, whose
+    casings turn to ghosted shells. A concept, with no figures; the label is added when
+    encoding. Runs on assets/orc_skid.blend; the rack comes from assets/plantroom.blend."""
+    import xray
+
+    sc = bpy.context.scene
+    ks.setup_render(sc, a.width, a.height, a.samples)
+    for o in bpy.data.objects:
+        if o.users_collection and o.users_collection[0].name == "ORC_Labels":
+            o.hide_render = True
+    coll = bpy.data.collections.new("Chain")
+    sc.collection.children.link(coll)
+    src = Path(__file__).resolve().parent / "assets" / "plantroom.blend"
+    with bpy.data.libraries.load(str(src), link=False) as (_, dst):
+        dst.collections = ["Rack", "ServerSource"]
+    rack = bpy.data.collections["Rack"]
+    rack.instance_offset = (-0.55, 0, 0)
+    e = bpy.data.objects.new("Chain_Rack", None)
+    e.instance_type, e.instance_collection = "COLLECTION", rack
+    e.location = (-6.2, 0.1, 0)
+    coll.objects.link(e)
+    ghost = xray.ghost_material()
+    refr = xray.flow_material("Chain_Refrigerant", (0.65, 0.25, 1.0))
+    warm = xray.flow_material("Chain_Warm", (1.0, 0.2, 0.05))
+    lifted = xray.flow_material("Chain_Lifted", (1.0, 0.36, 0.0))
+    cold = xray.flow_material("Chain_Cold", (0.15, 0.5, 1.0))
+    mats_ = (
+        mat("HP_Steel", (0.6, 0.6, 0.62), 0.35, metal=1.0),
+        mat("HP_Fins", (0.55, 0.6, 0.65), 0.4, metal=1.0),
+        mat("HP_Copper", (0.8, 0.4, 0.2), 0.3, metal=1.0),
+    )
+    hp = (-3.0, -0.25, 0.0)
+    heatpump_unit(coll, hp, ghost, refr, mats_)
+    # Server heat from the rack into the heat pump, cooled water back.
+    xray.tube("Chain_RackOut", xray.dense([(-5.9, 0.55, 2.0), (-5.9, -0.25, 2.0), (-5.9, -0.25, 0.55),
+                                           (-3.55, -0.25, 0.55)]), 0.035, warm, coll)  # fmt: skip
+    xray.tube("Chain_RackBack", xray.dense([(-3.55, -0.35, 0.25), (-5.8, -0.35, 0.25),
+                                            (-5.8, 0.55, 0.25)]), 0.03, cold, coll)  # fmt: skip
+    # The lifted, hotter water from the heat pump's condenser to the ORC's hot inlet.
+    run = [
+        (-2.62, -0.35, 0.45),
+        (-1.2, -0.35, 0.45),
+        (-1.2, -0.38, 0.85),
+        (-0.15, -0.38, 0.85),
+    ]
+    xray.tube("Chain_Lifted", xray.dense(run), 0.045, lifted, coll)
+    tc = bpy.data.curves.new("Chain_LiftedText", "FONT")
+    tc.body, tc.size, tc.align_x = "lifted", 0.16, "CENTER"
+    txt = bpy.data.objects.new("Chain_LiftedText", tc)
+    txt.location, txt.rotation_euler = (-1.9, -0.42, 0.55), (math.radians(90), 0, 0)
+    tc.materials.append(mat("Chain_Text", (1, 0.8, 0.6), 0.5, (1.0, 0.62, 0.25), 6.0))
+    coll.objects.link(txt)
+    cut = bpy.data.objects["Cam_ORC_Cutaway"]
+    cfwd = cut.matrix_world.to_3x3() @ Vector((0, 0, -1))
+    cam = new_camera(sc, "Pitch_Chain", 30)
+    n = 180
+    path_keys(
+        cam,
+        [
+            (1, (-7.6, -2.8, 1.7), (-6.0, 0.0, 1.0), 30),
+            (60, (-4.3, -2.4, 1.4), (-3.0, -0.2, 0.55), 32),
+            (110, (-2.3, -2.2, 1.3), (-1.2, -0.3, 0.75), 30),
+            (n, cut.location.copy(), cut.location + cfwd * 3, cut.data.lens),
+        ],
+    )
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    for f in range(1, n + 1, a.step):
+        if f >= 120 and "ghosted" not in sc:
+            for o in sc.objects:
+                if (o.type == "MESH" and o.name.startswith(("Turbine", "Evap", "Cond", "Gen"))
+                        and "Fan" not in o.name):  # fmt: skip
+                    for slot in o.material_slots:
+                        slot.link = "OBJECT"
+                        slot.material = ghost
+            sc["ghosted"] = 1
+        for m in (refr, warm, lifted, cold):
+            m.node_tree.nodes["Phase"].outputs[0].default_value = 0.02 * f
+        sc.frame_set(f)
+        sc.render.filepath = str(out / f"{f:04d}.png")
+        bpy.ops.render.render(write_still=True)
+    return sc, None
+
+
 SHOTS = {
     "title": shot_title,
     "fly-city": shot_fly_city,
@@ -1060,6 +1187,7 @@ SHOTS = {
     "farm": shot_farm,
     "heatpump": shot_heatpump,
     "orc": shot_orc,
+    "chain": shot_chain,
     "tower": shot_tower,
     "plantfloor": shot_plantfloor,
 }
