@@ -23,6 +23,9 @@ const CITY_HOLD_MS = 1000;
 /** City → the building, tilted so the 3D blocks show. */
 const HOME_CAMERA = { center: HOME, zoom: 18.2, pitch: 60, bearing: -25 };
 const HOME_FLY_MS = 3000;
+/** Pressing "a": dive at the building, steep and close, before the 3D house takes over. */
+const INSIDE_CAMERA = { center: HOME, zoom: 19.8, pitch: 72, bearing: -25 };
+export const INSIDE_DIVE_MS = 1400;
 
 const BUILDINGS = "3d-buildings";
 const HOME_BUILDING = "home-building";
@@ -154,8 +157,18 @@ export type Stage = "city" | "building";
  * A dark Mapbox globe that spins for a moment, flies to Basel and dives at the presenter's
  * home, which rises as a solid orange block. onStage reports each step as it lands.
  */
-export function Globe({ token, onStage }: { token: string; onStage?: (stage: Stage) => void }) {
+export function Globe({
+  token,
+  onStage,
+  inside = false,
+}: {
+  token: string;
+  onStage?: (stage: Stage) => void;
+  /** Diving into the building (true) or back out to the street view (false). */
+  inside?: boolean;
+}) {
   const container = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
   // Latest callback without re-running the map effect
   const onStageRef = useRef(onStage);
   useEffect(() => {
@@ -172,6 +185,7 @@ export function Globe({ token, onStage }: { token: string; onStage?: (stage: Sta
       zoom: 1.8,
       center: [8, 25],
     });
+    mapRef.current = map;
 
     let spinning = true;
     let userInteracting = false;
@@ -243,9 +257,21 @@ export function Globe({ token, onStage }: { token: string; onStage?: (stage: Sta
 
     return () => {
       timers.forEach(clearTimeout);
+      mapRef.current = null;
       map.remove();
     };
   }, [token]);
+
+  // Into the building and back out again (only after we've been inside, not on first load)
+  const wasInside = useRef(false);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (inside) map.flyTo({ ...INSIDE_CAMERA, duration: INSIDE_DIVE_MS, essential: true });
+    else if (wasInside.current)
+      map.flyTo({ ...HOME_CAMERA, duration: INSIDE_DIVE_MS, essential: true });
+    wasInside.current = inside;
+  }, [inside]);
 
   return <div ref={container} className="h-full w-full" />;
 }

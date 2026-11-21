@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { card, label } from "./ui";
 
 /** Mock data for the demo building, as if looked up from public sources. */
 const BUILDING = {
@@ -61,10 +62,6 @@ const CLIMATE = [
   { icon: Snowflake, k: "Heating days", v: "≈ 210 / yr" },
   { icon: Calendar, k: "Heating season", v: "Oct – Apr" },
 ];
-
-const card = "edge-card pointer-events-auto animate-card-in rounded-[26px] p-2 text-white";
-const label =
-  "flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-white/55 uppercase";
 
 /** Building photo, or a plain tinted block if the image isn't there. */
 function Photo() {

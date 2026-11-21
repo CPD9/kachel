@@ -1,7 +1,8 @@
 import { ArrowRight, Building2, Check, Heater, LoaderCircle, MapPin } from "lucide-react";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
-import { Globe, type Stage } from "./Globe";
+import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
+import { HouseView } from "./HouseView";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
 
 /** Status pill over the globe: pops in, with a check once done or a spinner while loading. */
@@ -54,6 +55,30 @@ export function App() {
   const send = useCallback((text: string) => setSaid(text), []);
   // How far the globe has got: Basel in view, then the home building lit up
   const [stage, setStage] = useState<Stage | null>(null);
+  // Inside the building: the house in 3D with its floors, opened with "a" once the building is lit up
+  const [inside, setInside] = useState(false);
+  // The house takes over once the map has finished diving at the building
+  const [houseShown, setHouseShown] = useState(false);
+  useEffect(() => {
+    if (!inside) return;
+    const t = setTimeout(() => setHouseShown(true), INSIDE_DIVE_MS);
+    return () => {
+      clearTimeout(t);
+      setHouseShown(false);
+    };
+  }, [inside]);
+
+  useEffect(() => {
+    if (stage !== "building" || inside) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey)
+        return;
+      if (e.key.toLowerCase() === "a") setInside(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [stage, inside]);
 
   if (!token) {
     return (
@@ -70,12 +95,13 @@ export function App() {
     return (
       <main className="relative h-screen w-screen overflow-hidden bg-black font-sans">
         <div className="absolute inset-0 animate-globe-in">
-          <Globe token={token} onStage={setStage} />
+          <Globe token={token} onStage={setStage} inside={inside} />
         </div>
         {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
         {stage && <div key={stage} aria-hidden className="edge-glow animate-edge-glow" />}
-        {stage === "building" && <BuildingDetails />}
-        {stage && (
+        {stage === "building" && !inside && <BuildingDetails />}
+        {stage === "building" && houseShown && <HouseView onExit={() => setInside(false)} />}
+        {stage && !inside && (
           <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
             <Pill icon={<MapPin size={13} />} label="Basel identified" />
             {stage === "building" ? (
@@ -91,6 +117,7 @@ export function App() {
             onEnd={() => {
               setSaid(null);
               setStage(null);
+              setInside(false);
             }}
           />
         </div>
