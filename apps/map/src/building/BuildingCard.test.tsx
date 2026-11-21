@@ -23,6 +23,7 @@ const FACTS: BuildingFacts = {
     solarKwh: 13_268,
   },
   hectare: { totalMwh: 4561.6, districtSharePct: 81.8 },
+  osmSolar: { photovoltaic: 1, thermal: 0, other: 0 },
 };
 
 afterEach(cleanup);
@@ -37,6 +38,7 @@ describe("building card", () => {
     expect(screen.getByText(/SFOE Sonnendach, computed from GWR data/)).toBeTruthy();
     expect(screen.getByText("Source: BFS GWR, as of 19.11.2026.")).toBeTruthy();
     expect(screen.getByText(/Dense enough for a heating network/)).toBeTruthy();
+    expect(screen.getByText("Mapped within 40 m: 1 photovoltaic.")).toBeTruthy();
   });
 
   it("shows the chosen month's heat on the slider", () => {
@@ -62,7 +64,7 @@ describe("building card", () => {
   it("says so when nothing is published", () => {
     render(
       <BuildingCard
-        facts={{ register: null, roof: null, hectare: null }}
+        facts={{ register: null, roof: null, hectare: null, osmSolar: null }}
         month={10}
         onClose={() => undefined}
       />,

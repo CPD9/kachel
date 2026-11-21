@@ -1,4 +1,5 @@
 import { BUILD_PERIOD, ENERGY_SOURCE, sourceKind, type SourceKind } from "./codes";
+import { parseSolar, solarUrl, type OsmSolar } from "./solar";
 
 /**
  * Lookups on api3.geo.admin.ch, the federal geodata API (free, "fair use"; see apps/map/README.md).
@@ -138,6 +139,8 @@ export interface BuildingFacts {
   readonly register: Register | null;
   readonly roof: RoofEstimate | null;
   readonly hectare: Hectare | null;
+  /** Solar already mapped in OpenStreetMap around the building; null if Overpass did not answer. */
+  readonly osmSolar: OsmSolar | null;
 }
 
 export interface Picked {
@@ -145,6 +148,9 @@ export interface Picked {
   readonly lon: number;
   readonly lat: number;
 }
+
+/** How long the card waits for Overpass before showing everything else. */
+export const SOLAR_WAIT_MS = 6000;
 
 const cache = new Map<string, Promise<BuildingFacts>>();
 
@@ -167,15 +173,25 @@ export function lookUp(picked: Picked, fetcher: Fetch = fetch): Promise<Building
       : get(identifyUrl(GWR_LAYER, picked.lon, picked.lat, 20)),
     get(identifyUrl(SOLAR_ROOF_LAYER, picked.lon, picked.lat, 4)),
     get(identifyUrl(HEAT_DEMAND_LAYER, picked.lon, picked.lat, 0)),
-  ]).then(([gwr, roofs, hectare]) => ({
+    // Overpass is often busy: give it six seconds, so it never holds up the heat figures.
+    Promise.race([
+      fetcher(solarUrl(picked.lon, picked.lat))
+        .then(async (res) => (res.ok ? parseSolar(await res.json()) : null))
+        .catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), SOLAR_WAIT_MS)),
+    ]),
+  ]).then(([gwr, roofs, hectare, osmSolar]) => ({
     register: gwr[0] === undefined ? null : parseRegister(gwr[0]),
     roof: parseRoofs(roofs),
     hectare: parseHectare(hectare[0]),
+    osmSolar,
   }));
   cache.set(String(key), job);
   // An empty answer may be a dropped connection: forget it, so the next click asks again.
   void job.then((facts) => {
-    if (facts.register === null && facts.roof === null && facts.hectare === null) {
+    const empty = facts.register === null && facts.roof === null && facts.hectare === null;
+    // Overpass is often busy; a later click on the same building asks again.
+    if (empty || facts.osmSolar === null) {
       cache.delete(String(key));
     }
   });
