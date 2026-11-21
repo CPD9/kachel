@@ -6,10 +6,13 @@ import {
   CesiumTerrainProvider,
   ClockRange,
   Credit,
+  EllipsoidTerrainProvider,
   ImageryLayer,
   JulianDate,
   Math as CesiumMath,
   OpenStreetMapImageryProvider,
+  PolylineCollection,
+  Material,
   Cartesian2,
   Rectangle,
   SunLight,
@@ -23,10 +26,11 @@ import "cesium/Build/Cesium/Widgets/widgets.css";
 import type { Picked } from "../building/geoadmin";
 import type { Area, Network } from "../networks/thermal";
 import { beforeSunset, swissHour } from "../clock";
-import { BASEL, ORIGIN, type View } from "../places";
+import { BASEL, CANTONS_FROM_M, ORIGIN, type View } from "../places";
 import { OSM_TILES, SWISS_BUILDINGS, SWISS_IMAGE, SWISS_TERRAIN, SWITZERLAND } from "../sources";
 import { duskSky } from "../sky";
 import { nightFactor, sunElevationDeg, windowsLitShare } from "../sun";
+import { loadCantons } from "./cantons";
 import { homeServerLayer, networkLayer } from "./layers";
 import { originFrame, updateWindows, windowShader } from "./windows";
 
@@ -143,6 +147,14 @@ export async function createScene(
     }),
   );
 
+  // Canton borders: thin muted lines, drawn 5 km up so the Alps never hide them from above.
+  const cantons = scene.primitives.add(new PolylineCollection()) as PolylineCollection;
+  cantons.show = false;
+  let cantonsAsked = false;
+  const borderMaterial = Material.fromType("Color", {
+    color: Color.fromCssColorString("#4b3f72").withAlpha(0.85),
+  });
+
   const clock = viewer.clock;
   clock.currentTime = JulianDate.fromDate(
     options.at ?? beforeSunset(now, ORIGIN.lat, ORIGIN.lon, 20),
@@ -165,16 +177,43 @@ export async function createScene(
   ]);
   if (viewer.isDestroyed()) throw new Error("The map closed while it was loading.");
   viewer.terrainProvider = terrain;
+  const flat = new EllipsoidTerrainProvider();
   const shader = windowShader();
   buildings.customShader = shader;
   scene.primitives.add(buildings);
+  // Dev builds only: a handle for debugging in the browser console.
+  if (import.meta.env.DEV) Object.assign(window, { kachelDebug: { viewer, buildings } });
 
   const sun = new SunLight();
   scene.light = sun;
   const frame = originFrame();
   const onTick = () => {
     const when = JulianDate.toDate(clock.currentTime);
-    const night = nightFactor(sunElevationDeg(when, ORIGIN.lat, ORIGIN.lon));
+    const height = viewer.camera.positionCartographic.height;
+    cantons.show = height > CANTONS_FROM_M;
+    if (cantons.show && !cantonsAsked) {
+      cantonsAsked = true;
+      void loadCantons().then((rings) => {
+        // A failed request is tried again after half a minute, not on the next frame.
+        if (rings.length === 0) window.setTimeout(() => (cantonsAsked = false), 30_000);
+        for (const ring of rings) {
+          cantons.add({
+            positions: Cartesian3.fromDegreesArrayHeights(ring.flatMap(([x, y]) => [x, y, 5000])),
+            width: 1.5,
+            material: borderMaterial,
+          });
+        }
+      });
+    }
+    // The aerial photo stops at a rectangle around Switzerland; from high up that box shows.
+    swissImage.show = !cantons.show;
+    // From high up, Cesium's own day and night on the globe tell the story; Basel's dusk would not.
+    const fromSpace = height > 150_000;
+    // swisstopo's terrain ends at a ragged edge that shows as a seam from high up; up there the
+    // relief is too small to see, so the globe goes flat until the camera comes back down.
+    const wanted = height > 150_000 ? flat : terrain;
+    if (viewer.terrainProvider !== wanted) viewer.terrainProvider = wanted;
+    const night = fromSpace ? 0 : nightFactor(sunElevationDeg(when, ORIGIN.lat, ORIGIN.lon));
     updateWindows(shader, frame, viewer.camera, night, windowsLitShare(swissHour(when)));
     // Cesium's sun keeps shining from below the horizon: fade it and the sky's fill light out.
     sun.intensity = 2 * (1 - 0.92 * night);
@@ -183,9 +222,9 @@ export async function createScene(
       1 - 0.85 * night,
     );
     // Cesium's sky goes black a few degrees after sunset; from dusk on, our painted sky shows.
-    if (scene.skyBox !== undefined) scene.skyBox.show = false;
+    if (scene.skyBox !== undefined) scene.skyBox.show = fromSpace;
     if (scene.skyAtmosphere !== undefined) scene.skyAtmosphere.show = night < 0.2;
-    container.style.background = duskSky(night);
+    container.style.background = fromSpace ? "#04060c" : duskSky(night);
     // Cesium never darkens the ground fully after sunset, so dim the photos and maps by hand.
     for (const layer of [viewer.imageryLayers.get(0), swissImage]) {
       layer.brightness = 1 - 0.85 * night;

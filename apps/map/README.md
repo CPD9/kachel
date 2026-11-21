@@ -27,6 +27,11 @@ many small servers in many homes. That second layer is an illustration, not data
 
 <p align="center"><img src="../../docs/images/map-networks.webp" width="720" alt="Basel at dusk with SFOE's district heating networks as red points and Kachel's home servers as amber dots; the card for Wärmeverbund Theodor shows IWB as operator, groundwater heat pumps and gas, 1.38 MW and 2.4 GWh a year"></p>
 
+The buttons top right fly from Basel to Bern, to all of Switzerland with its cantons, to the
+neighbouring countries and to the globe.
+
+<p align="center"><img src="../../docs/images/map-switzerland.webp" width="720" alt="Switzerland from above on the OpenStreetMap map, thin canton borders from swissBOUNDARIES3D, with buttons for Basel, Bern, Switzerland, Neighbours and Globe"></p>
+
 ## How it works
 
 - [CesiumJS](https://cesium.com/platform/cesiumjs/) 1.147 (Apache-2.0) draws the globe, the
@@ -39,16 +44,17 @@ many small servers in many homes. That second layer is an illustration, not data
 
 ## Data sources and terms
 
-| Layer                           | Service                                                                                    | Terms                                                                                                                                                               |
-| ------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Buildings (swissBUILDINGS3D)    | `https://3d.geo.admin.ch/ch.swisstopo.swissbuildings3d.3d/v1/tileset.json`                 | [3D Tiles docs](https://docs.geo.admin.ch/visualize-data/3d-tiles.html); free with credit "© swisstopo", fair use                                                   |
-| Terrain                         | `https://3d.geo.admin.ch/ch.swisstopo.terrain.3d/v1/` (quantized mesh)                     | [Terrain docs](https://docs.geo.admin.ch/visualize-data/terrain-service.html); same terms                                                                           |
-| Aerial photos (SWISSIMAGE)      | `https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/…`                                | [FSDI terms of use](https://www.geo.admin.ch/en/general-terms-of-use-fsdi): free, "© swisstopo"; about 20,000 users a day counts as fair use                        |
-| Building register (GWR)         | `api3.geo.admin.ch` find on `ch.bfs.gebaeude_wohnungs_register` by EGID                    | BFS; level A data are public and free to use; "Source: BFS GWR"                                                                                                     |
-| Heat demand, solar (Sonnendach) | `api3.geo.admin.ch` identify on `ch.bfe.solarenergie-eignung-daecher`                      | SFOE, data status 21.02.2023; "Source: SFOE"                                                                                                                        |
-| Heat demand per hectare         | `api3.geo.admin.ch` identify on `ch.bfe.fernwaerme-nachfrage_wohn_dienstleistungsgebaeude` | SFOE, 2014 building and 2013 company statistics; "Source: SFOE"                                                                                                     |
-| Thermal networks                | `api3.geo.admin.ch` identify on `ch.bfe.thermische-netze` for the area in view             | SFOE, data status 18.11.2026; "Source: SFOE"                                                                                                                        |
-| Map outside Switzerland         | `https://tile.openstreetmap.org/`                                                          | [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/); "© OpenStreetMap contributors", data [ODbL](https://www.openstreetmap.org/copyright) |
+| Layer                              | Service                                                                                                     | Terms                                                                                                                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Buildings (swissBUILDINGS3D)       | `https://3d.geo.admin.ch/ch.swisstopo.swissbuildings3d.3d/v1/tileset.json`                                  | [3D Tiles docs](https://docs.geo.admin.ch/visualize-data/3d-tiles.html); free with credit "© swisstopo", fair use                                                   |
+| Terrain                            | `https://3d.geo.admin.ch/ch.swisstopo.terrain.3d/v1/` (quantized mesh)                                      | [Terrain docs](https://docs.geo.admin.ch/visualize-data/terrain-service.html); same terms                                                                           |
+| Aerial photos (SWISSIMAGE)         | `https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/…`                                                 | [FSDI terms of use](https://www.geo.admin.ch/en/general-terms-of-use-fsdi): free, "© swisstopo"; about 20,000 users a day counts as fair use                        |
+| Building register (GWR)            | `api3.geo.admin.ch` find on `ch.bfs.gebaeude_wohnungs_register` by EGID                                     | BFS; level A data are public and free to use; "Source: BFS GWR"                                                                                                     |
+| Heat demand, solar (Sonnendach)    | `api3.geo.admin.ch` identify on `ch.bfe.solarenergie-eignung-daecher`                                       | SFOE, data status 21.02.2023; "Source: SFOE"                                                                                                                        |
+| Heat demand per hectare            | `api3.geo.admin.ch` identify on `ch.bfe.fernwaerme-nachfrage_wohn_dienstleistungsgebaeude`                  | SFOE, 2014 building and 2013 company statistics; "Source: SFOE"                                                                                                     |
+| Thermal networks                   | `api3.geo.admin.ch` identify on `ch.bfe.thermische-netze` for the area in view                              | SFOE, data status 18.11.2026; "Source: SFOE"                                                                                                                        |
+| Canton borders (swissBOUNDARIES3D) | `api3.geo.admin.ch` identify on `ch.swisstopo.swissboundaries3d-kanton-flaeche.fill`, once, when zoomed out | swisstopo, data status 01.01.2026; "© swisstopo"                                                                                                                    |
+| Map outside Switzerland            | `https://tile.openstreetmap.org/`                                                                           | [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/); "© OpenStreetMap contributors", data [ODbL](https://www.openstreetmap.org/copyright) |
 
 The credits sit in the footer at all times. For a public deployment with real traffic, swap
 `tile.openstreetmap.org` for a tile provider that allows it; the policy does not cover heavy use.
