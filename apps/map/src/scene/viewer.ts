@@ -49,7 +49,12 @@ export interface Scene {
   time(): Date;
   playing(): boolean;
   setPlaying(on: boolean): void;
-  flyTo(view: View, seconds?: number): void;
+  /** Flies to a view; resolves when the flight ends or is cancelled. */
+  flyTo(view: View, seconds?: number): Promise<void>;
+  /** Resolves once the buildings and the ground in view have loaded. */
+  tilesLoaded(): Promise<void>;
+  /** Moves the map's clock to this moment. */
+  setTime(when: Date): void;
   /** Calls back with what was clicked; returns an unsubscribe. */
   onPick(callback: (picked: Pick) => void): () => void;
   /** The ground in view, at most a degree across around the camera. */
@@ -71,8 +76,8 @@ function readFeature(feature: Cesium3DTileFeature): Picked | null {
   return { egid: Number.isFinite(egid) && egid > 0 ? egid : null, lon, lat };
 }
 
-/** Puts the camera at a view at once, or flies there. */
-function goTo(viewer: Viewer, view: View, seconds: number): void {
+/** Puts the camera at a view at once, or flies there; resolves when it is there. */
+function goTo(viewer: Viewer, view: View, seconds: number): Promise<void> {
   const options = {
     destination: Cartesian3.fromDegrees(view.lon, view.lat, view.height),
     orientation: {
@@ -81,8 +86,13 @@ function goTo(viewer: Viewer, view: View, seconds: number): void {
       roll: 0,
     },
   };
-  if (seconds === 0) viewer.camera.setView(options);
-  else viewer.camera.flyTo({ ...options, duration: seconds });
+  if (seconds === 0) {
+    viewer.camera.setView(options);
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    viewer.camera.flyTo({ ...options, duration: seconds, complete: resolve, cancel: resolve });
+  });
 }
 
 /**
@@ -117,6 +127,8 @@ export async function createScene(
   });
   const { scene } = viewer;
   scene.globe.enableLighting = true;
+  // While map tiles load, the globe shows a dark slate rather than a white or blue ball.
+  scene.globe.baseColor = Color.fromCssColorString("#1b2330");
   scene.globe.dynamicAtmosphereLighting = true;
   scene.globe.dynamicAtmosphereLightingFromSun = true;
   // Cesium switches ground lighting off near the ground by default; keep it on at every height.
@@ -244,7 +256,13 @@ export async function createScene(
     highlighted = hit instanceof Cesium3DTileFeature ? hit : null;
     if (highlighted !== null) highlighted.color = HIGHLIGHT;
     const network = networks.networkOf(hit);
-    const building = highlighted === null ? null : readFeature(highlighted);
+    const house = homeServers.houseOf(hit);
+    const building =
+      house !== null
+        ? { egid: house.egid, lon: house.lon, lat: house.lat }
+        : highlighted === null
+          ? null
+          : readFeature(highlighted);
     const picked: Pick =
       network !== null
         ? { kind: "network", network }
@@ -261,6 +279,19 @@ export async function createScene(
       clock.shouldAnimate = on;
     },
     flyTo: (view, seconds = 3) => goTo(viewer, view, seconds),
+    tilesLoaded: () =>
+      new Promise((resolve) => {
+        const done = () => buildings.tilesLoaded && scene.globe.tilesLoaded;
+        if (done()) return resolve();
+        const remove = scene.postRender.addEventListener(() => {
+          if (!done()) return;
+          remove();
+          resolve();
+        });
+      }),
+    setTime: (when) => {
+      clock.currentTime = JulianDate.fromDate(when);
+    },
     onPick: (callback) => {
       listeners.add(callback);
       return () => listeners.delete(callback);

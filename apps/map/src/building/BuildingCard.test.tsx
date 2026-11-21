@@ -23,6 +23,7 @@ const FACTS: BuildingFacts = {
     solarKwh: 13_268,
   },
   hectare: { totalMwh: 4561.6, districtSharePct: 81.8 },
+  osmSolar: { photovoltaic: 1, thermal: 0, other: 0 },
 };
 
 afterEach(cleanup);
@@ -37,6 +38,7 @@ describe("building card", () => {
     expect(screen.getByText(/SFOE Sonnendach, computed from GWR data/)).toBeTruthy();
     expect(screen.getByText("Source: BFS GWR, as of 19.11.2026.")).toBeTruthy();
     expect(screen.getByText(/Dense enough for a heating network/)).toBeTruthy();
+    expect(screen.getByText("Mapped within 40 m: 1 photovoltaic.")).toBeTruthy();
   });
 
   it("shows the chosen month's heat on the slider", () => {
@@ -59,10 +61,40 @@ describe("building card", () => {
     expect(screen.getByText(/scaled from Kachel's Basel reference house/)).toBeTruthy();
   });
 
+  it("says a fleet house is synthetic and the building real", () => {
+    const house = {
+      id: "house-07",
+      city: "Basel",
+      servers: 6,
+      heatDemandKwh: 30_000,
+      egid: 441428,
+      lon: 7.5754,
+      lat: 47.5608,
+      hectareHeatMwh: 4562,
+    };
+    render(<BuildingCard facts={FACTS} month={10} fleet={house} onClose={() => undefined} />);
+    expect(
+      screen.getByText(/here this building gets 6 servers, as synthetic house house-07/),
+    ).toBeTruthy();
+    expect(screen.getByText(/the fleet is not/)).toBeTruthy();
+    // The whole-building estimate is named apart from the fleet's servers.
+    expect(screen.getByText("If Kachel heated the whole building, estimated")).toBeTruthy();
+  });
+
+  it("flags a heat figure that is high for any building", () => {
+    // 386,067 kWh over 668 m² is 578 kWh/m².
+    const facts = {
+      ...FACTS,
+      register: FACTS.register && { ...FACTS.register, heatedAreaM2: 668 },
+    };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("578 kWh, high, check")).toBeTruthy();
+  });
+
   it("says so when nothing is published", () => {
     render(
       <BuildingCard
-        facts={{ register: null, roof: null, hectare: null }}
+        facts={{ register: null, roof: null, hectare: null, osmSolar: null }}
         month={10}
         onClose={() => undefined}
       />,
