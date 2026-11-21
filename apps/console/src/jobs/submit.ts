@@ -10,7 +10,7 @@ export type NewJob = {
 };
 
 const JOB_COLUMNS =
-  "id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, created_at, updated_at";
+  "id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, moved_offsite, created_at, updated_at";
 
 /** The buyer's session has ended, so the job cannot be theirs; they need to sign in again. */
 export class SignedOut extends Error {

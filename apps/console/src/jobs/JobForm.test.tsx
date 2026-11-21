@@ -113,6 +113,7 @@ describe("console", () => {
       server_hours: job.size,
       deadline_at: job.deadline,
       active_cpu_s: 0,
+      moved_offsite: false,
       created_at: "2026-11-21T12:00:00+00:00",
       updated_at: "2026-11-21T12:00:00+00:00",
     }));
