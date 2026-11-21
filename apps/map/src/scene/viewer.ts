@@ -21,15 +21,23 @@ import {
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import type { Picked } from "../building/geoadmin";
+import type { Area, Network } from "../networks/thermal";
 import { beforeSunset, swissHour } from "../clock";
 import { BASEL, ORIGIN, type View } from "../places";
 import { OSM_TILES, SWISS_BUILDINGS, SWISS_IMAGE, SWISS_TERRAIN, SWITZERLAND } from "../sources";
 import { duskSky } from "../sky";
 import { nightFactor, sunElevationDeg, windowsLitShare } from "../sun";
+import { homeServerLayer, networkLayer } from "./layers";
 import { originFrame, updateWindows, windowShader } from "./windows";
 
 /** Simulated seconds per real second: a whole day passes in about five minutes. */
 export const DAY_SPEED = 300;
+
+/** What a click hit: a building, a thermal network, or nothing of ours. */
+export type Pick =
+  | { readonly kind: "building"; readonly building: Picked }
+  | { readonly kind: "network"; readonly network: Network }
+  | null;
 
 /** What the page needs from the 3D scene; tests pass a fake. */
 export interface Scene {
@@ -38,8 +46,13 @@ export interface Scene {
   playing(): boolean;
   setPlaying(on: boolean): void;
   flyTo(view: View, seconds?: number): void;
-  /** Calls back with the building clicked (null for empty ground); returns an unsubscribe. */
-  onPick(callback: (picked: Picked | null) => void): () => void;
+  /** Calls back with what was clicked; returns an unsubscribe. */
+  onPick(callback: (picked: Pick) => void): () => void;
+  /** The ground in view, at most a degree across around the camera. */
+  viewArea(): Area;
+  /** Shows these thermal networks, or hides the layer with null. */
+  showNetworks(networks: readonly Network[] | null): void;
+  showHomeServers(on: boolean): void;
   destroy(): void;
 }
 
@@ -182,14 +195,23 @@ export async function createScene(
   const removeTick = scene.preRender.addEventListener(onTick);
 
   const clicks = new ScreenSpaceEventHandler(scene.canvas);
-  const listeners = new Set<(picked: Picked | null) => void>();
+  const listeners = new Set<(picked: Pick) => void>();
+  const networks = networkLayer(viewer);
+  const homeServers = homeServerLayer(viewer);
   let highlighted: Cesium3DTileFeature | null = null;
   clicks.setInputAction((event: ScreenSpaceEventHandler.PositionedEvent) => {
     const hit: unknown = scene.pick(event.position);
     if (highlighted !== null) highlighted.color = Color.WHITE;
     highlighted = hit instanceof Cesium3DTileFeature ? hit : null;
     if (highlighted !== null) highlighted.color = HIGHLIGHT;
-    const picked = highlighted === null ? null : readFeature(highlighted);
+    const network = networks.networkOf(hit);
+    const building = highlighted === null ? null : readFeature(highlighted);
+    const picked: Pick =
+      network !== null
+        ? { kind: "network", network }
+        : building !== null
+          ? { kind: "building", building }
+          : null;
     for (const l of listeners) l(picked);
   }, ScreenSpaceEventType.LEFT_CLICK);
 
@@ -204,6 +226,25 @@ export async function createScene(
       listeners.add(callback);
       return () => listeners.delete(callback);
     },
+    viewArea: () => {
+      const here = viewer.camera.positionCartographic;
+      const lon = CesiumMath.toDegrees(here.longitude);
+      const lat = CesiumMath.toDegrees(here.latitude);
+      const box = { west: lon - 0.5, south: lat - 0.5, east: lon + 0.5, north: lat + 0.5 };
+      const seen = viewer.camera.computeViewRectangle();
+      if (seen === undefined) return box;
+      return {
+        west: Math.max(box.west, CesiumMath.toDegrees(seen.west)),
+        south: Math.max(box.south, CesiumMath.toDegrees(seen.south)),
+        east: Math.min(box.east, CesiumMath.toDegrees(seen.east)),
+        north: Math.min(box.north, CesiumMath.toDegrees(seen.north)),
+      };
+    },
+    showNetworks: (list) => {
+      if (list === null) networks.hide();
+      else networks.show(list);
+    },
+    showHomeServers: (on) => homeServers.setShown(on),
     destroy: () => {
       removeTick();
       clicks.destroy();
