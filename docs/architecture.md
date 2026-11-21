@@ -38,7 +38,7 @@ What each box is in the repo:
 | Fleet model                 | `services/scheduler/heatsched/fleet.py`          | Built as a model on synthetic houses (#86, #95); `fleet_write.py` fills Supabase (#100) |
 | Solar and battery           | `services/scheduler/heatsched/solar.py`          | Built. Roof PV and a battery in the yearly balance (#91)                                |
 | Agent                       | `services/agent`                                 | Built. Follows a run/pause signal file and writes to Supabase                           |
-| Supabase and Realtime       | `supabase/migrations`, `packages/db/src/live.ts` | Built. Realtime on `servers`, `jobs` and `heat_state`                                   |
+| Supabase and Realtime       | `supabase/migrations`, `packages/db/src/live.ts` | Built. Realtime on `servers`, `jobs` and `heat_state`; row level security on all        |
 | Host app                    | `apps/host`                                      | Built. Shows the house, each server and its job live                                    |
 | Console app                 | `apps/console`                                   | Built. Submits jobs (#85) and lists them with their state                               |
 | Scheduler writes the signal | `services/scheduler`, `services/agent`           | Next. On stage the signal file is written by hand                                       |
