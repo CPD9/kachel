@@ -14,7 +14,7 @@ OUT = "../../docs/economics"
 N = 6                                       # servers per house, as in kpis.json
 MUTED = "#5B616B"
 ELCOM_2026, ELCOM_2027 = 0.277, 0.265       # ElCom H4 median, CHF/kWh
-SWISS_MIN, SWISS_MAX = 0.106, 0.459         # cheapest and dearest municipality 2027
+SWISS_MIN, SWISS_MAX = 0.106, 0.459         # cheapest and dearest municipality 2027, as reported by Blick (check against ElCom)
 
 
 def save(fig, name, sub):
@@ -117,7 +117,7 @@ def chart_break_even(cfg):
     p = np.linspace(0.08, 0.50, 200); r = cfg["server"]["heat_recovery"]
     fig, ax = plt.subplots(figsize=(11, 5.6))
     ax.axvspan(SWISS_MIN, SWISS_MAX, color=GRID, alpha=0.6, lw=0)
-    ax.text((SWISS_MIN + SWISS_MAX) / 2, 0.535, "Range across Swiss municipalities, 2027 (cheapest to dearest)", ha="center", fontsize=10, color=MUTED, va="top")
+    ax.text((SWISS_MIN + SWISS_MAX) / 2, 0.535, "Range across Swiss municipalities, 2027, as reported by Blick", ha="center", fontsize=10, color=MUTED, va="top")
     ax.plot(p, p, color=SLATE, lw=2, ls="--", label="All heat wasted (data centre)")
     for cop, c, lab in ((4.9, MINT, "4.9 (best air/water pump in field test)"), (3.4, GLACIER, "3.4 (field-test average)"),
                         (2.5, EMBER, "2.5 (case brief)")):
@@ -166,7 +166,7 @@ def tornado(prof, cfg, k_base):
         ("Compute price, 0.25 to 0.75 CHF per server-hour\n(our assumption ±50%)",
          with_(cfg, prices__compute_chf_per_server_hour=0.25), with_(cfg, prices__compute_chf_per_server_hour=0.75), "0.25", "0.75"),
         ("Backlog of flexible jobs: none vs unlimited\n(our assumption)", no_backlog(cfg), cfg, "none", "unlimited"),
-        ("Electricity price, 10.6 to 45.9 Rp per kWh\n(ElCom 2027, cheapest to dearest municipality)",
+        ("Electricity price, 10.6 to 45.9 Rp per kWh\n(2027 municipal range as reported by Blick)",
          with_(cfg, prices__electricity_chf_per_kwh=SWISS_MAX), with_(cfg, prices__electricity_chf_per_kwh=SWISS_MIN), "45.9", "10.6"),
         ("Heat recovered, 60% to 95%\n(95% is a vendor's maximum)",
          with_(cfg, server__heat_recovery=0.6), with_(cfg, server__heat_recovery=0.95), "60%", "95%"),
