@@ -28,7 +28,8 @@ Charts:
     month        heat from the servers and backup heat per month, stacked,
                  with the server utilisation drawn along
     breakeven    cost and price per server-hour, with the break-even point
-    sensitivity  what moves the yearly result, as a tornado chart
+    sensitivity  what moves the yearly result after hardware, as a tornado chart
+    payback      cumulative cash per house over the years, for three hardware cases
 
 Options after "--":
     --chart NAME   one of the charts above (required)
@@ -138,7 +139,18 @@ def decimals(step):
 
 
 def number(value, places=0):
-    return f"{value:,.{places}f}"
+    """Thousands with commas, and a true minus sign for negatives."""
+    return f"{value:,.{places}f}".replace("-", "\u2212")
+
+
+def span_ticks(low, high, count):
+    """Round tick values covering low to high (either may be negative), about count steps."""
+    raw = (high - low) / count
+    mag = 10 ** math.floor(math.log10(raw))
+    step = next(m * mag for m in (1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10) if m * mag >= raw)
+    first = math.floor(low / step + 1e-9)
+    last = math.ceil(high / step - 1e-9)
+    return [step * i for i in range(first, last + 1)], step
 
 
 def tick_text(value, step, suffix=""):
@@ -343,6 +355,7 @@ def load(data_dir):
         monthly=rows("monthly.csv"),
         sensitivity=rows("sensitivity.csv"),
         per_house=rows("servers_per_house.csv"),
+        hardware=rows("hardware.csv"),
         daily=rows("daily.csv"),
         summary=summary,
     )
@@ -386,7 +399,7 @@ def chart_month(data):
 
     axis = paint("axis", INK, start=0.2)
     grid = paint("grid", SLATE, start=0.2)
-    secondary = paint("captions", SLATE, start=0.2)
+    secondary = paint("captions", INK, start=0.2)
     for i, (kv, pv) in enumerate(zip(kwh_ticks, pct_ticks)):
         yy = ky(kv)
         if i:
@@ -493,7 +506,7 @@ def chart_breakeven(data):
         text(label, X(v), y0 - 62, axis, align="CENTER")
         rect(f"tick {i}", X(v) - 1.5, y0 - 14, X(v) + 1.5, y0, axis, z=0.02)
     rect("baseline", x0, y0 - 1.5, x1, y0 + 1.5, axis, z=0.02)
-    caption = paint("caption", SLATE, start=0.2)
+    caption = paint("caption", INK, start=0.2)
     text(
         "Compute price, CHF per server-hour", (x0 + x1) / 2, 32, caption, align="CENTER"
     )
@@ -598,7 +611,7 @@ def chart_breakeven(data):
 
 
 def chart_sensitivity(data):
-    net = data.summary["net_chf_per_house_before_hardware"]
+    base = data.summary["hardware"]["mid"]["net_chf_after_hardware"]
     rows = sorted(
         data.sensitivity,
         key=lambda r: abs(float(r["high_chf"]) - float(r["low_chf"])),
@@ -606,31 +619,44 @@ def chart_sensitivity(data):
     )
     header(
         "What moves the result",
-        f"Yearly result per house before hardware, CHF. Base case {number(net)}",
+        f"Yearly result per house after hardware, CHF. Mid case {number(base)}",
     )
-    top_value = max(max(float(r["low_chf"]), float(r["high_chf"])) for r in rows)
-    values, step = ticks(top_value, 4)
-    x0, x1, axis_y = 260, 1780, 170
+    every = [float(r[k]) for r in rows for k in ("low_chf", "high_chf")]
+    values, step = span_ticks(min(every + [0.0]), max(every + [0.0]), 4)
+    x0, x1, axis_y = 300, 1700, 140
 
     def X(v):
-        return x0 + v / values[-1] * (x1 - x0)
+        return x0 + (v - values[0]) / (values[-1] - values[0]) * (x1 - x0)
 
     axis = paint("axis", INK, start=0.2)
     for i, v in enumerate(values):
-        text(tick_text(v, step), X(v), axis_y - 62, axis, align="CENTER")
+        text(
+            tick_text(v, step),
+            X(v),
+            axis_y - 62,
+            axis,
+            align="CENTER",
+        )
         rect(f"tick {i}", X(v) - 1.5, axis_y - 14, X(v) + 1.5, axis_y, axis, z=0.02)
     rect("axis", x0, axis_y - 1.5, x1, axis_y + 1.5, axis, z=0.02)
 
     worse = paint("lower", GLACIER)
     better = paint("higher", MINT)
-    pitch, first_baseline = 136, 800
+    zero = paint("zero", SLATE, start=0.2)
+    # One line of text over each bar; seven rows fit between the subtitle and the axis.
+    pitch, first_baseline, half = 104, 830, 15
     for i, r in enumerate(rows):
-        start = 0.8 + 0.55 * i
+        start = 0.8 + 0.4 * i
         baseline = first_baseline - pitch * i
-        bar0, bar1 = baseline - 64, baseline - 18
+        mid = baseline - 36
+        bar0, bar1 = mid - half, mid + half
         words = paint(f"row {i}", INK, start=start)
-        text(r["input"], MARGIN, baseline, words)
-        rect(f"base {i}", X(net) - 2, bar0 - 10, X(net) + 2, bar1 + 10, words, z=0.03)
+        name = text(r["input"], MARGIN, baseline, words)
+        if r["input"].startswith("Electricity price"):
+            # The range of municipal tariffs comes from a newspaper, not ElCom.
+            text("(range as reported by Blick)", extent(name)[2] + 22, baseline, words)
+        rect(f"zero {i}", X(0) - 1.5, bar0 - 8, X(0) + 1.5, bar1 + 8, zero, z=0.025)
+        rect(f"base {i}", X(base) - 2, bar0 - 8, X(base) + 2, bar1 + 8, words, z=0.03)
         lo = min(float(r["low_chf"]), float(r["high_chf"]))
         hi = max(float(r["low_chf"]), float(r["high_chf"]))
         left = rect(f"lower {i}", 0, 0, 0, 0, worse)
@@ -640,24 +666,160 @@ def chart_sensitivity(data):
             t, start=start, lo=lo, hi=hi, left=left, right=right, b=(bar0, bar1)
         ):
             f = ease_out((t - start - 0.2) / 0.8)
-            place(left, X(net + (min(lo, net) - net) * f), b[0], X(net), b[1])
-            place(right, X(net), b[0], X(net + (max(hi, net) - net) * f), b[1])
+            place(left, X(base + (min(lo, base) - base) * f), b[0], X(base), b[1])
+            place(right, X(base), b[0], X(base + (max(hi, base) - base) * f), b[1])
 
         update(0.0)
         UPDATES.append(update)
         figures = paint(f"figures {i}", INK, start=start + 0.9)
-        mid = (bar0 + bar1) / 2 - LABEL * CAP / 2
-        text(number(lo), X(min(lo, net)) - 16, mid, figures, align="RIGHT")
-        text(number(hi), X(max(hi, net)) + 16, mid, figures)
+        middle = mid - LABEL * CAP / 2
+        for label in (
+            text(number(lo), X(min(lo, base)) - 16, middle, figures, align="RIGHT"),
+            text(number(hi), X(max(hi, base)) + 16, middle, figures),
+        ):
+            box = extent(label)
+            if box[0] - 6 < X(0) < box[2] + 6:
+                # Keep the zero mark out of a figure that sits across it.
+                backing([label], start + 0.9, pad=6).location.z = 0.027
 
-    source = paint("source", SLATE, start=0.8 + 0.55 * len(rows) + 0.6)
-    text("Electricity price range as reported by Blick", MARGIN, 32, source)
+
+# Chart 4: paying back the hardware
+
+
+def chart_payback(data):
+    n = data.summary["base_case"]["servers_per_house"]
+    cases = {r["case"]: r for r in data.hardware}
+    colours = {"low": MINT, "mid": EMBER, "high": GLACIER}
+    curves = {}
+    for name, r in cases.items():
+        capex, upkeep = float(r["capex_chf"]), float(r["upkeep_chf_per_year"])
+        rate, life = float(r["discount_rate"]), float(r["lifetime_years"])
+        cash = float(r["net_chf_before_hardware"]) - upkeep
+
+        def cumulative(y, capex=capex, cash=cash, rate=rate):
+            """Discounted cash after y years, less what was paid up front."""
+            return -capex + cash * (1 - (1 + rate) ** -y) / rate
+
+        if abs(cumulative(life) - float(r["npv_chf"])) > 2:
+            sys.exit(f"charts.py: the {name} curve does not end at its NPV")
+        payback = float(r["payback_years"]) if r["payback_years"] else None
+        if payback and payback <= life and abs(cumulative(payback)) > cash * 0.06:
+            sys.exit(f"charts.py: the {name} curve does not cross zero at payback")
+        curves[name] = (cumulative, life, r)
+
+    header(
+        "Paying back the hardware",
+        f"Discounted cash per house with {n} servers, CHF, over each case's lifetime",
+    )
+    longest = max(life for _, life, _ in curves.values())
+    lows = [-float(r["capex_chf"]) for r in cases.values()]
+    highs = [float(r["npv_chf"]) for r in cases.values()]
+    yv, _ = span_ticks(min(lows), max(highs + [0.0]), 4)
+    years = list(range(math.ceil(longest) + 1))
+    x0, x1, y0, y1 = 300, 1260, 170, 770
+
+    def X(v):
+        return x0 + v / years[-1] * (x1 - x0)
+
+    def Y(v):
+        return y0 + (v - yv[0]) / (yv[-1] - yv[0]) * (y1 - y0)
+
+    axis = paint("axis", INK, start=0.2)
+    grid = paint("grid", SLATE, start=0.2)
+    for i, v in enumerate(yv):
+        if v != 0:
+            rect(f"grid {i}", x0, Y(v) - 1, x1, Y(v) + 1, grid, z=0.005)
+        text(number(v), x0 - 22, Y(v) - LABEL * CAP / 2, axis, align="RIGHT")
+    for i, v in enumerate(years):
+        text(str(v), X(v), y0 - 62, axis, align="CENTER")
+        rect(f"tick {i}", X(v) - 1.5, y0 - 14, X(v) + 1.5, y0, axis, z=0.02)
+    rect("bottom", x0, y0 - 1.5, x1, y0 + 1.5, axis, z=0.02)
+    rect("zero", x0, Y(0) - 2, x1, Y(0) + 2, axis, z=0.02)
+    text("Years", (x0 + x1) / 2, 40, axis, align="CENTER")
+
+    first, length = 1.0, 4.0
+
+    def year_at(t):
+        return years[-1] * ease((t - first) / length)
+
+    def time_of(year):
+        for u in range(401):
+            if year_at(first + length * u / 400) >= year:
+                return first + length * u / 400
+        return first + length
+
+    for name, (cumulative, life, r) in curves.items():
+        mat = paint(f"line {name}", colours[name])
+        draw = stroke(f"line {name}", mat, 8 if name == "mid" else 6)
+        points = [
+            (X(life * k / 120), Y(cumulative(life * k / 120))) for k in range(121)
+        ]
+
+        def update(t, draw=draw, points=points, life=life):
+            reach = year_at(t)
+            draw(partial(points, min(reach, life) / life * 120) if reach > 0 else [])
+
+        update(0.0)
+        UPDATES.append(update)
+        done = time_of(life)
+        end = disc(f"end {name}", *points[-1], 9, mat)
+        UPDATES.append(
+            lambda t, end=end, done=done: setattr(end, "hide_render", t < done)
+        )
+        end.hide_render = True
+        label = paint(f"label {name}", INK, start=done)
+        years_text = f"{r['lifetime_years']} years"
+        end_text = text(
+            f"{name.capitalize()}, {years_text}: {number(float(r['npv_chf']))}",
+            points[-1][0] + 24,
+            points[-1][1] - LABEL * CAP / 2,
+            label,
+        )
+        backing([end_text], done, pad=6)
+
+    cumulative, life, r = curves["mid"]
+    payback = float(r["payback_years"])
+    when = time_of(payback)
+    dot = disc("payback", X(payback), Y(0), 18, paint("dot", AMBER), z=0.05)
+    ring = disc("payback ring", X(payback), Y(0), 24, paint("ring", INK), z=0.045)
+
+    def pop(t):
+        f = clamp01((t - when) / 0.35)
+        grow = 1 + 0.35 * math.sin(math.pi * f) if f < 1 else 1
+        for obj, radius in ((dot, 18), (ring, 24)):
+            obj.hide_render = t < when
+            obj.scale = (radius * grow * PX, radius * grow * PX, 1)
+
+    pop(0.0)
+    UPDATES.append(pop)
+    note = paint("payback label", INK, start=when + 0.2)
+    top = Y(yv[-1]) - 90
+    key = [
+        disc(
+            "key ring",
+            x0 + 54,
+            top + LABEL * CAP / 2,
+            16,
+            paint("key ring", INK, start=when + 0.2),
+        ),
+        disc(
+            "key dot",
+            x0 + 54,
+            top + LABEL * CAP / 2,
+            11,
+            paint("key dot", AMBER, start=when + 0.2),
+        ),
+    ]
+    key[1].location.z = 0.05
+    text("Mid case pays back", x0 + 88, top, note, bold=True)
+    text(f"in {r['payback_years']} years", x0 + 88, top - 66, note, bold=True)
 
 
 CHARTS = {
     "month": (chart_month, 9.0),
     "breakeven": (chart_breakeven, 8.0),
     "sensitivity": (chart_sensitivity, 8.0),
+    "payback": (chart_payback, 8.0),
 }
 
 

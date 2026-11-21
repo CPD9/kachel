@@ -10,6 +10,7 @@ A job runs only when its heat is useful.
 <p align="center"><img src="docs/media/scheduler.gif" width="640" alt="The plant room through a January day and a July day: servers run when the house needs heat and pause when the tank is full"></p>
 
 More renders, the videos and the charts are in [docs/media](docs/media/README.md).
+Every value the model assumes, with its unit and source, is in [docs/assumptions.md](docs/assumptions.md).
 
 ## Run it
 

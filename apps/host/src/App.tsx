@@ -2,7 +2,7 @@ import { HeatLoop } from "@kachel/ui";
 import { useEffect, useState } from "react";
 import type { HostAuth } from "./auth/session";
 import { SignIn } from "./auth/SignIn";
-import type { JobFeed } from "./live/feed";
+import type { JobFeed } from "@kachel/db";
 import { LiveJobs } from "./live/LiveJobs";
 
 /**

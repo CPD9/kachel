@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App";
 import { DEMO_HOST, isLocalStack, type HostAuth } from "./auth/session";
-import type { JobFeed } from "./live/feed";
+import type { JobFeed } from "@kachel/db";
 
 const quiet: JobFeed = {
   load: () => new Promise(() => undefined),

@@ -50,6 +50,8 @@ jobs:
       - run: node --test scripts/*.test.mjs
       - run: node scripts/readme-check.mjs
       - run: node scripts/readme-figures.mjs --check
+      # docs/assumptions.md must match services/scheduler/config.json (pnpm assumptions).
+      - run: node scripts/assumptions.mjs --check
 
   # The local Supabase stack in Docker: migrations and seed apply cleanly, and the schema lints.
   database:

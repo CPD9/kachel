@@ -107,7 +107,10 @@ select is((select count(*) from public.jobs where id = '00000000-0000-4000-8000-
 select is((select count(*) from public.job_runs), 3::bigint, 'buyer reads the runs of their jobs');
 select results_eq('select id::text from public.sites',
   array['00000000-0000-4000-8000-000000000100'], 'buyer reads the house their jobs ran in only');
-select is((select count(*) from public.servers), 0::bigint, 'buyer cannot read servers');
+select set_eq('select id::text from public.servers',
+  array['00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000202',
+        '00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000204'],
+  'buyer reads only the servers their jobs ran on');
 select is((select count(*) from public.heat_state), 0::bigint, 'buyer cannot read heat state');
 select is((select count(*) from public.kpis), 0::bigint, 'buyer cannot read a site''s balance');
 

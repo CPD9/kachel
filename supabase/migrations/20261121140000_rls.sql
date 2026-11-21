@@ -1,7 +1,7 @@
 -- Row level security (#3): every table is closed unless a policy below opens it.
 -- A host reads their own site, its servers, the jobs on those servers, its heat and its
 -- yearly balance, and may rename or retune their site. A buyer reads and submits their own
--- jobs, reads the runs of those jobs and the house each one ran in. The agent writes
+-- jobs, reads the runs of those jobs and the house and server each one ran on. The agent writes
 -- everything with the service role key, which bypasses row level security; that key is read
 -- from services/agent/.env and never reaches an app. The model's assumptions and
 -- measurements are public. The tests are in supabase/tests/rls.test.sql (#7).
@@ -60,12 +60,27 @@ as $$
   where j.buyer_id = (select auth.uid()) and j.site_id is not null;
 $$;
 
+-- The servers the signed-in buyer's jobs run or ran on, so the console can show the heat.
+create function private.bought_server_ids()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select distinct j.server_id
+  from public.jobs j
+  where j.buyer_id = (select auth.uid()) and j.server_id is not null;
+$$;
+
 revoke all on function private.hosted_site_ids() from public;
 revoke all on function private.hosted_server_ids() from public;
 revoke all on function private.bought_site_ids() from public;
 grant execute on function private.hosted_site_ids() to authenticated;
 grant execute on function private.hosted_server_ids() to authenticated;
 grant execute on function private.bought_site_ids() to authenticated;
+revoke all on function private.bought_server_ids() from public;
+grant execute on function private.bought_server_ids() to authenticated;
 
 -- sites
 create policy "Hosts read their own sites" on public.sites
@@ -85,6 +100,10 @@ with check (host_id = (select auth.uid()));
 create policy "Hosts read the servers in their sites" on public.servers
 for select to authenticated
 using (site_id in (select private.hosted_site_ids()));
+
+create policy "Buyers read the servers their jobs ran on" on public.servers
+for select to authenticated
+using (id in (select private.bought_server_ids()));
 
 -- jobs
 create policy "Buyers read their own jobs" on public.jobs

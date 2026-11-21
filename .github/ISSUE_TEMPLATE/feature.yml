@@ -1,0 +1,25 @@
+name: Feature
+description: Something Kachel should do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: What should be possible once this is done.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: Who needs it, and for which part of the demo or pitch.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: How we will know it is done, as something we can check.
+    validations:
+      required: true
