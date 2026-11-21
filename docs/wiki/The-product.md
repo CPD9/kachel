@@ -100,6 +100,10 @@ and jobs come from Supabase and are synthetic too (`supabase/seed.sql`). The map
 - **Honest pictures.** The lit windows are an illustration, not data, and the map says so in
   its footer. The credits are on screen at all times.
 - `?at=2026-11-21T16:15:00Z` opens the map paused at that moment, for screenshots and the demo.
+- **A tour for the stage.** **Tour** (top centre) shows Basel at dusk, then FHNW Campus Dreispitz,
+  where the hackathon is, with its card. The campus opened in August 2026, after swisstopo's 3D
+  data and SFOE's roof figures, so an orange pin stands on its site and the card gives our
+  estimate from the building register.
 
 ![The card for Rebgasse 3, Basel: 104 MWh of heat a year, estimated, built 1876, district heating, with the source under each figure](https://raw.githubusercontent.com/CPD9/kachel/main/docs/images/map-card.webp)
 

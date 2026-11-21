@@ -49,6 +49,7 @@ export function BuildingCard({
   facts,
   month,
   fleet = null,
+  notIn3D = false,
   onClose,
 }: {
   facts: BuildingFacts | "loading";
@@ -56,6 +57,8 @@ export function BuildingCard({
   month: number;
   /** The synthetic fleet house placed on this building, if any. */
   fleet?: FleetHouse | null;
+  /** The building is newer than swisstopo's 3D data: the map shows a marker instead. */
+  notIn3D?: boolean;
   onClose: () => void;
 }) {
   return (
@@ -74,6 +77,12 @@ export function BuildingCard({
       {fleet !== null && (
         <p className="mr-8 mb-2 rounded border border-heat/50 px-2 py-1 text-xs text-paper/80">
           {`Fleet simulation: here this building gets ${fleet.servers} servers, as synthetic house ${fleet.id}, one of ${FLEET.length} in Basel and Bern. An illustration: the building and the published figures below are real, the fleet is not.`}
+        </p>
+      )}
+      {notIn3D && (
+        <p className="mr-8 mb-2 rounded border border-heat px-2 py-1 text-xs text-paper/80">
+          Building newer than swisstopo&apos;s 3D data: the orange pin shows where the building
+          register puts it.
         </p>
       )}
       {facts === "loading" ? (
@@ -115,19 +124,24 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
       ? heatDemand(area, period, renovated, kind)
       : null;
   const renovation = renovationScale(period, renovated);
+  const heatingKind = register?.heatingKind ?? "unknown";
+  // Without a Sonnendach roof (a building newer than its data, say), our estimate leads the card.
+  const fromOurs = roof === null && ours !== null;
   const estimate =
-    roof === null
-      ? null
-      : heatEstimate(
-          roof.heatingKwh * scale,
-          roof.hotWaterKwh * scale,
-          register?.heatingKind ?? "unknown",
-          area,
-        );
+    roof !== null
+      ? heatEstimate(roof.heatingKwh * scale, roof.hotWaterKwh * scale, heatingKind, area)
+      : ours !== null
+        ? heatEstimate(ours.spaceHeatingKwh, ours.hotWaterKwh, heatingKind, area)
+        : null;
+  /** The heat Kachel would cover: SFOE's, renovated if ticked, else our estimate. */
+  const kachelHeatKwh =
+    roof !== null
+      ? roof.heatingKwh * scale * renovation + roof.hotWaterKwh * scale
+      : (ours?.totalKwh ?? null);
   // Then the per-m² figure may divide a whole block by one address: show it only when it is
   // plausible, and call the total what it is. The figure is a group figure when the group is unknown, or when it has several buildings but
   // this one has no floor area to take a share by.
-  const groupFigure = group === null || (group.egids.length > 1 && share === null);
+  const groupFigure = !fromOurs && (group === null || (group.egids.length > 1 && share === null));
   const perM2 =
     estimate?.perSquareMetre === null || estimate === null
       ? null
@@ -142,11 +156,13 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
       {estimate !== null && (
         <section className="mt-3">
           <h3 className="font-medium text-heat">
-            {share !== null
-              ? "Heat a year, estimated, this building's share"
-              : groupFigure
-                ? "Heat a year, SFOE estimate for the building group"
-                : "Heat a year, estimated"}
+            {fromOurs
+              ? `Heat a year, our estimate${renovated ? ", renovated" : ""}`
+              : share !== null
+                ? "Heat a year, estimated, this building's share"
+                : groupFigure
+                  ? "Heat a year, SFOE estimate for the building group"
+                  : "Heat a year, estimated"}
           </h3>
           <p className="text-2xl font-semibold">{formatEnergy(estimate.heatKwh)}</p>
           <dl className="mt-1 space-y-0.5">
@@ -172,7 +188,8 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
                 estimate.energyKwh === null ? "heating not known" : formatEnergy(estimate.energyKwh)
               }
             />
-            {period !== null && (
+            {fromOurs && <Row label="SFOE Sonnendach" value="no figure for this building yet" />}
+            {period !== null && !fromOurs && (
               <Row
                 label={`Our estimate, built ${periodLabel(period)}${renovated ? ", renovated" : ""}`}
                 value={
@@ -202,18 +219,24 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
               initialMonth={month}
             />
           )}
+          {fromOurs ? (
+            <Source>
+              {`SFOE Sonnendach has no roof here: its data (status 21.02.2023) predate the building. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
+            </Source>
+          ) : (
+            <Source>
+              {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023), for a whole swissBUILDINGS3D building${share !== null ? `, here split among its ${group?.egids.length ?? 0} GWR buildings by floor area (our split)` : groupFigure ? `; it may cover neighbouring buildings too, so the per-m² figure shows only when plausible` : ""}. Months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
+            </Source>
+          )}
           <Source>
-            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023), for a whole swissBUILDINGS3D building${share !== null ? `, here split among its ${group?.egids.length ?? 0} GWR buildings by floor area (our split)` : groupFigure ? `; it may cover neighbouring buildings too, so the per-m² figure shows only when plausible` : ""}. Months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
-          </Source>
-          <Source>
-            {`Our estimate: heated floor area × space heating for its construction period and use${kind === null ? "" : ` (${USE_LABEL[kind]})`} + hot water. ${HOUSE_SOURCE}. Renovated also halves SFOE's space heating in the Kachel figures below, never under a new building's; SFOE's figure above stays as published.`}
+            {`Our estimate: heated floor area × space heating for its construction period and use${kind === null ? "" : ` (${USE_LABEL[kind]})`} + hot water. ${HOUSE_SOURCE}. ${fromOurs ? "Renovated halves its space heating, never under a new building's." : "Renovated also halves SFOE's space heating in the Kachel figures below, never under a new building's; SFOE's figure above stays as published."}`}
           </Source>
         </section>
       )}
 
-      {estimate !== null && roof !== null && (
+      {estimate !== null && kachelHeatKwh !== null && (
         <WithKachel
-          heatKwh={roof.heatingKwh * scale * renovation + roof.hotWaterKwh * scale}
+          heatKwh={kachelHeatKwh}
           renovated={renovated}
           municipality={register?.municipality ?? null}
         />

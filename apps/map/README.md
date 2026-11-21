@@ -46,13 +46,20 @@ neighbouring countries and to the globe.
 ## Tour for the stage
 
 Press **Tour** (top centre), or open http://localhost:5175/?tour=1 to start it on load. In about
-40 seconds it shows Basel at dusk, one real building's card, district heating with Kachel's fleet
+40 seconds it shows Basel at dusk, FHNW Campus Dreispitz with its card, district heating with Kachel's fleet
 beside it, and all of Switzerland, with a caption for each stop. **Pause tour** holds the picture
 (the clock stops too); **Stop** ends it. Each stop waits for tiles at most 8 seconds, so a slow
 connection shortens the wait instead of stalling the tour. A stop shows its caption only once its
 tiles are in (or the cap has passed); `?tourcap=20000` lets each stop wait longer on a slow machine.
 
-<p align="center"><img src="../../docs/images/map-tour.webp" width="720" alt="The tour's second stop: the caption reads One real building: its heat a year, from public data, beside the card for Erlenmattstrasse 3, Basel"></p>
+The building stop is FHNW Campus Dreispitz, Dornacherstrasse 394 (EGID 243058419), where the
+hackathon is. It opened in August 2026, after swisstopo's 3D survey (the blocks around it date from
+2021, when the plot was a building site), and SFOE Sonnendach has no roof for it. So the tour
+colours it only if the 3D tiles have it; otherwise it puts an orange pin, six storeys tall, where
+the register puts the building (a point, not a footprint), and the card says the building is newer
+than the 3D data. The card leads with our period estimate from the register, and Kachel's from that.
+
+<p align="center"><img src="../../docs/images/map-tour.webp" width="720" alt="The tour's second stop: the caption reads FHNW Campus Dreispitz, where we built this: its heat a year, from public data; an orange pin stands on the campus site beside the card for Dornacherstrasse 394, Basel"></p>
 
 ## How it works
 

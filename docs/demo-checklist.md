@@ -60,7 +60,9 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
    shows Running.
 3. Console, http://localhost:5174, signed in as `buyer@kachel.test` / `kachel-demo`. A Batch
    job needs a deadline; Backlog does not.
-4. Map, http://localhost:5175. Click Basel, then a building, for its energy card.
+4. Map, http://localhost:5175. Click Basel, then a building, for its energy card. **Tour** (top
+   centre) stops at FHNW Campus Dreispitz, where we are: newer than swisstopo's 3D data, so an
+   orange pin stands on its site.
 5. Operator, http://localhost:5177, signed in as `operator@kachel.test` / `kachel-demo`: the
    whole fleet, the buyers and the revenue. Click July, then slide the temperature up: heat
    demand, servers running and revenue fall.
