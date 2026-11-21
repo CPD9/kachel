@@ -40,6 +40,7 @@ from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kachel_scene as ks
+from snowdata import snow_hours
 
 HEAT_ATLAS = Path.home() / "Projects/heat-atlas"
 TZ = ZoneInfo("Europe/Zurich")
@@ -68,6 +69,9 @@ def args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", choices=("outside", "inside"), required=True)
     ap.add_argument("--city", choices=tuple(CITIES), default="basel")
+    ap.add_argument(
+        "--snow", action="store_true", help="cover roofs and ground by snow depth"
+    )
     ap.add_argument("--day", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--width", type=int, default=960)
@@ -87,6 +91,46 @@ def find_config(day_dir):
         if (d / "config.json").exists():
             return json.loads((d / "config.json").read_text())
     raise SystemExit(f"no config.json above {day_dir}")
+
+
+SNOW_FULL_M = 0.10  # lying snow at which roofs and ground are fully white
+
+
+def add_snow(mat):
+    """Mix a material's colour towards snow by a SnowCover value (0..1), patchy when thin."""
+    nt = mat.node_tree
+    b = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    cover = nt.nodes.new("ShaderNodeValue")
+    cover.name = "SnowCover"
+    cover.outputs[0].default_value = 0.0
+    nz = nt.nodes.new("ShaderNodeTexNoise")
+    nz.inputs["Scale"].default_value = 0.6
+    nz.inputs["Detail"].default_value = 4
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    nt.links.new(tc.outputs["Object"], nz.inputs["Vector"])
+    # factor = clamp(cover * 2.4 - (1 - noise) * 0.5): a thin cover shows as patches first
+    k = nt.nodes.new("ShaderNodeMath")
+    k.operation = "MULTIPLY_ADD"
+    k.inputs[1].default_value = 2.4
+    nt.links.new(cover.outputs[0], k.inputs[0])
+    off = nt.nodes.new("ShaderNodeMath")
+    off.operation = "MULTIPLY_ADD"
+    nt.links.new(nz.outputs["Fac"], off.inputs[0])
+    off.inputs[1].default_value = 0.5
+    off.inputs[2].default_value = -0.5
+    nt.links.new(off.outputs[0], k.inputs[2])
+    k.use_clamp = True
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    mix.inputs["B"].default_value = (0.85, 0.87, 0.9, 1)
+    nt.links.new(k.outputs[0], mix.inputs["Factor"])
+    base = b.inputs["Base Color"]
+    if base.is_linked:
+        nt.links.new(base.links[0].from_socket, mix.inputs["A"])
+    else:
+        mix.inputs["A"].default_value = base.default_value
+    nt.links.new(mix.outputs["Result"], base)
+    return cover
 
 
 def load(path):
@@ -236,6 +280,12 @@ def outside(a, rows):
                     True  # keep only the pipe lines, not the concept markers
                 )
         heat_mats = heat_overlay(SK, cam, hud)
+    snow_cover = []
+    snow = snow_hours(a.day, a.city) if a.snow else {}
+    if a.snow:
+        for n in ("Roof_Pitched", "Roof_Flat", "Ground_Urban", "Ground_Bern"):
+            if n in bpy.data.materials:
+                snow_cover.append(add_snow(bpy.data.materials[n]))
     gains = {}
     for m in bpy.data.materials:
         if m.node_tree and "WindowGain" in m.node_tree.nodes:
@@ -298,6 +348,9 @@ def outside(a, rows):
             m.node_tree.nodes["Emission"].inputs["Strength"].default_value = (
                 0.3 + 2.4 * hk
             )
+        depth = snow.get(int(r["hour"]), (0.0, 0.0))[0]
+        for v in snow_cover:
+            v.outputs[0].default_value = min(1.0, depth / SNOW_FULL_M)
         key = f"{int(r['hour']):02d}{minute:02d}"
         sc.render.filepath = str(Path(a.out) / "outside" / f"{key}.png")
         bpy.ops.render.render(write_still=True)

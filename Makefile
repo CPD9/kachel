@@ -132,6 +132,8 @@ video-scheduler:
 DAYNIGHT_DAY ?= january
 DAYNIGHT_SAMPLES ?= 48
 DAYNIGHT_STEPS ?= 4
+# Snow on roofs and ground (and falling flakes when it snows) for the snowy day only.
+SNOW_FLAG = $(if $(filter snow,$(DAYNIGHT_DAY)),--snow)
 DAYNIGHT_WORK = $(VIDEO_OUT)/work/daynight-$(DAYNIGHT_DAY)
 
 video-daynight:
@@ -140,11 +142,11 @@ video-daynight:
 	scripts/video/gpu_wait.sh
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(HOME)/Projects/heat-atlas/renders/skyline.blend \
 		--python scripts/video/daynight.py -- --part outside --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
-		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS)
+		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS) $(SNOW_FLAG)
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
 		--day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv --out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES)
-	uv run --no-project --with pillow python scripts/video/compose_daynight.py \
+	uv run --no-project --with pillow python scripts/video/compose_daynight.py $(SNOW_FLAG) \
 		--frames $(DAYNIGHT_WORK) --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
 		--mp4 $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY).mp4 --sheet $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY)-sheet.png
 
@@ -166,11 +168,11 @@ video-daynight-bern: $(BERN_BLEND)
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(BERN_BLEND) \
 		--python scripts/video/daynight.py -- --part outside --city bern \
 		--day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) \
-		--samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS)
+		--samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS) $(SNOW_FLAG)
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
 		--day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) --samples $(DAYNIGHT_SAMPLES)
-	uv run --no-project --with pillow python scripts/video/compose_daynight.py --city bern \
+	uv run --no-project --with pillow python scripts/video/compose_daynight.py $(SNOW_FLAG) --city bern \
 		--frames $(BERN_WORK) --day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv \
 		--mp4 $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY).mp4 \
 		--sheet $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY)-sheet.png

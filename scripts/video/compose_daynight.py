@@ -23,6 +23,7 @@ from PIL import Image, ImageDraw, ImageFilter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import compose as c
+from snowdata import snow_hours
 
 HOUR = 36  # frames per hour: 24 h in 36 s
 FADE = 12
@@ -33,7 +34,7 @@ CREDITS = {
     "bern": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river course "
     "approximated.",
 }
-CITY = {"name": "basel"}
+CITY = {"name": "basel", "snow": None}  # snow: {hour: (depth_m, snowfall_cm)} when on
 
 
 def overlay(r, ctx, minute=0):
@@ -121,6 +122,8 @@ def overlay(r, ctx, minute=0):
     f = c.F["small"].font_variant(size=15)
     lines = CREDITS[CITY["name"]].split(". ", 1)
     lines = [lines[0] + ".", lines[1]]
+    if CITY["snow"] is not None:
+        lines[1] += " Snow: Open-Meteo."
     tw = max(d.textlength(t, font=f) for t in lines)
     c.rounded(
         d, (HALF - 16 - tw - 24, c.H - 66, HALF - 16, c.H - 14), (16, 19, 24, 200), 6
@@ -183,7 +186,28 @@ def halves(fr, r, minute=0, step=None):
     return lim, rim, len(left)
 
 
+def snowfall(img, cm, phase):
+    """Falling flakes over the outside half, as many as the hour's snowfall asks for."""
+    n = min(600, int(120 * cm))
+    if n <= 0:
+        return img
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    for k in range(n):
+        h = (k * 2654435761) % 2**32
+        x0, y0 = h % HALF, (h >> 12) % c.H
+        size = 1.5 + (h >> 24) % 3
+        fall = 1.2 + size * 0.8
+        x = (x0 + 12 * ((phase * 0.02 + k) % 6.283)) % HALF
+        y = (y0 + phase * fall) % c.H
+        d.ellipse((x - size, y - size, x + size, y + size), fill=(245, 247, 250, 200))
+    layer = layer.filter(ImageFilter.GaussianBlur(0.8))
+    return Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
+
+
 def assemble(lim, rim, r, ctx, t, phase, minute=0):
+    if CITY["snow"]:
+        lim = snowfall(lim, CITY["snow"].get(int(r["hour"]), (0.0, 0.0))[1], phase)
     right, to_px = push_half(rim, t)
     hk = float(r["heat_produced"]) / ctx["heat_full"]
     right = flow_dots(right, ctx["flow"], to_px, phase, 0.6 + 3.4 * hk if hk > 0 else 0)
@@ -234,6 +258,9 @@ def main():
     ap.add_argument("--sheet", required=True)
     ap.add_argument("--city", default="basel")
     ap.add_argument(
+        "--snow", action="store_true", help="snow credit and falling flakes"
+    )
+    ap.add_argument(
         "--preview",
         nargs="+",
         default=[],
@@ -241,6 +268,8 @@ def main():
     )
     a = ap.parse_args()
     CITY["name"] = a.city
+    if a.snow:
+        CITY["snow"] = snow_hours(a.day or a.preview[0].split(",")[1], a.city)
     if a.preview:
         shots = []
         for spec in a.preview:
