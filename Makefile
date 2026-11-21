@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year fleet video-charts
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -43,6 +43,11 @@ year:
 check-db:
 	@if pnpm exec supabase status >/dev/null 2>&1; then pnpm exec supabase test db; \
 	else echo "check-db: local Supabase is not running (make dev); skipped, CI runs it."; fi
+
+# 50 synthetic houses as one fleet on the January and July days, on the saved Basel 2025 weather:
+# where every job ran, each house's heat by the hour and the KPIs (out/fleet_*.csv, fleet_kpis.json).
+fleet:
+	cd $(SCHED) && uv run python run_fleet.py --weather tests/data/weather_basel_2025.csv
 
 check-readme:
 	node --test scripts/*.test.mjs

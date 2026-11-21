@@ -78,6 +78,31 @@ Note in config.json: Whisper large-v3 speech to text, the MLPerf Inference speec
 
 Note in config.json: ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model. Job size measured on our machine: 0.113 Wh and 34.2 CPU-s per 200,000 items, about 8,840 jobs per 1 kW server-hour (docs/measurements.md).
 
+## Fleet (synthetic, make fleet)
+
+| What                                       | Key                                  | Value          | Unit         | Source                                     |
+| ------------------------------------------ | ------------------------------------ | -------------- | ------------ | ------------------------------------------ |
+| Houses in the fleet                        | `houses`                             | 50             |              | our guess                                  |
+| Random seed that draws the houses and jobs | `seed`                               | 2025           |              | our guess                                  |
+| City whose weather every house gets        | `city`                               | Basel          |              | Open-Meteo archive, Basel 2025 (CC BY 4.0) |
+| Latitude range of the houses               | `latitude`                           | 47.54 to 47.58 | °N           | our guess                                  |
+| Longitude range of the houses              | `longitude`                          | 7.56 to 7.63   | °E           | our guess                                  |
+| Servers per house                          | `servers_per_house`                  | 2 to 8         |              | our guess                                  |
+| Hot-water tank                             | `tank_kwh`                           | 20 to 50       | kWh          | our guess                                  |
+| Space heating, times the reference house   | `space_heating_scale`                | 0.4 to 1.6     |              | our guess                                  |
+| Hot water a day                            | `hot_water_kwh_per_day`              | 6 to 18        | kWh          | our guess                                  |
+| Interactive jobs a day, per house          | `interactive_jobs_per_house_per_day` | 4              |              | our guess                                  |
+| Interactive jobs start from, until before  | `interactive_hours_of_day`           | 17 to 23       | h            | our guess                                  |
+| Batch jobs a day, per house                | `batch_jobs_per_house_per_day`       | 4              |              | our guess                                  |
+| Size of a batch job                        | `batch_hours`                        | 2 to 6         | server-hours | our guess                                  |
+| Batch deadline after arrival               | `batch_deadline_h`                   | 8 to 24        | h            | our guess                                  |
+| Backlog jobs a day, per house              | `backlog_jobs_per_house_per_day`     | 12             |              | our guess                                  |
+| Size of a backlog job                      | `backlog_hours`                      | 1 to 4         | server-hours | our guess                                  |
+| Backlog deadline after arrival             | `backlog_deadline_h`                 | 48             | h            | our guess                                  |
+| Days run before the shown day              | `warmup_days`                        | 2              |              | our guess                                  |
+
+Note in config.json: OUR synthetic scenario for make fleet (heatsched/fleet_scenario.py): every house is made up, drawn evenly from these ranges with this seed, on the real Basel 2025 weather. space_heating_scale multiplies the reference house's space heating. Unlike the one-house model, the backlog is finite and due within backlog_deadline_h, so work the houses cannot take shows up as moved to a data centre.
+
 ## Hardware
 
 | What                          | Key                    | Value | Unit  | Source                    |

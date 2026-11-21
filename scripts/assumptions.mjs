@@ -12,6 +12,7 @@ export const PAGE = "docs/assumptions.md";
 
 /** Sources, numbered as in docs/economics/README.md#sources. */
 const BRIEF = "[1] DigitalHeat case brief";
+const WEATHER = "Open-Meteo archive, Basel 2025 (CC BY 4.0)";
 const ELCOM = "[3] ElCom 2026 H4 median, a placeholder for Basel (IWB)";
 const FIELD_COP = "[4] Fraunhofer ISE field test";
 const PCSP = "[9] PCSP server prices 2026";
@@ -44,6 +45,7 @@ const show = {
   pct: (v) => `${Math.round(v * 100)} %`,
   rate: (v) => `${Number((v * 100).toFixed(2))} %`,
   hours: (v) => (v === null ? "none" : `${v} h`),
+  range: (v) => (Array.isArray(v) ? `${v[0]} to ${v[1]}` : String(v)),
   arrivals: (v) =>
     Object.entries(v)
       .map(([h, n]) => `${n} at ${hour(h)}`)
@@ -79,6 +81,32 @@ export const VALUES = {
   "hardware.service_chf_per_hour": ["Service fitter with van", "CHF/h", show.plain, WBAG],
   "hardware.service_callout_chf": ["Service call-out", "CHF", show.plain, WBAG],
 };
+
+/** The synthetic fleet for make fleet (config.json: fleet). A [low, high] pair is one value. */
+const FLEET_VALUES = {
+  houses: ["Houses in the fleet", "", show.plain],
+  seed: ["Random seed that draws the houses and jobs", "", show.plain],
+  city: ["City whose weather every house gets", "", show.plain, WEATHER],
+  latitude: ["Latitude range of the houses", "°N", show.range],
+  longitude: ["Longitude range of the houses", "°E", show.range],
+  servers_per_house: ["Servers per house", "", show.range],
+  tank_kwh: ["Hot-water tank", "kWh", show.range],
+  space_heating_scale: ["Space heating, times the reference house", "", show.range],
+  hot_water_kwh_per_day: ["Hot water a day", "kWh", show.range],
+  interactive_jobs_per_house_per_day: ["Interactive jobs a day, per house", "", show.plain],
+  interactive_hours_of_day: ["Interactive jobs start from, until before", "h", show.range],
+  batch_jobs_per_house_per_day: ["Batch jobs a day, per house", "", show.plain],
+  batch_hours: ["Size of a batch job", "server-hours", show.range],
+  batch_deadline_h: ["Batch deadline after arrival", "h", show.range],
+  backlog_jobs_per_house_per_day: ["Backlog jobs a day, per house", "", show.plain],
+  backlog_hours: ["Size of a backlog job", "server-hours", show.range],
+  backlog_deadline_h: ["Backlog deadline after arrival", "h", show.plain],
+  warmup_days: ["Days run before the shown day", "", show.plain],
+};
+
+for (const [key, [what, unit, print, source]] of Object.entries(FLEET_VALUES)) {
+  VALUES[`fleet.${key}`] = [what, unit, print, source ?? GUESS];
+}
 
 const JOB_VALUES = {
   label: ["What it is", "", show.plain],
@@ -120,7 +148,11 @@ export function valuePaths(node, prefix = "") {
   return Object.entries(node).flatMap(([key, value]) => {
     if (NOT_VALUES.has(key)) return [];
     const path = prefix ? `${prefix}.${key}` : key;
-    const leaf = value === null || typeof value !== "object" || key === "arrivals_server_h";
+    const leaf =
+      value === null ||
+      typeof value !== "object" ||
+      Array.isArray(value) ||
+      key === "arrivals_server_h";
     return leaf ? [path] : valuePaths(value, path);
   });
 }
@@ -146,6 +178,7 @@ const SECTIONS = [
   ["Interactive jobs", "jobs.interactive"],
   ["Batch jobs", "jobs.batch"],
   ["Backlog jobs", "jobs.opportunistic"],
+  ["Fleet (synthetic, make fleet)", "fleet"],
   ["Hardware", "hardware"],
 ];
 
