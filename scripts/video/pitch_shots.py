@@ -550,17 +550,17 @@ def shot_farm(a):
     sky = nt.nodes.new("ShaderNodeTexSky")
     sky.sun_elevation, sky.sun_rotation = math.radians(elev), math.radians(90 - az)
     nt.links.new(sky.outputs[0], nt.nodes["Background"].inputs[0])
-    nt.nodes["Background"].inputs[1].default_value = 0.25
+    nt.nodes["Background"].inputs[1].default_value = 0.12
     sd = bpy.data.lights.new("Farm_Sun", "SUN")
-    sd.energy, sd.angle = 3.0, math.radians(1.5)
+    sd.energy, sd.angle = 1.6, math.radians(1.5)
     sun = bpy.data.objects.new("Farm_Sun", sd)
     sun.rotation_euler = (math.radians(90 - elev), 0, math.radians(90 - az + 90))
     coll.objects.link(sun)
-    sc.view_settings.exposure = -0.6
+    sc.view_settings.exposure = -1.7
     # Ground and snow, white as far as the depth goes (full at 10 cm).
     cover = min(1.0, depth / dn.SNOW_FULL_M)
     snow = mat(
-        "Farm_Snow", tuple(0.45 + 0.4 * cover * k for k in (1.0, 1.02, 1.06)), 0.7
+        "Farm_Snow", tuple((0.3 + 0.32 * cover) * k for k in (1.0, 1.02, 1.08)), 0.7
     )
     gm = bpy.data.meshes.new("Farm_Ground")
     gm.from_pydata(
@@ -578,7 +578,7 @@ def shot_farm(a):
     # The shed round the plant room, and the farmhouse.
     wood = mat("Farm_Wood", (0.25, 0.14, 0.08), 0.8)
     plaster = mat("Farm_Plaster", (0.75, 0.7, 0.6), 0.8)
-    roof_snow = mat("Farm_RoofSnow", tuple(0.3 + 0.55 * cover for _ in range(3)), 0.6)
+    roof_snow = mat("Farm_RoofSnow", tuple(0.25 + 0.35 * cover for _ in range(3)), 0.6)
     shed = [gable("Shed", 5.4, 4.7, 2.85, 1.2, (1.25, -0.5, 0), wood, roof_snow, coll)]
     shed.append(bpy.data.objects["Shed_Walls"])
     gable("House", 11.0, 13.0, 6.5, 3.6, (14.0, 19.0, 0), plaster, roof_snow, coll)
@@ -819,20 +819,20 @@ def shot_tower(a):
     dusk(SK, sc)
     t = json.loads(sc["meta"])["tallest"]
     c0 = Vector((t["cx"], t["cy"], 0))
-    away = (
-        Vector((-0.55, -0.83, 0)).normalized() * 150
-    )  # from the south-west, across the river
-    cam = new_camera(sc, "Pitch_Tower", 30)
+    # Back towards the dusk camera, across the river, so nothing stands in between.
+    src = bpy.data.objects["Cam_Dusk"].location
+    away = Vector((src.x - c0.x, src.y - c0.y, 0)).normalized() * 480
+    cam = new_camera(sc, "Pitch_Tower", 45)
     n = 96
     path_keys(
         cam,
         [
-            (1, c0 + away + Vector((0, 0, 25)), c0 + Vector((0, 0, 60)), 28),
+            (1, c0 + away + Vector((0, 0, 40)), c0 + Vector((0, 0, 50)), 50),
             (
                 n,
-                c0 + away * 1.25 + Vector((0, 0, t["zmax"] + 20)),
-                c0 + Vector((0, 0, t["zmax"] - 40)),
-                30,
+                c0 + away * 0.85 + Vector((0, 0, t["zmax"] + 30)),
+                c0 + Vector((0, 0, t["zmax"] - 30)),
+                45,
             ),
         ],
     )
@@ -852,7 +852,7 @@ def shot_plantfloor(a):
             "Tray",
             "Pipes",
         )
-        if room and not o.name.startswith(("Tank_", "Floor", "Heater_")):
+        if room and not o.name.startswith(("Tank_", "Heater_")):
             o.hide_render = True
     tank = bpy.data.collections.new("TankSet")
     for o in list(sc.objects):
@@ -864,6 +864,7 @@ def shot_plantfloor(a):
     tank.instance_offset = (3.0, 0.75, 0)
     rack = bpy.data.collections["Rack"]
     rack.instance_offset = (-0.55, 0, 0)
+    sc.collection.children.unlink(rack)  # drawn only through its instances
     coll = bpy.data.collections.new("Floor")
     sc.collection.children.link(coll)
     for i in range(10):
@@ -871,22 +872,23 @@ def shot_plantfloor(a):
             e = bpy.data.objects.new(f"Rack_{row}_{i}", None)
             e.instance_type, e.instance_collection = "COLLECTION", rack
             e.location = (-12 + 1.0 * i, y, 0)
-            e.rotation_euler = (0, 0, math.pi if row else 0)
+            e.rotation_euler = (0, 0, 0 if row else math.pi)  # fronts face the aisle
             coll.objects.link(e)
     for i in range(4):
         e = bpy.data.objects.new(f"Tank_{i}", None)
         e.instance_type, e.instance_collection = "COLLECTION", tank
-        e.location = (2.0 + 1.4 * i, 0, 0)
+        e.location = (-12 + 3.0 * i, 6.5, 0)
         coll.objects.link(e)
     concrete = mat("Floor_Concrete", (0.42, 0.42, 0.4), 0.7)
     block("Floor_Slab", (40, 20, 0.2), (0, 0, -0.1), concrete, coll)
     block("Floor_Ceiling", (40, 20, 0.3), (0, 0, 3.6), concrete, coll)
-    for k in range(8):
-        ld = bpy.data.lights.new(f"Floor_Light{k}", "AREA")
-        ld.energy, ld.size = 120, 1.2
-        lo = bpy.data.objects.new(f"Floor_Light{k}", ld)
-        lo.location = (-12 + 3.5 * k, 0, 3.4)
-        coll.objects.link(lo)
+    for k in range(10):
+        for y in (-2.0, 2.0):
+            ld = bpy.data.lights.new(f"Floor_Light{k}{y}", "AREA")
+            ld.energy, ld.size = 90, 1.6
+            lo = bpy.data.objects.new(f"Floor_Light{k}{y}", ld)
+            lo.location = (-14 + 2.5 * k, y, 3.4)
+            coll.objects.link(lo)
     for o in sc.objects:
         if o.name.startswith("Server_U"):
             o["on"] = 1.0
@@ -894,7 +896,7 @@ def shot_plantfloor(a):
     n = 96
     path_keys(
         cam,
-        [(1, (-15, 0.2, 1.7), (-5, 0, 1.2), 22), (n, (-4, 0.4, 1.9), (6, 0, 1.0), 24)],
+        [(1, (-16, 0.3, 1.6), (-8, 0, 1.2), 22), (n, (-6, 0.5, 2.2), (2, 3, 1.0), 22)],
     )
     return sc, n
 
