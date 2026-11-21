@@ -353,7 +353,8 @@ function solar(): ToolResult {
   const cost = `${src}, ${SOLAR.costCase} prices`;
   const pv = run.setups.pv;
   const battery = run.setups.pv_battery;
-  const facts: Fact[] = [
+  type Maybe = { label: string; value: number | null; unit: string; source: string };
+  const figures: Maybe[] = [
     {
       label: "Electricity price",
       value: run.chfPerKwh,
@@ -366,38 +367,41 @@ function solar(): ToolResult {
       unit: "kWp",
       source: "config.json solar.roof_kwp (our guess)",
     },
-    {
-      label: "PV saves the servers",
-      value: pv.savingChfPerYear ?? 0,
-      unit: "CHF a year",
-      source: src,
-    },
+    { label: "PV saves the servers", value: pv.savingChfPerYear, unit: "CHF a year", source: src },
     {
       label: "Servers' power from own PV",
       value: pv.ownPvShareOfServerPowerPct,
       unit: "%",
       source: src,
     },
-    { label: "PV costs", value: pv.solarCapexChf ?? 0, unit: "CHF", source: cost },
-    { label: "PV pays back in", value: pv.paybackYearsMid ?? 0, unit: "years", source: cost },
+    { label: "PV costs", value: pv.solarCapexChf, unit: "CHF", source: cost },
+    { label: "PV pays back in", value: pv.paybackYearsMid, unit: "years", source: cost },
     {
       label: `PV and a ${SOLAR.batteryKwh} kWh battery save`,
-      value: battery.savingChfPerYear ?? 0,
+      value: battery.savingChfPerYear,
       unit: "CHF a year",
       source: src,
     },
     {
       label: "PV and battery pay back in",
-      value: battery.paybackYearsMid ?? 0,
+      value: battery.paybackYearsMid,
       unit: "years",
       source: cost,
     },
   ];
+  // A figure the economics run left out is left out here too, never shown as 0.
+  const facts = figures.flatMap((f): Fact[] =>
+    f.value === null ? [] : [{ ...f, value: f.value }],
+  );
+  const missing = figures.filter((f) => f.value === null).map((f) => f.label);
   return {
     tool: "solar",
     title: TITLES.solar,
     facts,
-    note: `For the ${SOLAR.house} on the 2025 Basel weather, not measured on this roof. The saving is on the servers' electricity only; sun they cannot use is sold at ${SOLAR.feedInChfPerKwh} CHF/kWh.`,
+    note: [
+      `For the ${SOLAR.house} on the 2025 Basel weather, not measured on this roof. The saving is on the servers' electricity only; sun they cannot use is sold at ${SOLAR.feedInChfPerKwh} CHF/kWh.`,
+      ...(missing.length ? [`Not in the economics run: ${missing.join(", ")}.`] : []),
+    ].join(" "),
   };
 }
 
