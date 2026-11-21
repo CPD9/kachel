@@ -28,9 +28,13 @@
   "lint-staged": {
     "*.{ts,tsx,js,mjs,json,md,yml,yaml,css}": "prettier --write",
     "*.{ts,tsx}": "eslint --fix",
-    "*.py": [
+    "{scripts,services/agent}/**/*.py": [
       "uv run --project services/agent ruff format",
       "uv run --project services/agent ruff check --fix"
+    ],
+    "services/scheduler/tests/**/*.py": [
+      "uv run --project services/scheduler ruff format",
+      "uv run --project services/scheduler ruff check --fix"
     ]
   }
 }
