@@ -31,9 +31,15 @@ function fakeFetch(): Fetch & { calls: string[] } {
     calls.push(url);
     const body = url.includes("/find?")
       ? { results: [{ attributes: GWR }] }
-      : url.includes("solarenergie")
-        ? { results: [{ attributes: ROOF }, { attributes: { ...ROOF, stromertrag: 7898 } }] }
-        : { results: [{ attributes: HECTARE }] };
+      : url.includes("overpass")
+        ? {
+            elements: [
+              { tags: { "generator:source": "solar", "generator:method": "photovoltaic" } },
+            ],
+          }
+        : url.includes("solarenergie")
+          ? { results: [{ attributes: ROOF }, { attributes: { ...ROOF, stromertrag: 7898 } }] }
+          : { results: [{ attributes: HECTARE }] };
     return { ok: true, json: async () => body };
   });
   return Object.assign(f, { calls });
@@ -49,10 +55,28 @@ describe("building register", () => {
     expect(r?.heatingKind).toBe("district");
     expect(r?.heatedAreaM2).toBe(668);
     expect(r?.built).toBe("1874");
+    expect(r?.period).toBe("before_1919");
+  });
+
+  it("reads the municipality, whose BFS number picks the electricity price", () => {
+    const r = parseRegister({ ...GWR, ggdenr: 2701, ggdename: "Basel" });
+    expect(r?.municipality).toEqual({ bfs: 2701, name: "Basel" });
+    expect(parseRegister({ ...GWR, ggdenr: null })?.municipality).toBeNull();
+  });
+
+  it("tells a house from flats by the building class, else by the dwellings", () => {
+    expect(parseRegister({ ...GWR, gklas: 1110 })?.kind).toBe("single");
+    expect(parseRegister({ ...GWR, gklas: 1122 })?.kind).toBe("multi");
+    expect(parseRegister({ ...GWR, gklas: null, ganzwhg: 2 })?.kind).toBe("single");
+    expect(parseRegister({ ...GWR, gklas: null, ganzwhg: 8 })?.kind).toBe("multi");
+    expect(parseRegister({ ...GWR, gklas: 1220 })?.kind).toBe("office");
+    expect(parseRegister({ ...GWR, gklas: 1242 })?.kind).toBeNull(); // a garage
+    expect(parseRegister({ ...GWR, gklas: null, ganzwhg: null })?.kind).toBeNull();
   });
 
   it("falls back to the build period when the year is missing", () => {
     expect(parseRegister({ ...GWR, gbauj: null })?.built).toBe("before 1919");
+    expect(parseRegister({ ...GWR, gbauj: null, gbaup: 8014 })?.period).toBe("1961_1970");
   });
 });
 
@@ -75,9 +99,52 @@ describe("look-up", () => {
     const picked = { egid: 441428, lon: 7.5754, lat: 47.5608 };
     const facts = await lookUp(picked, f);
     await lookUp(picked, f);
-    expect(f.calls).toHaveLength(3);
+    // GWR, roof, hectare, the roof's faces (for the building group) and Overpass.
+    expect(f.calls).toHaveLength(5);
+    expect(facts.osmSolar?.photovoltaic).toBe(1);
     expect(facts.register?.egid).toBe(441428);
     expect(facts.hectare?.totalMwh).toBe(4561.6);
+  });
+
+  it("finds the GWR buildings under the same Sonnendach roof", async () => {
+    const square = [
+      [7.575, 47.56],
+      [7.576, 47.56],
+      [7.576, 47.561],
+      [7.575, 47.561],
+      [7.575, 47.56],
+    ];
+    const f: Fetch = async (url) => {
+      const body = url.includes("searchField=building_id")
+        ? { results: [{ geometry: { type: "Polygon", coordinates: [square] } }] }
+        : url.includes("esriGeometryEnvelope")
+          ? {
+              results: [
+                {
+                  geometry: { coordinates: [7.5752, 47.5602] },
+                  properties: { egid: "441428", gebf: 668 },
+                },
+                {
+                  geometry: { coordinates: [7.5758, 47.5608] },
+                  properties: { egid: "9", gebf: 1000 },
+                },
+                {
+                  geometry: { coordinates: [7.58, 47.5608] },
+                  properties: { egid: "10", gebf: 5000 },
+                },
+              ],
+            }
+          : url.includes("/find?")
+            ? { results: [{ attributes: GWR }] }
+            : url.includes("overpass")
+              ? { elements: [] }
+              : url.includes("solarenergie")
+                ? { results: [{ attributes: ROOF }] }
+                : { results: [{ attributes: HECTARE }] };
+      return { ok: true, json: async () => body };
+    };
+    const facts = await lookUp({ egid: 441428, lon: 7.5754, lat: 47.5608 }, f);
+    expect(facts.group).toEqual({ egids: [441428, 9], floorM2: 1668 });
   });
 
   it("turns a failed request into a missing piece, not an error", async () => {
@@ -85,7 +152,43 @@ describe("look-up", () => {
       throw new Error("offline");
     };
     const facts = await lookUp({ egid: 1, lon: 7.5, lat: 47.5 }, f);
-    expect(facts).toEqual({ register: null, roof: null, hectare: null });
+    expect(facts).toEqual({
+      register: null,
+      roof: null,
+      hectare: null,
+      group: null,
+      osmSolar: null,
+    });
+  });
+
+  it("asks Overpass again on its own when it was busy", async () => {
+    const calls: string[] = [];
+    let busy = true;
+    const f: Fetch = async (url) => {
+      calls.push(url);
+      if (url.includes("overpass")) return { ok: !busy, json: async () => ({ elements: [] }) };
+      return { ok: true, json: async () => ({ results: [{ attributes: GWR }] }) };
+    };
+    const picked = { egid: 4, lon: 7.5, lat: 47.5 };
+    expect((await lookUp(picked, f)).osmSolar).toBeNull();
+    busy = false;
+    expect((await lookUp(picked, f)).osmSolar).toEqual({ photovoltaic: 0, thermal: 0, other: 0 });
+    expect(calls.filter((u) => u.includes("overpass"))).toHaveLength(2);
+    expect(calls.filter((u) => u.includes("geo.admin"))).toHaveLength(3);
+  });
+
+  it("does not wait for Overpass beyond its time limit", async () => {
+    vi.useFakeTimers();
+    const f: Fetch = async (url) =>
+      url.includes("overpass")
+        ? new Promise(() => undefined)
+        : { ok: true, json: async () => ({ results: [{ attributes: GWR }] }) };
+    const job = lookUp({ egid: 3, lon: 7.5, lat: 47.5 }, f);
+    await vi.advanceTimersByTimeAsync(6000);
+    const facts = await job;
+    vi.useRealTimers();
+    expect(facts.register?.egid).toBe(441428);
+    expect(facts.osmSolar).toBeNull();
   });
 
   it("asks again after an empty answer", async () => {
@@ -97,7 +200,7 @@ describe("look-up", () => {
     const picked = { egid: 2, lon: 7.5, lat: 47.5 };
     await lookUp(picked, f);
     await lookUp(picked, f);
-    expect(calls).toBe(6);
+    expect(calls).toBe(8);
   });
 });
 

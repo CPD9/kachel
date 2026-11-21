@@ -51,50 +51,50 @@
           "value_of_heat_used_chf": 2753,
           "computing_income_chf": 15538,
           "net_chf_before_hardware": 9683,
-          "hardware_chf_per_year": 8268,
-          "net_chf_after_hardware": 1415,
+          "hardware_chf_per_year": 6718,
+          "net_chf_after_hardware": 2965,
           "break_even_chf_per_server_hour": 0.1884,
-          "break_even_chf_per_server_hour_incl_hardware": 0.454
+          "break_even_chf_per_server_hour_incl_hardware": 0.405
         },
         "swiss_median_2027": {
           "electricity_cost_chf": 8235,
           "value_of_heat_used_chf": 2634,
           "computing_income_chf": 15538,
           "net_chf_before_hardware": 9937,
-          "hardware_chf_per_year": 8268,
-          "net_chf_after_hardware": 1669,
+          "hardware_chf_per_year": 6718,
+          "net_chf_after_hardware": 3219,
           "break_even_chf_per_server_hour": 0.1802,
-          "break_even_chf_per_server_hour_incl_hardware": 0.446
+          "break_even_chf_per_server_hour_incl_hardware": 0.396
         },
         "iwb_h4_2026": {
           "electricity_cost_chf": 10332,
           "value_of_heat_used_chf": 3305,
           "computing_income_chf": 15538,
           "net_chf_before_hardware": 8511,
-          "hardware_chf_per_year": 8268,
-          "net_chf_after_hardware": 243,
+          "hardware_chf_per_year": 6718,
+          "net_chf_after_hardware": 1793,
           "break_even_chf_per_server_hour": 0.2261,
-          "break_even_chf_per_server_hour_incl_hardware": 0.492
+          "break_even_chf_per_server_hour_incl_hardware": 0.442
         },
         "iwb_h4_2027": {
           "electricity_cost_chf": 10385,
           "value_of_heat_used_chf": 3322,
           "computing_income_chf": 15538,
           "net_chf_before_hardware": 8475,
-          "hardware_chf_per_year": 8268,
-          "net_chf_after_hardware": 207,
+          "hardware_chf_per_year": 6718,
+          "net_chf_after_hardware": 1757,
           "break_even_chf_per_server_hour": 0.2273,
-          "break_even_chf_per_server_hour_incl_hardware": 0.493
+          "break_even_chf_per_server_hour_incl_hardware": 0.443
         },
         "iwb_c3_2027": {
           "electricity_cost_chf": 10130,
           "value_of_heat_used_chf": 3240,
           "computing_income_chf": 15538,
           "net_chf_before_hardware": 8648,
-          "hardware_chf_per_year": 8268,
-          "net_chf_after_hardware": 380,
+          "hardware_chf_per_year": 6718,
+          "net_chf_after_hardware": 1930,
           "break_even_chf_per_server_hour": 0.2217,
-          "break_even_chf_per_server_hour_incl_hardware": 0.488
+          "break_even_chf_per_server_hour_incl_hardware": 0.438
         }
       }
     },
@@ -118,50 +118,50 @@
           "value_of_heat_used_chf": 12131,
           "computing_income_chf": 68428,
           "net_chf_before_hardware": 42650,
-          "hardware_chf_per_year": 35828,
-          "net_chf_after_hardware": 6822,
+          "hardware_chf_per_year": 29110,
+          "net_chf_after_hardware": 13540,
           "break_even_chf_per_server_hour": 0.1884,
-          "break_even_chf_per_server_hour_incl_hardware": 0.45
+          "break_even_chf_per_server_hour_incl_hardware": 0.401
         },
         "swiss_median_2027": {
           "electricity_cost_chf": 36267,
           "value_of_heat_used_chf": 11605,
           "computing_income_chf": 68428,
           "net_chf_before_hardware": 43766,
-          "hardware_chf_per_year": 35828,
-          "net_chf_after_hardware": 7938,
+          "hardware_chf_per_year": 29110,
+          "net_chf_after_hardware": 14656,
           "break_even_chf_per_server_hour": 0.1802,
-          "break_even_chf_per_server_hour_incl_hardware": 0.442
+          "break_even_chf_per_server_hour_incl_hardware": 0.393
         },
         "iwb_h4_2026": {
           "electricity_cost_chf": 45505,
           "value_of_heat_used_chf": 14562,
           "computing_income_chf": 68428,
           "net_chf_before_hardware": 37485,
-          "hardware_chf_per_year": 35828,
-          "net_chf_after_hardware": 1657,
+          "hardware_chf_per_year": 29110,
+          "net_chf_after_hardware": 8375,
           "break_even_chf_per_server_hour": 0.2261,
-          "break_even_chf_per_server_hour_incl_hardware": 0.488
+          "break_even_chf_per_server_hour_incl_hardware": 0.439
         },
         "iwb_h4_2027": {
           "electricity_cost_chf": 45738,
           "value_of_heat_used_chf": 14636,
           "computing_income_chf": 68428,
           "net_chf_before_hardware": 37326,
-          "hardware_chf_per_year": 35828,
-          "net_chf_after_hardware": 1498,
+          "hardware_chf_per_year": 29110,
+          "net_chf_after_hardware": 8216,
           "break_even_chf_per_server_hour": 0.2273,
-          "break_even_chf_per_server_hour_incl_hardware": 0.489
+          "break_even_chf_per_server_hour_incl_hardware": 0.44
         },
         "iwb_c3_2027": {
           "electricity_cost_chf": 44611,
           "value_of_heat_used_chf": 14276,
           "computing_income_chf": 68428,
           "net_chf_before_hardware": 38093,
-          "hardware_chf_per_year": 35828,
-          "net_chf_after_hardware": 2265,
+          "hardware_chf_per_year": 29110,
+          "net_chf_after_hardware": 8983,
           "break_even_chf_per_server_hour": 0.2217,
-          "break_even_chf_per_server_hour_incl_hardware": 0.483
+          "break_even_chf_per_server_hour_incl_hardware": 0.434
         }
       }
     },
@@ -185,50 +185,50 @@
           "value_of_heat_used_chf": 12214,
           "computing_income_chf": 68899,
           "net_chf_before_hardware": 42943,
-          "hardware_chf_per_year": 37206,
-          "net_chf_after_hardware": 5737,
+          "hardware_chf_per_year": 30230,
+          "net_chf_after_hardware": 12713,
           "break_even_chf_per_server_hour": 0.1884,
-          "break_even_chf_per_server_hour_incl_hardware": 0.458
+          "break_even_chf_per_server_hour_incl_hardware": 0.408
         },
         "swiss_median_2027": {
           "electricity_cost_chf": 36516,
           "value_of_heat_used_chf": 11685,
           "computing_income_chf": 68899,
           "net_chf_before_hardware": 44068,
-          "hardware_chf_per_year": 37206,
-          "net_chf_after_hardware": 6862,
+          "hardware_chf_per_year": 30230,
+          "net_chf_after_hardware": 13838,
           "break_even_chf_per_server_hour": 0.1802,
-          "break_even_chf_per_server_hour_incl_hardware": 0.45
+          "break_even_chf_per_server_hour_incl_hardware": 0.4
         },
         "iwb_h4_2026": {
           "electricity_cost_chf": 45818,
           "value_of_heat_used_chf": 14662,
           "computing_income_chf": 68899,
           "net_chf_before_hardware": 37743,
-          "hardware_chf_per_year": 37206,
-          "net_chf_after_hardware": 537,
+          "hardware_chf_per_year": 30230,
+          "net_chf_after_hardware": 7513,
           "break_even_chf_per_server_hour": 0.2261,
-          "break_even_chf_per_server_hour_incl_hardware": 0.496
+          "break_even_chf_per_server_hour_incl_hardware": 0.445
         },
         "iwb_h4_2027": {
           "electricity_cost_chf": 46052,
           "value_of_heat_used_chf": 14737,
           "computing_income_chf": 68899,
           "net_chf_before_hardware": 37584,
-          "hardware_chf_per_year": 37206,
-          "net_chf_after_hardware": 378,
+          "hardware_chf_per_year": 30230,
+          "net_chf_after_hardware": 7354,
           "break_even_chf_per_server_hour": 0.2273,
-          "break_even_chf_per_server_hour_incl_hardware": 0.497
+          "break_even_chf_per_server_hour_incl_hardware": 0.447
         },
         "iwb_c3_2027": {
           "electricity_cost_chf": 44918,
           "value_of_heat_used_chf": 14374,
           "computing_income_chf": 68899,
           "net_chf_before_hardware": 38355,
-          "hardware_chf_per_year": 37206,
-          "net_chf_after_hardware": 1149,
+          "hardware_chf_per_year": 30230,
+          "net_chf_after_hardware": 8125,
           "break_even_chf_per_server_hour": 0.2217,
-          "break_even_chf_per_server_hour_incl_hardware": 0.492
+          "break_even_chf_per_server_hour_incl_hardware": 0.441
         }
       }
     },
@@ -252,50 +252,50 @@
           "value_of_heat_used_chf": 20219,
           "computing_income_chf": 114053,
           "net_chf_before_hardware": 71087,
-          "hardware_chf_per_year": 53741,
-          "net_chf_after_hardware": 17346,
+          "hardware_chf_per_year": 43665,
+          "net_chf_after_hardware": 27422,
           "break_even_chf_per_server_hour": 0.1884,
-          "break_even_chf_per_server_hour_incl_hardware": 0.424
+          "break_even_chf_per_server_hour_incl_hardware": 0.38
         },
         "swiss_median_2027": {
           "electricity_cost_chf": 60448,
           "value_of_heat_used_chf": 19343,
           "computing_income_chf": 114053,
           "net_chf_before_hardware": 72948,
-          "hardware_chf_per_year": 53741,
-          "net_chf_after_hardware": 19207,
+          "hardware_chf_per_year": 43665,
+          "net_chf_after_hardware": 29283,
           "break_even_chf_per_server_hour": 0.1802,
-          "break_even_chf_per_server_hour_incl_hardware": 0.416
+          "break_even_chf_per_server_hour_incl_hardware": 0.372
         },
         "iwb_h4_2026": {
           "electricity_cost_chf": 75845,
           "value_of_heat_used_chf": 24270,
           "computing_income_chf": 114053,
           "net_chf_before_hardware": 62478,
-          "hardware_chf_per_year": 53741,
-          "net_chf_after_hardware": 8737,
+          "hardware_chf_per_year": 43665,
+          "net_chf_after_hardware": 18813,
           "break_even_chf_per_server_hour": 0.2261,
-          "break_even_chf_per_server_hour_incl_hardware": 0.462
+          "break_even_chf_per_server_hour_incl_hardware": 0.418
         },
         "iwb_h4_2027": {
           "electricity_cost_chf": 76233,
           "value_of_heat_used_chf": 24395,
           "computing_income_chf": 114053,
           "net_chf_before_hardware": 62215,
-          "hardware_chf_per_year": 53741,
-          "net_chf_after_hardware": 8474,
+          "hardware_chf_per_year": 43665,
+          "net_chf_after_hardware": 18550,
           "break_even_chf_per_server_hour": 0.2273,
-          "break_even_chf_per_server_hour_incl_hardware": 0.463
+          "break_even_chf_per_server_hour_incl_hardware": 0.419
         },
         "iwb_c3_2027": {
           "electricity_cost_chf": 74356,
           "value_of_heat_used_chf": 23794,
           "computing_income_chf": 114053,
           "net_chf_before_hardware": 63491,
-          "hardware_chf_per_year": 53741,
-          "net_chf_after_hardware": 9750,
+          "hardware_chf_per_year": 43665,
+          "net_chf_after_hardware": 19826,
           "break_even_chf_per_server_hour": 0.2217,
-          "break_even_chf_per_server_hour_incl_hardware": 0.457
+          "break_even_chf_per_server_hour_incl_hardware": 0.413
         }
       }
     }

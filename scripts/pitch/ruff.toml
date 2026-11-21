@@ -1,0 +1,7 @@
+# The pitch shot scripts: shot scripts take the shared look with `from style import *`.
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = ["F403", "F405", "E731"]

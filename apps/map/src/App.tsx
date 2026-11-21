@@ -1,36 +1,91 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BuildingCard } from "./building/BuildingCard";
 import { lookUp, type BuildingFacts } from "./building/geoadmin";
+import { latestOnly } from "./building/latest";
 import { swissTime } from "./clock";
+import { fleetHouse, type FleetHouse } from "./fleet/fleet";
+import { Layers, useLayers } from "./networks/Layers";
+import { Places } from "./Places";
+import { NetworkCard } from "./networks/NetworkCard";
+import type { Network } from "./networks/thermal";
 import type { Scene } from "./scene/viewer";
 import { CREDITS } from "./sources";
+import type { TourBuilding } from "./tour/steps";
+import { TourBar } from "./tour/TourBar";
 
 export type StartScene = (container: HTMLElement) => Promise<Scene>;
 
 /** The heat map: Basel in 3D at dusk, the day passing, with the sources always on screen. */
-export function App({ start }: { start: StartScene }) {
+export function App({
+  start,
+  autoTour = false,
+  tourCapMs,
+}: {
+  start: StartScene;
+  autoTour?: boolean;
+  tourCapMs?: number | undefined;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const [scene, setScene] = useState<Scene | null>(null);
   const [failed, setFailed] = useState(false);
   const [time, setTime] = useState<Date | null>(null);
   const [playing, setPlaying] = useState(true);
   const [building, setBuilding] = useState<BuildingFacts | "loading" | null>(null);
+  const [network, setNetwork] = useState<Network | null>(null);
+  const [house, setHouse] = useState<FleetHouse | null>(null);
+  /** The tour found its building missing from swissBUILDINGS3D: the card says so. */
+  const [notIn3D, setNotIn3D] = useState(false);
+  const layers = useLayers(scene);
+  // Only the latest card request may fill the card.
+  const [requests] = useState(latestOnly);
+
+  /** Opens the card for a building: by click, or by the tour. */
+  const openBuilding = useCallback(
+    (egid: number | null, lon: number, lat: number) => {
+      setNetwork(null);
+      setHouse(fleetHouse(egid));
+      setNotIn3D(false);
+      setBuilding("loading");
+      requests.run(lookUp({ egid, lon, lat }), setBuilding);
+    },
+    [requests],
+  );
+
+  const closeCards = useCallback(() => {
+    requests.cancel();
+    setBuilding(null);
+    setNetwork(null);
+    setNotIn3D(false);
+  }, [requests]);
+
+  const { setNetworksOn, setServersOn } = layers;
+  const tourDeps = useMemo(
+    () =>
+      scene === null
+        ? null
+        : {
+            scene,
+            openBuilding: (b: TourBuilding) => openBuilding(b.egid, b.lon, b.lat),
+            setNotIn3D,
+            closeCards,
+            setNetworksOn,
+            setServersOn,
+            ...(tourCapMs === undefined ? {} : { tilesCapMs: tourCapMs }),
+          },
+    [scene, openBuilding, closeCards, setNetworksOn, setServersOn, tourCapMs],
+  );
 
   useEffect(() => {
     if (scene === null) return;
-    let latest = 0;
     return scene.onPick((picked) => {
-      const call = ++latest;
-      if (picked === null) {
-        setBuilding(null);
+      if (picked?.kind === "building") {
+        openBuilding(picked.building.egid, picked.building.lon, picked.building.lat);
         return;
       }
-      setBuilding("loading");
-      void lookUp(picked).then((facts) => {
-        if (call === latest) setBuilding(facts);
-      });
+      closeCards();
+      if (picked?.kind === "network") setNetwork(picked.network);
     });
-  }, [scene]);
+  }, [scene, openBuilding, closeCards]);
 
   useEffect(() => {
     const el = container.current;
@@ -96,7 +151,21 @@ export function App({ start }: { start: StartScene }) {
         </button>
       </section>
 
-      {building !== null && <BuildingCard facts={building} onClose={() => setBuilding(null)} />}
+      {building !== null && (
+        <BuildingCard
+          facts={building}
+          month={(time ?? new Date()).getMonth()}
+          fleet={house}
+          notIn3D={notIn3D}
+          onClose={() => setBuilding(null)}
+        />
+      )}
+
+      {network !== null && <NetworkCard network={network} onClose={() => setNetwork(null)} />}
+
+      {scene !== null && <Layers {...layers} />}
+      {tourDeps !== null && <TourBar deps={tourDeps} autoStart={autoTour} onPlaying={setPlaying} />}
+      {scene !== null && <Places scene={scene} />}
 
       {failed && (
         <p

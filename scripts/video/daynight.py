@@ -21,7 +21,7 @@ hour's demand_kwh, and the concept supply and return lines glow in
 proportion to heat_produced. Inside, the servers and the tank follow the same
 row, as in segment 3. Nothing is keyframed.
 
-Options after "--": --part outside|inside, --day CSV, --out DIR,
+Options after "--": --part outside|inside, --city basel|bern, --day CSV, --out DIR,
 --width/--height of one half (960x1080), --samples, --steps (stills per hour),
 --times 07:30,13:00 to render only those times (previews).
 """
@@ -40,11 +40,14 @@ from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kachel_scene as ks
+from snowdata import snow_hours
 
 HEAT_ATLAS = Path.home() / "Projects/heat-atlas"
-LAT, LON, TZ = 47.56, 7.59, ZoneInfo("Europe/Zurich")
+TZ = ZoneInfo("Europe/Zurich")
+CITIES = {"basel": (47.56, 7.59), "bern": (46.95, 7.45)}  # latitude N, longitude E
+LAT, LON = CITIES["basel"]
 INSIDE_EYE = (3.4, -2.4, 2.0)
-INSIDE_AIM = (0.7, 0.7, 1.05)
+INSIDE_AIM = (0.95, 0.7, 1.05)
 # Pipe runs in the plant room, in the direction the water flows: hot from the servers to the
 # heat exchanger and on to the tank, cooled water back the other way.
 FLOW = {
@@ -65,6 +68,10 @@ def args():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", choices=("outside", "inside"), required=True)
+    ap.add_argument("--city", choices=tuple(CITIES), default="basel")
+    ap.add_argument(
+        "--snow", action="store_true", help="cover roofs and ground by snow depth"
+    )
     ap.add_argument("--day", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--width", type=int, default=960)
@@ -74,13 +81,61 @@ def args():
     ap.add_argument(
         "--times", default="", help="HH:MM list to render only those (previews)"
     )
-    ap.add_argument("--lens", type=float, default=21.0)
+    ap.add_argument("--lens", type=float, default=20.0)
     return ap.parse_args(argv)
+
+
+def find_config(day_dir):
+    """The scheduler's config.json, next to out/ (Basel) or one level up (out/bern/)."""
+    for d in (day_dir.parent, day_dir.parent.parent):
+        if (d / "config.json").exists():
+            return json.loads((d / "config.json").read_text())
+    raise SystemExit(f"no config.json above {day_dir}")
+
+
+SNOW_FULL_M = 0.10  # lying snow at which roofs and ground are fully white
+
+
+def add_snow(mat):
+    """Mix a material's colour towards snow by a SnowCover value (0..1), patchy when thin."""
+    nt = mat.node_tree
+    b = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    cover = nt.nodes.new("ShaderNodeValue")
+    cover.name = "SnowCover"
+    cover.outputs[0].default_value = 0.0
+    nz = nt.nodes.new("ShaderNodeTexNoise")
+    nz.inputs["Scale"].default_value = 0.6
+    nz.inputs["Detail"].default_value = 4
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    nt.links.new(tc.outputs["Object"], nz.inputs["Vector"])
+    # factor = clamp(cover * 2.4 - (1 - noise) * 0.5): a thin cover shows as patches first
+    k = nt.nodes.new("ShaderNodeMath")
+    k.operation = "MULTIPLY_ADD"
+    k.inputs[1].default_value = 2.4
+    nt.links.new(cover.outputs[0], k.inputs[0])
+    off = nt.nodes.new("ShaderNodeMath")
+    off.operation = "MULTIPLY_ADD"
+    nt.links.new(nz.outputs["Fac"], off.inputs[0])
+    off.inputs[1].default_value = 0.5
+    off.inputs[2].default_value = -0.5
+    nt.links.new(off.outputs[0], k.inputs[2])
+    k.use_clamp = True
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    mix.inputs["B"].default_value = (0.72, 0.76, 0.82, 1)  # snow, a little blue
+    nt.links.new(k.outputs[0], mix.inputs["Factor"])
+    base = b.inputs["Base Color"]
+    if base.is_linked:
+        nt.links.new(base.links[0].from_socket, mix.inputs["A"])
+    else:
+        mix.inputs["A"].default_value = base.default_value
+    nt.links.new(mix.outputs["Result"], base)
+    return cover
 
 
 def load(path):
     out = Path(path).parent
-    cfg = json.loads((out.parent / "config.json").read_text())
+    cfg = find_config(out)
     kpis = json.loads((out / "kpis.json").read_text())
     with open(path, newline="") as f:
         rows = sorted(csv.DictReader(f), key=lambda r: int(r["hour"]))
@@ -208,19 +263,29 @@ def outside(a, rows):
     # Half-width frame: keep the vertical view of the dusk shot, centred on the towers.
     cam.data.sensor_fit = "VERTICAL"
     cam.data.sensor_height = cam.data.sensor_width * 9 / 16
-    cam.data.shift_x = 0.33
+    cam.data.shift_x = 0.33 if a.city == "basel" else 0.0
     hud = SK.H.get_collection("HUD")
     sky = SK.setup_world("dusk")
     bg = sc.world.node_tree.nodes["Background"]
-    SK.show("HeatColumns", False)
-    SK.show("Concept", False)
-    bpy.context.view_layer.update()
-    SK.xray(cam, hud)
-    lines = [bpy.data.materials[n] for n in ("HUD_XSupply", "HUD_XReturn")]
-    for o in hud.objects:
-        if not o.name.startswith(("XRay_Loop_Supply", "XRay_Loop_Return")):
-            o.hide_render = True  # keep only the pipe lines, not the concept markers
-    heat_mats = heat_overlay(SK, cam, hud)
+    lines, heat_mats = [], []
+    if a.city == "basel":  # the concept loop and the hectare data exist for Basel only
+        SK.show("HeatColumns", False)
+        SK.show("Concept", False)
+        bpy.context.view_layer.update()
+        SK.xray(cam, hud)
+        lines = [bpy.data.materials[n] for n in ("HUD_XSupply", "HUD_XReturn")]
+        for o in hud.objects:
+            if not o.name.startswith(("XRay_Loop_Supply", "XRay_Loop_Return")):
+                o.hide_render = (
+                    True  # keep only the pipe lines, not the concept markers
+                )
+        heat_mats = heat_overlay(SK, cam, hud)
+    snow_cover = []
+    snow = snow_hours(a.day, a.city) if a.snow else {}
+    if a.snow:
+        for n in ("Roof_Pitched", "Roof_Flat", "Ground_Urban", "Ground_Bern"):
+            if n in bpy.data.materials:
+                snow_cover.append(add_snow(bpy.data.materials[n]))
     gains = {}
     for m in bpy.data.materials:
         if m.node_tree and "WindowGain" in m.node_tree.nodes:
@@ -262,7 +327,11 @@ def outside(a, rows):
             (0.012, 0.025, 0.06),
             night,
         )
-        SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
+        if a.city == "basel":
+            SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
+        else:  # Bern's view is shorter: haze from nearer in, so the land fades into the sky
+            haze = lerp(fog, (0.95, 0.97, 1.0), day)  # pale enough to meet the day sky
+            SK.set_fog(lerp(700.0, 900.0, day), lerp(900.0, 1600.0, day), 1.0, haze)
         sc.view_settings.exposure = -0.3
         dark = max(0.0, min(1.0, (3 - elev) / 9))
         for n, g in gains.items():
@@ -279,6 +348,9 @@ def outside(a, rows):
             m.node_tree.nodes["Emission"].inputs["Strength"].default_value = (
                 0.3 + 2.4 * hk
             )
+        depth = snow.get(int(r["hour"]), (0.0, 0.0))[0]
+        for v in snow_cover:
+            v.outputs[0].default_value = min(1.0, depth / SNOW_FULL_M)
         key = f"{int(r['hour']):02d}{minute:02d}"
         sc.render.filepath = str(Path(a.out) / "outside" / f"{key}.png")
         bpy.ops.render.render(write_still=True)
@@ -291,7 +363,7 @@ def outside(a, rows):
 
 
 def inside(a, rows, cfg, kpis):
-    h = ks.prepare()
+    h = ks.prepare(int(kpis["servers_per_house"]))
     sc = h["scene"]
     ks.setup_render(sc, a.width, a.height, a.samples)
     # Portrait half: a raised view down into the room, so rack and tank stack up the frame
@@ -337,7 +409,9 @@ def inside(a, rows, cfg, kpis):
 
 
 def main():
+    global LAT, LON
     a = args()
+    LAT, LON = CITIES[a.city]
     rows, cfg, kpis = load(a.day)
     (Path(a.out) / a.part).mkdir(parents=True, exist_ok=True)
     if a.part == "outside":

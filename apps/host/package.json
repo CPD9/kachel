@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@kachel/db": "workspace:*",
+    "@kachel/economics": "workspace:*",
     "@kachel/ui": "workspace:*",
     "react": "19.3.1",
     "react-dom": "19.3.1"

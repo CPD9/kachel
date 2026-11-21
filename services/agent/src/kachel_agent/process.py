@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import signal
+import time
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -48,6 +49,20 @@ class Job:
             return now
         if run and now is State.PAUSED:
             self.resume()
-        elif not run and now is State.RUNNING:
+            return self.settle(State.RUNNING)
+        if not run and now is State.RUNNING:
             self.pause()
-        return self.state()
+            return self.settle(State.PAUSED)
+        return now
+
+    def settle(self, want: State, timeout_s: float = 1.0) -> State:
+        """Wait until /proc shows the state a signal asked for.
+
+        The kernel applies SIGSTOP and SIGCONT a moment after os.kill returns.
+        """
+        deadline = time.monotonic() + timeout_s
+        while (now := self.state()) is not want and now is not State.GONE:
+            if time.monotonic() > deadline:
+                break
+            time.sleep(0.005)
+        return now

@@ -41,8 +41,11 @@ export function LiveJobs({ feed }: { feed: JobFeed }) {
   return (
     <section aria-labelledby="live-jobs" className="px-6 py-4">
       <h2 id="live-jobs" className="text-lg font-semibold">
-        Your servers {status === "live" && <span className="text-sm text-heat">· live</span>}
+        Your servers now {status === "live" && <span className="text-sm text-heat">· live</span>}
       </h2>
+      <p className="mt-1 text-xs text-muted">
+        What each server is doing this minute, as the agent pauses and resumes its job.
+      </p>
       <ul aria-live="polite" className="mt-3 divide-y divide-idle/30">
         {ordered.map((server) => {
           const job = [...jobs.values()]

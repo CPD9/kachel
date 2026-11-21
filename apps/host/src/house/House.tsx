@@ -3,15 +3,20 @@ import { Sourced } from "@kachel/ui";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { DayChart } from "./DayChart";
 import { chooseDay, dayMoney, hourAt, local, toDays, toPrices } from "./day";
-import { celsius, clock, kwh, longDate, shortDate } from "./format";
+import { celsius, clock, kwh, longDate, mediumDate, shortDate } from "./format";
 import { Money } from "./Money";
 import { TankGauge } from "./TankGauge";
 
 const systemClock = () => new Date();
 
-/** heat_state.server_hours in an hour is how many servers ran it. */
-const working = (n: number) =>
-  n === 0 ? "no server working" : n === 1 ? "1 server working" : `${n} servers working`;
+/**
+ * heat_state.server_hours in an hour is how many servers ran it. A replayed hour says "ran", so
+ * it is never read as the live server list below.
+ */
+const working = (n: number, live: boolean) => {
+  const servers = n === 0 ? "no server" : n === 1 ? "1 server" : `${n} servers`;
+  return live ? `${servers} working` : `${servers} ran in the replayed hour`;
+};
 
 function Reading({
   label,
@@ -171,13 +176,26 @@ export function House({ feed, now = systemClock }: { feed: HouseFeed; now?: () =
     <div className="space-y-5">
       <section aria-labelledby="now" className="rounded-lg border border-grid bg-paper p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-          <h2 id="now" className="text-lg font-semibold">
-            Your house now
-            <span className="ml-2 text-sm font-normal text-muted">
+          <div>
+            <h2
+              id="now"
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 text-lg font-semibold"
+            >
+              {live ? "Your house now" : "The scheduler's day"}
+              {!live && (
+                <span
+                  data-replay
+                  className="rounded-full bg-amber px-2.5 py-0.5 text-xs font-semibold text-ink"
+                >
+                  Replay of {mediumDate(day.date)}
+                </span>
+              )}
+            </h2>
+            <p className="text-sm text-muted">
               {state.site.name}, {state.site.city}
               {current && ` · ${clock(current.hour)}`}
-            </span>
-          </h2>
+            </p>
+          </div>
           {days.length > 1 && (
             <div role="group" aria-label="Day" className="flex rounded-md border border-grid p-0.5">
               {days.map((d) => (
@@ -203,7 +221,8 @@ export function House({ feed, now = systemClock }: { feed: HouseFeed; now?: () =
           ) : (
             <>
               Replay of {longDate(day.date)} from the scheduler&apos;s yearly run, at the hour on
-              your clock. Today&apos;s hours take over once the scheduler writes them.
+              your clock, not your servers now: those are live below. Today&apos;s hours take over
+              once the scheduler writes them.
             </>
           )}
         </p>
@@ -216,7 +235,7 @@ export function House({ feed, now = systemClock }: { feed: HouseFeed; now?: () =
                 <p className="mt-5 border-t border-grid pt-3 text-sm">
                   <span className="text-muted">Scheduler: </span>
                   {current.row.reason}
-                  <span className="text-muted"> · {working(current.row.server_hours)}</span>
+                  <span className="text-muted"> · {working(current.row.server_hours, live)}</span>
                 </p>
               )}
             </div>

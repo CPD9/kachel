@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BuildingCard } from "./BuildingCard";
 import type { BuildingFacts } from "./geoadmin";
@@ -8,6 +8,8 @@ const FACTS: BuildingFacts = {
     egid: 441428,
     address: "Missionsstrasse 55",
     built: "1874",
+    period: "before_1919",
+    kind: "single",
     heatedAreaM2: 668,
     floors: 4,
     dwellings: 2,
@@ -15,21 +17,26 @@ const FACTS: BuildingFacts = {
     heatingKind: "district",
     hotWater: "district heating (low temperature)",
     asOf: "19.11.2026",
+    municipality: { bfs: 2701, name: "Basel" },
   },
   roof: {
+    buildingId: 1599044,
     heatingKwh: 314_659,
     hotWaterKwh: 71_408,
     degreeDays: [545, 488, 393, 187, 71, 5, 0, 0, 36, 166, 394, 535],
     solarKwh: 13_268,
   },
   hectare: { totalMwh: 4561.6, districtSharePct: 81.8 },
+  // A group of one: the Sonnendach figure is this building's alone.
+  group: { egids: [441428], floorM2: 668 },
+  osmSolar: { photovoltaic: 1, thermal: 0, other: 0 },
 };
 
 afterEach(cleanup);
 
 describe("building card", () => {
   it("shows the yearly heat as an estimate, with its sources", () => {
-    render(<BuildingCard facts={FACTS} onClose={() => undefined} />);
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
     expect(screen.getByRole("heading", { name: "Missionsstrasse 55" })).toBeTruthy();
     // District heating: the heat bought equals the heat used, so the figure shows twice.
     expect(screen.getAllByText("386 MWh")).toHaveLength(2);
@@ -37,12 +44,175 @@ describe("building card", () => {
     expect(screen.getByText(/SFOE Sonnendach, computed from GWR data/)).toBeTruthy();
     expect(screen.getByText("Source: BFS GWR, as of 19.11.2026.")).toBeTruthy();
     expect(screen.getByText(/Dense enough for a heating network/)).toBeTruthy();
+    expect(screen.getByText("Mapped within 40 m: 1 photovoltaic.")).toBeTruthy();
+  });
+
+  it("shows the chosen month's heat on the slider", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    const slider = screen.getByRole("slider");
+    expect(slider.getAttribute("aria-valuetext")).toMatch(/^November: /);
+    fireEvent.change(slider, { target: { value: "6" } });
+    // July: no heating degree days, so only a month of hot water: 71,408 × 31 ÷ 365.
+    expect(screen.getByLabelText("July")).toBeTruthy();
+    expect(slider.getAttribute("aria-valuetext")).toBe("July: 6,060 kWh");
+    // January: 314,659 × 545 ÷ 2,820 degree days, plus 71,408 × 31 ÷ 365 of hot water.
+    fireEvent.change(slider, { target: { value: "0" } });
+    expect(slider.getAttribute("aria-valuetext")).toBe("January: 66.9 MWh");
+  });
+
+  it("scales the Kachel reference house to the building", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    // 386,067 kWh ÷ 31,231 kWh × 6 servers = 74.2, so about 74 servers.
+    expect(screen.getByText("about 74")).toBeTruthy();
+    expect(screen.getByText(/scaled from Kachel's Basel reference house/)).toBeTruthy();
+  });
+
+  it("adds our period-based estimate and a renovated box that cuts the Kachel servers", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    // 668 m² × (156 × 0.89 space heating + 12 hot water) = 100,761 kWh.
+    expect(screen.getByText("Our estimate, built before 1919")).toBeTruthy();
+    expect(screen.getByText("101 MWh")).toBeTruthy();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Renovated/ }));
+    // Space heating halved: 668 × (69.42 + 12) = 54,389 kWh.
+    expect(screen.getByText("Our estimate, built before 1919, renovated")).toBeTruthy();
+    expect(screen.getByText("54.4 MWh")).toBeTruthy();
+    // SFOE's published figure stays; Kachel gets 314,659 ÷ 2 + 71,408 = 228,738 kWh: 43.9 servers.
+    expect(screen.getAllByText("386 MWh")).toHaveLength(2);
+    expect(screen.getByText("about 44")).toBeTruthy();
+  });
+
+  it("halves space heating for a renovated building with no period in the register", () => {
+    if (FACTS.register === null) throw new Error("the fixture has a register");
+    const noPeriod = { ...FACTS, register: { ...FACTS.register, period: null } };
+    render(<BuildingCard facts={noPeriod} month={10} onClose={() => undefined} />);
+    expect(screen.queryByText(/^Our estimate, built/)).toBeNull();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Renovated/ }));
+    expect(screen.getByText("about 44")).toBeTruthy();
+  });
+
+  it("lets the server size choose how many servers the heat needs", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    const size = screen.getByRole("combobox", { name: /Server size/ });
+    // 386,067 kWh needs 74.2 kW, as the reference house's 6 kW for 31,231 kWh.
+    fireEvent.change(size, { target: { value: "2kw" } });
+    expect(screen.getByText("Servers needed, 2 kW each")).toBeTruthy();
+    expect(screen.getByText("about 37")).toBeTruthy();
+    fireEvent.change(size, { target: { value: "gpu" } });
+    expect(screen.getByText("about 106")).toBeTruthy();
+  });
+
+  it("prices the servers' electricity at the municipality's tariff", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    // Basel: IWB's 2027 H4 tariff, saved from ElCom, until the live answer comes.
+    expect(screen.getByText("Electricity price, Basel")).toBeTruthy();
+    expect(screen.getByText("33.42 Rp/kWh")).toBeTruthy();
+    expect(screen.getByText(/ElCom 2027 H4, IWB Industrielle Werke Basel/)).toBeTruthy();
+  });
+
+  it("says a fleet house is synthetic and the building real", () => {
+    const house = {
+      id: "house-07",
+      city: "Basel",
+      servers: 6,
+      heatDemandKwh: 30_000,
+      egid: 441428,
+      lon: 7.5754,
+      lat: 47.5608,
+      hectareHeatMwh: 4562,
+    };
+    render(<BuildingCard facts={FACTS} month={10} fleet={house} onClose={() => undefined} />);
+    expect(
+      screen.getByText(/here this building gets 6 servers, as synthetic house house-07/),
+    ).toBeTruthy();
+    expect(screen.getByText(/the fleet is not/)).toBeTruthy();
+    // The whole-building estimate is named apart from the fleet's servers.
+    expect(screen.getByText("If Kachel heated the whole building, estimated")).toBeTruthy();
+  });
+
+  it("flags a heat figure that is high for any building", () => {
+    // 386,067 kWh over 668 m² is 578 kWh/m².
+    const facts = {
+      ...FACTS,
+      register: FACTS.register && { ...FACTS.register, heatedAreaM2: 668 },
+    };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("578 kWh, high, check")).toBeTruthy();
+  });
+
+  it("splits a block's figure by floor area when the roof covers several buildings", () => {
+    // Missionsstrasse 55 shares its Sonnendach roof with three more GWR buildings, 7,307 m² in all
+    // (api3.geo.admin.ch, 21 Nov 2026): 386,067 kWh × 668 ÷ 7,307 = 35.3 MWh, 53 kWh/m².
+    const facts = { ...FACTS, group: { egids: [441428, 2, 3, 4], floorM2: 7307 } };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("Heat a year, estimated, this building's share")).toBeTruthy();
+    expect(screen.getAllByText("35.3 MWh").length).toBeGreaterThan(0);
+    expect(screen.getByText("53 kWh")).toBeTruthy();
+    expect(screen.getByText("SFOE figure for 4 buildings under one roof")).toBeTruthy();
+    expect(
+      screen.getByText(/split among its 4 GWR buildings by floor area \(our split\)/),
+    ).toBeTruthy();
+  });
+
+  it("names a group figure as such, and hides an implausible per-m² line, without the group", () => {
+    const facts = { ...FACTS, group: null };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("Heat a year, SFOE estimate for the building group")).toBeTruthy();
+    expect(screen.queryByText(/kWh, high, check/)).toBeNull();
+  });
+
+  it("calls it the group figure when this building has no floor area to split by", () => {
+    const facts = {
+      ...FACTS,
+      register: FACTS.register && { ...FACTS.register, heatedAreaM2: null },
+      group: { egids: [441428, 2, 3], floorM2: 5000 },
+    };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("Heat a year, SFOE estimate for the building group")).toBeTruthy();
+  });
+
+  it("leads with our estimate when Sonnendach has no roof, as for a new building", () => {
+    const campus: BuildingFacts = {
+      register: {
+        egid: 243058419,
+        address: "Dornacherstrasse 394",
+        built: "2026",
+        period: "after_2015",
+        kind: "school",
+        heatedAreaM2: 14_436,
+        floors: 6,
+        dwellings: null,
+        heating: "district heating (low temperature)",
+        heatingKind: "district",
+        hotWater: "district heating (low temperature)",
+        asOf: "19.11.2026",
+        municipality: { bfs: 2701, name: "Basel" },
+      },
+      roof: null,
+      hectare: { totalMwh: 628.5, districtSharePct: 0 },
+      group: null,
+      osmSolar: { photovoltaic: 0, thermal: 0, other: 0 },
+    };
+    render(<BuildingCard facts={campus} month={10} notIn3D onClose={() => undefined} />);
+    expect(screen.getByText(/Building newer than swisstopo's 3D data/)).toBeTruthy();
+    expect(screen.getByText("Heat a year, our estimate")).toBeTruthy();
+    // 14,436 m² × (105 × 0.31 space heating + 3 hot water) = 513,200 kWh: heat, energy bought
+    // (district heat) and the servers' electricity, which all turns into heat.
+    expect(screen.getAllByText("513 MWh")).toHaveLength(3);
+    expect(screen.getByText("36 kWh")).toBeTruthy();
+    expect(screen.getByText("no figure for this building yet")).toBeTruthy();
+    // 513,200 ÷ 31,231 × 6 = 98.6 servers.
+    expect(screen.getByText("about 99")).toBeTruthy();
+    // Built after 2015: a renovation cannot lower its heat, and the card says so.
+    expect(screen.getByText(/so Renovated changes nothing here/)).toBeTruthy();
+    // No degree days without a roof, so no month slider.
+    expect(screen.queryByRole("slider")).toBeNull();
   });
 
   it("says so when nothing is published", () => {
     render(
       <BuildingCard
-        facts={{ register: null, roof: null, hectare: null }}
+        facts={{ register: null, roof: null, hectare: null, group: null, osmSolar: null }}
+        month={10}
         onClose={() => undefined}
       />,
     );

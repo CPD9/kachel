@@ -6,11 +6,60 @@
     "hot_water_shape": "flat",
     "source": "DigitalHeat case brief (reference house). hot_water_shape=flat is OUR assumption; overridden when the case CSV is passed with --profile."
   },
+  "house_quality": {
+    "_note": "Heat a building needs by when it was built, for the map's building card (issue #159): heated floor area (GWR gebf) times its class's space heating times its period's factor (GWR gbaup), plus hot water by class. The method and numbers SFOE's Sonnendach uses, without its climate and boiler-efficiency steps. Used by heatDemand() in packages/economics and heatsched/house.py.",
+    "space_heating_kwh_per_m2": {
+      "single": 156,
+      "multi": 94,
+      "office": 70,
+      "shop": 50,
+      "restaurant": 121,
+      "industry": 86,
+      "assembly": 101,
+      "school": 105,
+      "hospital": 75,
+      "sport": 87
+    },
+    "hot_water_kwh_per_m2": {
+      "single": 12,
+      "multi": 16,
+      "office": 2,
+      "shop": 1,
+      "restaurant": 59,
+      "industry": 2,
+      "assembly": 4,
+      "school": 3,
+      "hospital": 31,
+      "sport": 33
+    },
+    "period_factor": {
+      "before_1919": 0.89,
+      "1919_1945": 1.17,
+      "1946_1960": 1.17,
+      "1961_1970": 1.15,
+      "1971_1980": 1.15,
+      "1981_1990": 0.81,
+      "1991_2000": 0.53,
+      "2001_2005": 0.42,
+      "2006_2010": 0.42,
+      "2011_2015": 0.33,
+      "after_2015": 0.31
+    },
+    "renovated_factor": 0.5,
+    "source": {
+      "space_heating_kwh_per_m2": "Space heating per m² of energy reference area, mean of today's stock (SIA 2024, as Sonnendach uses it): by GWR building class: single-family houses 156 kWh (1110, 1121), flats 94 (1122, 1130, and hotels 1211, 1212), offices 70 (1220), shops 50 (1230), restaurants 121 (1231), industry 86 (1251), halls and churches 101 (1261, 1272), schools, museums and libraries 105 (1262, 1263), hospitals 75 (1264), sports halls 87 (1265) (Egon AG for SFOE, 'Abschätzung der Heizenergiekennzahl für die Bauperiode ab 2016', 20 Aug 2021, Tabelle 1, annex to Meteotest, 'Solarpotentialanalyse für Sonnendach.ch', Schlussbericht, 27 Jul 2022). Garages, stores, farm buildings and the other classes the table gives 0 get no estimate of ours.",
+      "hot_water_kwh_per_m2": "Hot water per m², same classes: 12, 16, 2, 1, 59, 2, 4, 3, 31 and 33 kWh (same report, Tabelle 2, from SIA 2024).",
+      "period_factor": "A period's space heating against the stock's mean: 0.89 before 1919, 1.17 for 1919-1960, 1.15 for 1961-1980, 0.81 for 1981-1990, 0.53 for 1991-2000, 0.42 for 2001-2010, 0.33 for 2011-2015 (Meteotest, Tabelle 8, as reprinted by Egon AG, Tabelle 2); 0.31 from 2016 (Egon AG, Tabelle 3, from TEP Energy 2021 for BAFU and EnDK).",
+      "renovated_factor": "A comprehensive renovation at least halves an unrenovated building's energy use (EnergieSchweiz and EnFK, 'Gebäude erneuern: Energieverbrauch halbieren', 01.2019). Applied to space heating only, and never below a new building's (after 2015): OUR rule."
+    }
+  },
   "server": {
     "power_kw": 1.0,
     "heat_recovery": 0.8,
     "idle_power_kw": 0.0,
-    "source": "Case brief. idle_power_kw=0 is OUR simplification: a paused server is assumed to draw nothing."
+    "sizes_kw": [0.5, 1, 2],
+    "gpu_workstation_kw": 0.7,
+    "source": "Case brief. idle_power_kw=0 is OUR simplification: a paused server is assumed to draw nothing. sizes_kw: the server sizes the map's card offers (issue #159); a server costs its case's server_chf per kW and draws, earns and heats in proportion to its kW, while each server needs its own water loop: OUR GUESS. gpu_workstation_kw: the mid case's workstation, an RTX PRO 6000 Blackwell at up to 600 W (VRLA Tech, 30 Jun 2026) plus about 100 W for the rest of the machine (OUR GUESS), at its case's full server_chf."
   },
   "prices": {
     "electricity_chf_per_kwh": 0.277,
@@ -48,9 +97,29 @@
   "fleet": {
     "houses": 50,
     "seed": 2025,
-    "city": "Basel",
-    "latitude": [47.54, 47.58],
-    "longitude": [7.56, 7.63],
+    "cities": {
+      "Basel": {
+        "weather": "tests/data/weather_basel_2025.csv",
+        "seed": 2025,
+        "id_prefix": "house",
+        "name_prefix": "Synthetic house",
+        "latitude": [47.54, 47.58],
+        "longitude": [7.56, 7.63]
+      },
+      "Bern": {
+        "weather": "tests/data/weather_bern_2025.csv",
+        "seed": 3011,
+        "id_prefix": "bern",
+        "name_prefix": "Synthetic Bern house",
+        "latitude": [46.93, 46.97],
+        "longitude": [7.4, 7.47]
+      }
+    },
+    "runs": {
+      "fleet": ["Basel"],
+      "fleet_bern": ["Bern"],
+      "fleet_basel_bern": ["Basel", "Bern"]
+    },
     "servers_per_house": [2, 8],
     "tank_kwh": [20, 50],
     "space_heating_scale": [0.4, 1.6],
@@ -64,7 +133,7 @@
     "backlog_hours": [1, 4],
     "backlog_deadline_h": 48,
     "warmup_days": 2,
-    "source": "OUR synthetic scenario for make fleet (heatsched/fleet_scenario.py): every house is made up, drawn evenly from these ranges with this seed, on the real Basel 2025 weather. space_heating_scale multiplies the reference house's space heating. Unlike the one-house model, the backlog is finite and due within backlog_deadline_h, so work the houses cannot take shows up as moved to a data centre."
+    "source": "OUR synthetic scenario for make fleet (heatsched/fleet_scenario.py): every house is made up, drawn evenly from these ranges with its city's seed, on the real 2025 weather of its city (Basel or Bern). houses is per city. Each run is one fleet of the cities listed; the job stream uses the fleet seed. space_heating_scale multiplies the reference house's space heating. Unlike the one-house model, the backlog is finite and due within backlog_deadline_h, so work the houses cannot take shows up as moved to a data centre."
   },
   "hardware": {
     "_note": "Per 1 kW server unless a name says per house. CHF without VAT. Dollar and pound prices converted at the ECB reference rates of 20 Nov 2026 (1 USD = 0.8392 CHF, 1 GBP = 1.1015 CHF). Each source is below; anything marked OUR GUESS has none yet. Charts and links: docs/economics/README.md",
@@ -83,10 +152,11 @@
         "service_visits_per_year": 1,
         "service_hours_per_visit": 1,
         "lifetime_years": 6,
+        "resale_share": 0.1,
         "discount_rate": 0.0328
       },
       "mid": {
-        "label": "New GPU workstation, 5-year life",
+        "label": "New GPU workstation, 6-year life",
         "server_chf": 5034,
         "cooling_kit_chf": 633,
         "fitter_hours_per_house": 10,
@@ -95,7 +165,8 @@
         "electrician_chf_per_hour": 151,
         "service_visits_per_year": 1,
         "service_hours_per_visit": 2,
-        "lifetime_years": 5,
+        "lifetime_years": 6,
+        "resale_share": 0.075,
         "discount_rate": 0.0375
       },
       "high": {
@@ -109,6 +180,7 @@
         "service_visits_per_year": 2,
         "service_hours_per_visit": 2,
         "lifetime_years": 4,
+        "resale_share": 0.15,
         "discount_rate": 0.06
       }
     },
@@ -119,7 +191,8 @@
       "electrician_chf_per_hour": "Elektroinstallateur EFZ, 151 CHF an hour without VAT (EIT.nordwest, Basel, recommended rates 2026).",
       "hours_per_house": "Fitter and electrician hours to fit six servers to the tank: OUR GUESS.",
       "service": "Service fitter with van 125 CHF an hour, call-out 65 CHF (WBAG, Regietarif 2025). Visits and hours a year: OUR GUESS.",
-      "lifetime_years": "6: the large cloud providers' server life by 2023 (SiliconANGLE, 22 Nov 2025). 5: Amazon, for part of its servers from 1 Jan 2025 (Amazon 10-K 2025). 4: Amazon from 2020 (SiliconANGLE).",
+      "lifetime_years": "6 (low and mid): the large cloud providers' server life by 2023 (SiliconANGLE, 22 Nov 2025), and the case owner's view that 6 years or more is realistic (feedback, 21 Nov 2026). Amazon cut part of its servers to 5 years from 1 Jan 2025 (Amazon 10-K 2025). 4 (high): Amazon from 2020 (SiliconANGLE).",
+      "resale_share": "What the server fetches at the end of its life, as a share of its price: enterprise servers 5-10% of their original value at 5 years and more, 15-25% at 4 years, when sold within six months of retirement (Servnet, 'ITAD Value Recovery 2026', 13 Aug 2026). low 10% and mid 7.5% at 6 years; high 15% at 4 years. Only the server, not its water loop or the fitting. Resale in 2025 ran at about 2.5 times its seven-year average (Resource Recycling, 22 Jan 2026), so these may be low.",
       "discount_rate": "3.28%: WACC for Swiss power grids, tariff year 2027 (UVEK, 2 Mar 2026). 3.75%: WACC for PV investment contributions 2026 (pv magazine, 2 Mar 2026). 6%: OUR GUESS for a young, riskier business."
     }
   },

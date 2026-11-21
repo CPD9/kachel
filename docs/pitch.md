@@ -6,12 +6,16 @@ goal. Two slides, one Blender film we talk over, one live moment, then the ask.
 - Slides: [docs/pitch/slides.md](pitch/slides.md) (Marp), rendered to
   [slides.pdf](pitch/slides.pdf). Every figure on them comes from
   `services/scheduler/out/kpis.json` or `docs/economics/data/summary.json`, with the source on
-  the slide. The look is a sunset poster in Anton (SIL Open Font License 1.1). The framed
-  picture on the title slide is the slot for the Kachi hero poster; it shows a server close-up
-  until the poster lands. Render with
+  the slide. Render with
   `npx @marp-team/marp-cli docs/pitch/slides.md --pdf --allow-local-files`.
+- The two-minute film in talk-track order:
+  [kachel-film-2min.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/kachel-film-2min.mp4)
+  (1080p) or the
+  [720p copy](https://github.com/CPD9/kachel/releases/download/media-v1/kachel-film-2min-720p.mp4);
+  `make video-film-2min` rebuilds it from the rendered parts.
 - Film segments: [docs/media](media/README.md) and the
   [media-v1 release](https://github.com/CPD9/kachel/releases/tag/media-v1).
+- Sunday morning, step by step: [the demo checklist](demo-checklist.md).
 - How the parts fit: [docs/architecture.md](architecture.md).
 - Charts, sources and open questions: [the numbers behind Kachel](economics/README.md).
 
@@ -93,7 +97,7 @@ lines.
 ### 2:32–3:32, live (60 s)
 
 Before the talk, Duc has run `make dev`, started the embedding job, and started the agent on
-Server 4 with `--tick 0.2` (command in `services/agent/.env.example`), signal file
+Server 4 with `--tick 0.2` (commands in [the demo checklist](demo-checklist.md)), signal file
 `/tmp/heat` holding `run`. The host app is open full screen, Server 4 shows Running.
 
 - 2:32 Duc switches the projector to the host app. Peter: "This is the host app, live on
@@ -110,15 +114,15 @@ Server 4 with `--tick 0.2` (command in `services/agent/.env.example`), signal fi
 
 If the stack is not up, Duc plays
 [live-demo.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
-(27 s) and Peter says the same lines over it.
+(30 s) and Peter says the same lines over it.
 
 ### 3:32–4:35, slide 2
 
 - 3:32 "One Basel house, six servers, real 2025 weather. Server heat covers 79.6 percent of
   the heat demand, and the house sells 31,075 server-hours a year."
 - 3:47 "Before hardware it pays from 0.188 francs a server-hour. We assume 0.50."
-- 3:57 "That leaves 9,683 francs a year before hardware. After hardware, mid case, 1,415, and
-  the hardware pays back in 4.2 years."
+- 3:57 "That leaves 9,683 francs a year before hardware. After hardware, mid case, 2,965, and
+  the hardware pays back in 4.0 years."
 - 4:12 "The buyer pays for compute, the home gets the heat. Next, one scheduler for many homes
   sends each job to wherever the heat is useful now."
 - 4:22 "Our ask: a Basel building for a pilot, buyers of compute that can pause, and a
