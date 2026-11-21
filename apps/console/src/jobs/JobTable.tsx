@@ -68,6 +68,13 @@ export function JobTable({ feed }: { feed: JobFeed }) {
             </tr>
           </thead>
           <tbody aria-live="polite" className="divide-y divide-idle/30">
+            {status === "live" && rows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-3 text-idle">
+                  No jobs yet. Submit one above.
+                </td>
+              </tr>
+            )}
             {rows.map((job) => {
               const site = job.site_id ? sites.get(job.site_id) : undefined;
               const server = job.server_id ? servers.get(job.server_id) : undefined;

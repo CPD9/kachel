@@ -9,9 +9,10 @@ const quiet: JobFeed = {
 };
 
 describe("console app", () => {
-  it("shows the console heading and the jobs table", () => {
-    render(<App feed={quiet} />);
+  it("shows the console heading, the form and the jobs table", () => {
+    render(<App feed={quiet} submit={() => new Promise(() => undefined)} />);
     expect(screen.getByRole("heading", { name: "Kachel console" })).toBeTruthy();
     expect(screen.getByRole("table")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Submit job" })).toBeTruthy();
   });
 });
