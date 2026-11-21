@@ -243,7 +243,7 @@ def chart_payback(k, cfg):
     ax.set(xlim=(0.2, 1.2), ylim=(0, top), xlabel="Price a server-hour fetches (CHF)",
            ylabel="Years to pay back the hardware", title="At 0.50 CHF the dearest hardware does not pay back within its life")
     ax.legend(frameon=False, loc="upper right", fontsize=10.5)
-    save(fig, "07_payback", "Discounted payback per house, six servers, the servers sold at the end. Dotted: each case's lifetime; on it, the break-even incl. hardware")
+    save(fig, "07_payback", "Discounted payback per house, six servers sold at the end. Dotted: each lifetime (low and mid share 6 years); on it, break-even incl. hardware")
     return pd.DataFrame(rows)
 
 
