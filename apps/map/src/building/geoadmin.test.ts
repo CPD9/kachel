@@ -81,10 +81,52 @@ describe("look-up", () => {
     const picked = { egid: 441428, lon: 7.5754, lat: 47.5608 };
     const facts = await lookUp(picked, f);
     await lookUp(picked, f);
-    expect(f.calls).toHaveLength(4);
+    // GWR, roof, hectare, the roof's faces (for the building group) and Overpass.
+    expect(f.calls).toHaveLength(5);
     expect(facts.osmSolar?.photovoltaic).toBe(1);
     expect(facts.register?.egid).toBe(441428);
     expect(facts.hectare?.totalMwh).toBe(4561.6);
+  });
+
+  it("finds the GWR buildings under the same Sonnendach roof", async () => {
+    const square = [
+      [7.575, 47.56],
+      [7.576, 47.56],
+      [7.576, 47.561],
+      [7.575, 47.561],
+      [7.575, 47.56],
+    ];
+    const f: Fetch = async (url) => {
+      const body = url.includes("searchField=building_id")
+        ? { results: [{ geometry: { type: "Polygon", coordinates: [square] } }] }
+        : url.includes("esriGeometryEnvelope")
+          ? {
+              results: [
+                {
+                  geometry: { coordinates: [7.5752, 47.5602] },
+                  properties: { egid: "441428", gebf: 668 },
+                },
+                {
+                  geometry: { coordinates: [7.5758, 47.5608] },
+                  properties: { egid: "9", gebf: 1000 },
+                },
+                {
+                  geometry: { coordinates: [7.58, 47.5608] },
+                  properties: { egid: "10", gebf: 5000 },
+                },
+              ],
+            }
+          : url.includes("/find?")
+            ? { results: [{ attributes: GWR }] }
+            : url.includes("overpass")
+              ? { elements: [] }
+              : url.includes("solarenergie")
+                ? { results: [{ attributes: ROOF }] }
+                : { results: [{ attributes: HECTARE }] };
+      return { ok: true, json: async () => body };
+    };
+    const facts = await lookUp({ egid: 441428, lon: 7.5754, lat: 47.5608 }, f);
+    expect(facts.group).toEqual({ egids: [441428, 9], floorM2: 1668 });
   });
 
   it("turns a failed request into a missing piece, not an error", async () => {
@@ -92,7 +134,13 @@ describe("look-up", () => {
       throw new Error("offline");
     };
     const facts = await lookUp({ egid: 1, lon: 7.5, lat: 47.5 }, f);
-    expect(facts).toEqual({ register: null, roof: null, hectare: null, osmSolar: null });
+    expect(facts).toEqual({
+      register: null,
+      roof: null,
+      hectare: null,
+      group: null,
+      osmSolar: null,
+    });
   });
 
   it("asks Overpass again on its own when it was busy", async () => {

@@ -19,7 +19,13 @@ Click a building for its estimated heat and energy use, from the federal buildin
 there, scaled from the scheduler's Basel reference house. Requests go out only on click and are
 cached.
 
-<p align="center"><img src="../../docs/images/map-card.webp" width="720" alt="The card for Steinengraben 5, Basel: 528 MWh of heat a year, estimated, a month slider on November, and what about 101 Kachel servers would cover there, each figure with its source"></p>
+<p align="center"><img src="../../docs/images/map-card.webp" width="720" alt="The card for Steinengraben 5, Basel: 429 MWh of heat a year, its share of the SFOE figure of 528 MWh for the two buildings under one roof, 92 kWh per square metre, and a month slider on November"></p>
+
+SFOE's Sonnendach gives heat demand per swissBUILDINGS3D 2.0 building, which in dense blocks covers
+several GWR buildings (SFOE's data model, field `GWR_EGID`). The card finds the GWR buildings under
+the same roof outline (two more requests) and shows the clicked building's share by floor area,
+labelled as our split, with SFOE's figure for the group beside it. Checked on nine Basel buildings on
+21 Nov 2026: seven land at 53 to 140 kWh/m² (Bleichestrasse 27 went from 1,216 to 90).
 
 Switch on **District heating today** for SFOE's thermal networks in view (click one for its
 operator, heat source and size), and **Kachel: heat from home servers** for our idea beside them:

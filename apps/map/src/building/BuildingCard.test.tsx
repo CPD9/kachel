@@ -17,12 +17,15 @@ const FACTS: BuildingFacts = {
     asOf: "19.11.2026",
   },
   roof: {
+    buildingId: 1599044,
     heatingKwh: 314_659,
     hotWaterKwh: 71_408,
     degreeDays: [545, 488, 393, 187, 71, 5, 0, 0, 36, 166, 394, 535],
     solarKwh: 13_268,
   },
   hectare: { totalMwh: 4561.6, districtSharePct: 81.8 },
+  // A group of one: the Sonnendach figure is this building's alone.
+  group: { egids: [441428], floorM2: 668 },
   osmSolar: { photovoltaic: 1, thermal: 0, other: 0 },
 };
 
@@ -91,10 +94,41 @@ describe("building card", () => {
     expect(screen.getByText("578 kWh, high, check")).toBeTruthy();
   });
 
+  it("splits a block's figure by floor area when the roof covers several buildings", () => {
+    // Missionsstrasse 55 shares its Sonnendach roof with three more GWR buildings, 7,307 m² in all
+    // (api3.geo.admin.ch, 21 Nov 2026): 386,067 kWh × 668 ÷ 7,307 = 35.3 MWh, 53 kWh/m².
+    const facts = { ...FACTS, group: { egids: [441428, 2, 3, 4], floorM2: 7307 } };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("Heat a year, estimated, this building's share")).toBeTruthy();
+    expect(screen.getAllByText("35.3 MWh").length).toBeGreaterThan(0);
+    expect(screen.getByText("53 kWh")).toBeTruthy();
+    expect(screen.getByText("SFOE figure for 4 buildings under one roof")).toBeTruthy();
+    expect(
+      screen.getByText(/split among its 4 GWR buildings by floor area \(our split\)/),
+    ).toBeTruthy();
+  });
+
+  it("names a group figure as such, and hides an implausible per-m² line, without the group", () => {
+    const facts = { ...FACTS, group: null };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("Heat a year, SFOE estimate for the building group")).toBeTruthy();
+    expect(screen.queryByText(/kWh, high, check/)).toBeNull();
+  });
+
+  it("calls it the group figure when this building has no floor area to split by", () => {
+    const facts = {
+      ...FACTS,
+      register: FACTS.register && { ...FACTS.register, heatedAreaM2: null },
+      group: { egids: [441428, 2, 3], floorM2: 5000 },
+    };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("Heat a year, SFOE estimate for the building group")).toBeTruthy();
+  });
+
   it("says so when nothing is published", () => {
     render(
       <BuildingCard
-        facts={{ register: null, roof: null, hectare: null, osmSolar: null }}
+        facts={{ register: null, roof: null, hectare: null, group: null, osmSolar: null }}
         month={10}
         onClose={() => undefined}
       />,

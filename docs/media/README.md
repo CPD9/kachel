@@ -18,6 +18,36 @@ evening to close, in the order of the [talk track](../pitch.md).
 One January day, outside and inside on the same clock. Sun, temperature, heat demand, servers and backup heater all come from the scheduler's output for 13 January 2025.
 [Video, 36 s](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-january.mp4)
 
+## Two cities, one model
+
+Basel and Bern are two separate use cases. Each film runs the same reference house on that
+city's own 2025 weather, and says so under the clock. Snow depth comes from the Open-Meteo
+archive ([services/scheduler/data](../../services/scheduler/data/README.md)); no snow fell on
+4 January, so none falls in the films.
+
+Basel: [13 January](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-january.mp4), [15 July](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-july.mp4) and
+[4 January, with the 2 cm of snow lying that day](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-snow.mp4).
+
+## Bern
+
+Bern is colder than Basel, so the model gives its house 7 servers instead of 6. Figures come
+from `make bern-days` (services/scheduler/out/bern).
+
+![Bern at 08:30 on 14 January 2025: the old town at dawn, seven of seven servers running](daynight-bern-january.webp)
+
+14 January: every server runs and the backup heater fills the gap.
+[Video, 36 s](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-bern-january.mp4)
+
+![Bern at 08:30 on 15 July 2025: the tank is full, so no server runs and the backlog is paused](daynight-bern-july.webp)
+
+15 July: the tank is full by morning and the backlog waits.
+[Video, 36 s](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-bern-july.mp4)
+
+![Bern at 08:30 on 4 January 2025 under 10 cm of snow, seven of seven servers running](daynight-bern-snow.webp)
+
+4 January, under the 10 cm of snow lying that day.
+[Video, 36 s](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-bern-snow.mp4)
+
 ## In the basement
 
 ![The plant room with each part labelled: server rack, pump, heat exchanger, tank and backup heater](setup.webp)
