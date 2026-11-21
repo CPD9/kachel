@@ -8,14 +8,14 @@ export interface View {
   readonly pitch: number;
 }
 
-/** Basel from above Kleinbasel, looking south-west over the Rhine to the old town. */
+/** Basel from above the old town, looking east along the Rhine to the Roche towers. */
 export const BASEL: View = {
   name: "Basel",
-  lon: 7.6005,
-  lat: 47.5655,
-  height: 620,
-  heading: 225,
-  pitch: -22,
+  lon: 7.5815,
+  lat: 47.5545,
+  height: 380,
+  heading: 68,
+  pitch: -6,
 };
 
 /** The point the lighting and the window pattern are anchored on: Basel Marktplatz. */
