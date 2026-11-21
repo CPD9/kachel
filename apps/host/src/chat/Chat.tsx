@@ -10,7 +10,7 @@ export const EXAMPLES = [
   "What would solar save me?",
 ];
 
-const number = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 2 });
+const number = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 4 });
 
 function Value({ fact }: { fact: Fact }) {
   const shown = typeof fact.value === "number" ? number.format(fact.value) : fact.value;

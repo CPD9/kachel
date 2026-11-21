@@ -1,6 +1,6 @@
 import type { HouseFeed, HouseRows, JobFeed, JobState, LiveJob, LiveServer } from "@kachel/db";
 import { SOLAR, TARIFFS, building } from "@kachel/economics";
-import { chooseDay, dayMoney, hourAt, toDays, toPrices, type Day } from "../house/day";
+import { ZONE, chooseDay, dayMoney, hourAt, toDays, toPrices, type Day } from "../house/day";
 import { clock, longDate } from "../house/format";
 import type { ToolSpec } from "./model";
 
@@ -79,6 +79,14 @@ export const isToolName = (name: string): name is ToolName => name in TITLES;
 const r1 = (v: number) => Math.round(v * 10) / 10;
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
+const stamp = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: ZONE,
+});
+/** 21 Nov 2026, 14:16 in Basel. */
+const when = (iso: string) => stamp.format(new Date(iso));
+
 const empty = (tool: ToolName, note: string): ToolResult => ({
   tool,
   title: TITLES[tool],
@@ -144,7 +152,7 @@ async function heatNow(data: ChatData): Promise<ToolResult> {
     tool: "heat_now",
     title: TITLES.heat_now,
     facts,
-    note: "The tank reports the heat it stores in kWh; there is no water temperature reading.",
+    note: "The tank has no water temperature reading, only the heat it stores.",
   };
 }
 
@@ -299,7 +307,11 @@ async function jobs(data: ChatData, args: Record<string, unknown>): Promise<Tool
   const runs = ids.length ? await data.runs(ids) : [];
   const facts: Fact[] = [];
   for (const s of picked) {
-    facts.push({ label: s.name, value: s.state, source: `servers.state, updated ${s.updated_at}` });
+    facts.push({
+      label: s.name,
+      value: s.state,
+      source: `servers.state, updated ${when(s.updated_at)}`,
+    });
     const job = onServer.get(s.id);
     if (!job) continue;
     facts.push({
@@ -312,7 +324,7 @@ async function jobs(data: ChatData, args: Record<string, unknown>): Promise<Tool
       facts.push({
         label: `${s.name}: why`,
         value: run.reason,
-        source: `job_runs.reason at ${run.at} (${run.state})`,
+        source: `job_runs.reason, ${when(run.at)} (${run.state})`,
       });
     }
   }
