@@ -1,7 +1,7 @@
 # Kachel: one entry point for setting up, running and checking the repo.
 AGENT := services/agent
 
-.PHONY: bootstrap dev check check-js check-py check-readme heat-loop
+.PHONY: bootstrap dev check check-js check-py check-readme heat-loop video-charts
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -52,3 +52,16 @@ endef
 heat-loop:
 	$(call heat-loop-render,house,1080x900,720:600,heat-loop)
 	$(call heat-loop-render,wide,1440x480,960:320,heat-loop-wide)
+
+# Render the economics charts for the pitch video with Blender 5.2 and ffmpeg (see
+# scripts/video/charts.py): one H.264 MP4 per chart and a PNG of its last frame.
+CHARTS_OUT ?= $(HOME)/.cache/kachel/video/charts
+
+video-charts:
+	mkdir -p $(CHARTS_OUT) $(HOME)/.cache/kachel/tmp
+	for chart in month breakeven sensitivity; do \
+		TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background --factory-startup \
+			--python scripts/video/charts.py -- --chart $$chart \
+			--out $(CHARTS_OUT)/frames/$$chart --mp4 $(CHARTS_OUT)/$$chart.mp4 \
+			--still $(CHARTS_OUT)/$$chart.png || exit 1; \
+	done
