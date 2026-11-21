@@ -1,7 +1,7 @@
 # Measurements
 
 One job type measured on our own machine and scaled to the 1 kW reference server (#12).
-The second job type is cited, not measured: see [assumptions.md](assumptions.md).
+The second job type is cited, not measured: see [job-types.md](job-types.md).
 
 ## The opportunistic backlog: embeddings
 

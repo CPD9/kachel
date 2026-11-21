@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { db } from "./db";
-import { supabaseFeed } from "./live/feed";
+import { supabaseFeed } from "@kachel/db";
 import "./index.css";
 
 const root = document.getElementById("root");

@@ -1,5 +1,5 @@
 import { HeatLoop } from "@kachel/ui";
-import type { JobFeed } from "./live/feed";
+import type { JobFeed } from "@kachel/db";
 import { LiveJobs } from "./live/LiveJobs";
 
 /** Host app: the homeowner's view of their house, its heat and its servers. */
