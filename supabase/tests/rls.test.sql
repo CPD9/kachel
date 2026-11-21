@@ -80,7 +80,7 @@ select throws_ok(
   '42501', null, 'host cannot add a site (the agent does)');
 select throws_ok(
   $$insert into public.jobs (buyer_id, kind, label, interruptible)
-    values ('00000000-0000-4000-8000-000000000001', 'batch', 'x', true)$$,
+    values ('00000000-0000-4000-8000-000000000002', 'batch', 'x', true)$$,
   '42501', null, 'host cannot insert a job as another buyer');
 select throws_ok(
   $$insert into public.heat_state (site_id, time, demand_kwh)
