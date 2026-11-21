@@ -18,6 +18,20 @@ evening to close, in the order of the [talk track](../pitch.md).
 One January day, outside and inside on the same clock. Sun, temperature, heat demand, servers and backup heater all come from the scheduler's output for 13 January 2025.
 [Video, 36 s](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-january.mp4)
 
+## Two cities, one model
+
+Basel and Bern are two separate use cases. Each film runs the same reference house on that
+city's own 2025 weather, and says so under the clock.
+
+- Basel: [13 January](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-january.mp4), [15 July](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-july.mp4) and
+  [4 January, with the 2 cm of snow lying that day](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-snow.mp4).
+- Bern: [14 January](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-bern-january.mp4), [15 July](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-bern-july.mp4) and
+  [4 January, with the 10 cm of snow lying that day](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-bern-snow.mp4). Bern is colder,
+  so its house gets 7 servers instead of 6.
+
+Snow depth comes from the Open-Meteo archive ([services/scheduler/data](../../services/scheduler/data/README.md));
+no snow fell on 4 January, so none falls in the films.
+
 ## In the basement
 
 ![The plant room with each part labelled: server rack, pump, heat exchanger, tank and backup heater](setup.webp)
