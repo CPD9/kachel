@@ -29,7 +29,8 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
    make dev
    ```
 
-   `permission denied ... docker.sock`: run `newgrp docker` in that terminal first.
+   `permission denied ... docker.sock`: run `newgrp docker` in that terminal first. The reset
+   also ends every sign-in, so sign in to the tabs after it.
 
 3. [ ] A second terminal, from the repo root: a fresh job that runs for hours, and the agent.
 
