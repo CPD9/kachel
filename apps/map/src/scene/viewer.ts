@@ -33,6 +33,7 @@ import { BASEL, CANTONS_FROM_M, ORIGIN, type View } from "../places";
 import { OSM_TILES, SWISS_BUILDINGS, SWISS_IMAGE, SWISS_TERRAIN, SWITZERLAND } from "../sources";
 import { duskSky } from "../sky";
 import { nightFactor, sunElevationDeg, windowsLitShare } from "../sun";
+import { CAMPUS, loadCampus, type Campus } from "./campus";
 import { loadCantons } from "./cantons";
 import { homeServerLayer, networkLayer } from "./layers";
 import { originFrame, updateWindows, windowShader } from "./windows";
@@ -42,7 +43,12 @@ export const DAY_SPEED = 300;
 
 /** What a click hit: a building, a thermal network, or nothing of ours. */
 export type Pick =
-  | { readonly kind: "building"; readonly building: Picked }
+  | {
+      readonly kind: "building";
+      readonly building: Picked;
+      /** The click hit our own block model of the building, not swisstopo's tiles. */
+      readonly ownModel?: boolean;
+    }
   | { readonly kind: "network"; readonly network: Network }
   | null;
 
@@ -72,6 +78,11 @@ export interface Scene {
   highlightBuilding(egid: number | null): number;
   /** How many 3D features of the highlighted building have been drawn so far. */
   highlightedCount(): number;
+  /**
+   * True when the map shows our own block model of this building (FHNW Campus Dreispitz, which
+   * is newer than the 3D tiles); false if there is none or it failed to load.
+   */
+  ownModel(egid: number): boolean;
   /**
    * An orange pin for a building the 3D data does not have: a slim column at the register's
    * point, as tall as its storeys, with a dot on top. It claims no footprint: the register gives
@@ -220,6 +231,18 @@ export async function createScene(
   const shader = windowShader();
   buildings.customShader = shader;
   scene.primitives.add(buildings);
+  // Our block model of FHNW Campus Dreispitz, newer than the tiles. If it fails to load, the
+  // map goes on without it and the tour puts its pin there instead.
+  let campus: Campus | null = null;
+  const campusSettled = loadCampus(terrain).then(
+    (c) => {
+      if (viewer.isDestroyed()) return;
+      campus = c;
+      scene.primitives.add(c.model);
+      c.setHighlight(chosenEgid === CAMPUS.egid);
+    },
+    () => undefined,
+  );
   // Dev builds only: a handle for debugging in the browser console.
   if (import.meta.env.DEV) Object.assign(window, { kachelDebug: { viewer, buildings } });
 
@@ -254,6 +277,7 @@ export async function createScene(
     if (viewer.terrainProvider !== wanted) viewer.terrainProvider = wanted;
     const night = fromSpace ? 0 : nightFactor(sunElevationDeg(when, ORIGIN.lat, ORIGIN.lon));
     updateWindows(shader, frame, viewer.camera, night, windowsLitShare(swissHour(when)));
+    campus?.setNight(night);
     // Cesium's sun keeps shining from below the horizon: fade it and the sky's fill light out.
     sun.intensity = 2 * (1 - 0.92 * night);
     buildings.imageBasedLighting.imageBasedLightingFactor = new Cartesian2(
@@ -306,14 +330,22 @@ export async function createScene(
   let marker: Entity[] = [];
   clicks.setInputAction((event: ScreenSpaceEventHandler.PositionedEvent) => {
     const hit: unknown = scene.pick(event.position);
+    const onCampus =
+      campus !== null &&
+      typeof hit === "object" &&
+      hit !== null &&
+      "primitive" in hit &&
+      hit.primitive === campus.model;
     clearChosen();
+    campus?.setHighlight(onCampus);
     if (highlighted !== null) highlighted.color = Color.WHITE;
     highlighted = hit instanceof Cesium3DTileFeature ? hit : null;
     if (highlighted !== null) highlighted.color = HIGHLIGHT;
     const network = networks.networkOf(hit);
     const house = homeServers.houseOf(hit);
-    const building =
-      house !== null
+    const building = onCampus
+      ? { egid: CAMPUS.egid, lon: CAMPUS.lon, lat: CAMPUS.lat }
+      : house !== null
         ? { egid: house.egid, lon: house.lon, lat: house.lat }
         : highlighted === null
           ? null
@@ -322,7 +354,7 @@ export async function createScene(
       network !== null
         ? { kind: "network", network }
         : building !== null
-          ? { kind: "building", building }
+          ? { kind: "building", building, ownModel: onCampus }
           : null;
     for (const l of listeners) l(picked);
   }, ScreenSpaceEventType.LEFT_CLICK);
@@ -335,15 +367,20 @@ export async function createScene(
     },
     flyTo: (view, seconds = 3) => goTo(viewer, view, seconds),
     tilesLoaded: () =>
-      new Promise((resolve) => {
-        const done = () => buildings.tilesLoaded && scene.globe.tilesLoaded;
-        if (done()) return resolve();
-        const remove = scene.postRender.addEventListener(() => {
-          if (!done()) return;
-          remove();
-          resolve();
-        });
-      }),
+      // The campus model counts as part of the buildings: loaded, or failed for good.
+      campusSettled.then(
+        () =>
+          new Promise((resolve) => {
+            const done = () =>
+              buildings.tilesLoaded && scene.globe.tilesLoaded && (campus?.model.ready ?? true);
+            if (done()) return resolve();
+            const remove = scene.postRender.addEventListener(() => {
+              if (!done()) return;
+              remove();
+              resolve();
+            });
+          }),
+      ),
     setTime: (when) => {
       clock.currentTime = JulianDate.fromDate(when);
     },
@@ -375,11 +412,13 @@ export async function createScene(
       if (highlighted !== null) highlighted.color = Color.WHITE;
       highlighted = null;
       chosenEgid = egid;
+      campus?.setHighlight(egid !== null && egid === CAMPUS.egid);
       scanned = new WeakSet();
       if (egid !== null) scanLoaded(buildings.root);
       return chosen.length;
     },
     highlightedCount: () => chosen.length,
+    ownModel: (egid) => egid === CAMPUS.egid && campus !== null,
     showMarker: (m) => {
       for (const e of marker) viewer.entities.remove(e);
       marker = [];

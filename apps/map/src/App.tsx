@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BuildingCard } from "./building/BuildingCard";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BuildingCard, type NotIn3D } from "./building/BuildingCard";
 import { lookUp, type BuildingFacts } from "./building/geoadmin";
 import { latestOnly } from "./building/latest";
 import { swissTime } from "./clock";
@@ -10,8 +10,12 @@ import { NetworkCard } from "./networks/NetworkCard";
 import type { Network } from "./networks/thermal";
 import type { Scene } from "./scene/viewer";
 import { CREDITS } from "./sources";
-import type { TourBuilding } from "./tour/steps";
+import type { InsideOf } from "./inside/stills";
+import { TOUR_BUILDING, type TourBuilding } from "./tour/steps";
 import { TourBar } from "./tour/TourBar";
+
+// three.js and the stills load only when someone opens a building's inside.
+const InsideView = lazy(() => import("./inside/InsideView"));
 
 export type StartScene = (container: HTMLElement) => Promise<Scene>;
 
@@ -33,18 +37,22 @@ export function App({
   const [building, setBuilding] = useState<BuildingFacts | "loading" | null>(null);
   const [network, setNetwork] = useState<Network | null>(null);
   const [house, setHouse] = useState<FleetHouse | null>(null);
-  /** The tour found its building missing from swissBUILDINGS3D: the card says so. */
-  const [notIn3D, setNotIn3D] = useState(false);
+  /** The building is missing from swissBUILDINGS3D (FHNW campus): the card says what stands in. */
+  const [notIn3D, setNotIn3D] = useState<NotIn3D>(false);
+  /** The EGID of the building whose card is open, for its Inside button. */
+  const [egid, setEgid] = useState<number | null>(null);
+  const [inside, setInside] = useState<InsideOf | null>(null);
   const layers = useLayers(scene);
   // Only the latest card request may fill the card.
   const [requests] = useState(latestOnly);
 
   /** Opens the card for a building: by click, or by the tour. */
   const openBuilding = useCallback(
-    (egid: number | null, lon: number, lat: number) => {
+    (egid: number | null, lon: number, lat: number, ownModel = false) => {
       setNetwork(null);
       setHouse(fleetHouse(egid));
-      setNotIn3D(false);
+      setEgid(egid);
+      setNotIn3D(ownModel ? "model" : false);
       setBuilding("loading");
       requests.run(lookUp({ egid, lon, lat }), setBuilding);
     },
@@ -79,7 +87,12 @@ export function App({
     if (scene === null) return;
     return scene.onPick((picked) => {
       if (picked?.kind === "building") {
-        openBuilding(picked.building.egid, picked.building.lon, picked.building.lat);
+        openBuilding(
+          picked.building.egid,
+          picked.building.lon,
+          picked.building.lat,
+          picked.ownModel === true,
+        );
         return;
       }
       closeCards();
@@ -119,6 +132,10 @@ export function App({
     return () => window.clearInterval(id);
   }, [scene]);
 
+  // The plant room and renders: for the fleet's houses and for the campus, where we built this.
+  const insideOf: InsideOf | null =
+    house !== null ? "house" : egid === TOUR_BUILDING.egid ? "campus" : null;
+
   const toggle = () => {
     if (scene === null) return;
     scene.setPlaying(!playing);
@@ -157,7 +174,12 @@ export function App({
           month={(time ?? new Date()).getMonth()}
           fleet={house}
           notIn3D={notIn3D}
-          onClose={() => setBuilding(null)}
+          onInside={insideOf === null ? undefined : () => setInside(insideOf)}
+          onClose={() => {
+            setBuilding(null);
+            // The orange belongs to the open card.
+            scene?.highlightBuilding(null);
+          }}
         />
       )}
 
@@ -166,6 +188,12 @@ export function App({
       {scene !== null && <Layers {...layers} />}
       {tourDeps !== null && <TourBar deps={tourDeps} autoStart={autoTour} onPlaying={setPlaying} />}
       {scene !== null && <Places scene={scene} />}
+
+      {inside !== null && (
+        <Suspense fallback={null}>
+          <InsideView of={inside} onClose={() => setInside(null)} />
+        </Suspense>
+      )}
 
       {failed && (
         <p
