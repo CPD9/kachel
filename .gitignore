@@ -20,6 +20,6 @@ out/*
 !**/out/day_january.csv
 !**/out/day_july.csv
 !**/out/fleet_*.csv
-!**/out/fleet_kpis.json
+!**/out/fleet_*.json
 
 .DS_Store

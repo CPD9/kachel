@@ -1,5 +1,6 @@
 {
   "profile_source": "Open-Meteo archive, Basel 2025",
+  "cities": ["Basel"],
   "houses": 50,
   "servers": 252,
   "synthetic": true,

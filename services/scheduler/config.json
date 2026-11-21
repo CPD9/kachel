@@ -48,9 +48,29 @@
   "fleet": {
     "houses": 50,
     "seed": 2025,
-    "city": "Basel",
-    "latitude": [47.54, 47.58],
-    "longitude": [7.56, 7.63],
+    "cities": {
+      "Basel": {
+        "weather": "tests/data/weather_basel_2025.csv",
+        "seed": 2025,
+        "id_prefix": "house",
+        "name_prefix": "Synthetic house",
+        "latitude": [47.54, 47.58],
+        "longitude": [7.56, 7.63]
+      },
+      "Bern": {
+        "weather": "tests/data/weather_bern_2025.csv",
+        "seed": 3011,
+        "id_prefix": "bern",
+        "name_prefix": "Synthetic Bern house",
+        "latitude": [46.93, 46.97],
+        "longitude": [7.4, 7.47]
+      }
+    },
+    "runs": {
+      "fleet": ["Basel"],
+      "fleet_bern": ["Bern"],
+      "fleet_basel_bern": ["Basel", "Bern"]
+    },
     "servers_per_house": [2, 8],
     "tank_kwh": [20, 50],
     "space_heating_scale": [0.4, 1.6],
@@ -64,7 +84,7 @@
     "backlog_hours": [1, 4],
     "backlog_deadline_h": 48,
     "warmup_days": 2,
-    "source": "OUR synthetic scenario for make fleet (heatsched/fleet_scenario.py): every house is made up, drawn evenly from these ranges with this seed, on the real Basel 2025 weather. space_heating_scale multiplies the reference house's space heating. Unlike the one-house model, the backlog is finite and due within backlog_deadline_h, so work the houses cannot take shows up as moved to a data centre."
+    "source": "OUR synthetic scenario for make fleet (heatsched/fleet_scenario.py): every house is made up, drawn evenly from these ranges with its city's seed, on the real 2025 weather of its city (Basel or Bern). houses is per city. Each run is one fleet of the cities listed; the job stream uses the fleet seed. space_heating_scale multiplies the reference house's space heating. Unlike the one-house model, the backlog is finite and due within backlog_deadline_h, so work the houses cannot take shows up as moved to a data centre."
   },
   "hardware": {
     "_note": "Per 1 kW server unless a name says per house. CHF without VAT. Dollar and pound prices converted at the ECB reference rates of 20 Nov 2026 (1 USD = 0.8392 CHF, 1 GBP = 1.1015 CHF). Each source is below; anything marked OUR GUESS has none yet. Charts and links: docs/economics/README.md",

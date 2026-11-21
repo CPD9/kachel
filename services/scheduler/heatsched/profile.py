@@ -2,12 +2,18 @@
 import io, urllib.request
 import numpy as np, pandas as pd
 
-URL = ("https://archive-api.open-meteo.com/v1/archive?latitude=47.56&longitude=7.59"
-       "&start_date=2025-01-01&end_date=2025-12-31&hourly=temperature_2m,shortwave_radiation"
-       "&timezone=Europe%2FZurich&format=csv")
+PLACES = {"basel": (47.56, 7.59), "bern": (46.95, 7.45)}
 
-def download_weather(path="out/weather_basel_2025.csv"):
-    raw = urllib.request.urlopen(URL, timeout=60).read().decode()
+def weather_url(lat=47.56, lon=7.59):
+    return (f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}"
+            "&start_date=2025-01-01&end_date=2025-12-31&hourly=temperature_2m,shortwave_radiation"
+            "&timezone=Europe%2FZurich&format=csv")
+
+URL = weather_url(*PLACES["basel"])
+
+def download_weather(path="out/weather_basel_2025.csv", place="basel"):
+    """Fetch 2025 hourly weather for a place in PLACES from the Open-Meteo archive (CC BY 4.0)."""
+    raw = urllib.request.urlopen(weather_url(*PLACES[place]), timeout=60).read().decode()
     body = raw[raw.index("time,"):]                      # skip Open-Meteo's metadata header
     df = pd.read_csv(io.StringIO(body))
     df.columns = ["time", "temp_c", "solar_wm2"]
