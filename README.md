@@ -26,6 +26,7 @@ make check
 | `packages/ui`     | Shared components and design tokens                             |
 | `packages/config` | Shared ESLint and TypeScript settings                           |
 | `services/agent`  | Python agent on the server box: pauses and resumes the real job |
+| `services/scheduler` | Python scheduler: hourly decisions, yearly balance, live demo |
 | `scripts`         | Repository checks                                               |
 
 ## Team

@@ -1,0 +1,18 @@
+{
+  "servers_per_house": 6,
+  "heat_demand_kwh": 31296,
+  "share_of_heat_covered_pct": 78.1,
+  "heat_dumped_kwh": 11.3,
+  "backup_heat_kwh": 6864,
+  "utilisation_pct": 58.1,
+  "server_hours_sold": 30554,
+  "missed_deadlines_pct_of_jobs": 0.0,
+  "moved_offsite_pct_of_deadline_jobs": 0.0,
+  "electricity_cost_chf": 8463,
+  "value_of_heat_used_chf": 2707,
+  "computing_income_chf": 15277,
+  "break_even_chf_per_server_hour": 0.1884,
+  "pays_off_at_assumed_compute_price": true,
+  "profile_source": "SYNTHETIC weather (offline test only)",
+  "heating_days": 202
+}
