@@ -2,7 +2,7 @@
 
 Your AI heats your home.
 
-<p align="center"><img src="packages/ui/src/heat-loop.svg" width="360" alt="A basement server runs a job, its heat fills the hot-water tank and warms the house"></p>
+<p align="center"><img src="packages/ui/src/heat-loop.webp" width="360" alt="A basement server runs a job, its heat fills the hot-water tank and warms the house"></p>
 
 Small servers in a home's basement run AI jobs, and their heat goes into space heating and hot water.
 A job runs only when its heat is useful.
@@ -19,14 +19,15 @@ make check
 
 ## Repo map
 
-| Path              | What it is                                                      |
-| ----------------- | --------------------------------------------------------------- |
-| `apps/host`       | React app for hosts: their house, their heat, their servers     |
-| `apps/console`    | React app for compute buyers: jobs and their state              |
-| `packages/ui`     | Shared components and design tokens                             |
-| `packages/config` | Shared ESLint and TypeScript settings                           |
-| `services/agent`  | Python agent on the server box: pauses and resumes the real job |
-| `scripts`         | Repository checks                                               |
+| Path                 | What it is                                                      |
+| -------------------- | --------------------------------------------------------------- |
+| `apps/host`          | React app for hosts: their house, their heat, their servers     |
+| `apps/console`       | React app for compute buyers: jobs and their state              |
+| `packages/ui`        | Shared components and design tokens                             |
+| `packages/config`    | Shared ESLint and TypeScript settings                           |
+| `services/agent`     | Python agent on the server box: pauses and resumes the real job |
+| `services/scheduler` | Python scheduler: hourly decisions, yearly balance, live demo   |
+| `scripts`            | Repository checks                                               |
 
 ## Team
 
