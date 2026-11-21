@@ -2,15 +2,24 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev check check-js check-py check-readme heat-loop year
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-readme heat-loop year video-charts
 
 bootstrap:
 	pnpm install --frozen-lockfile
 	uv sync --project $(AGENT)
 	uv sync --project $(SCHED)
 
+# Local Supabase runs in Docker (supabase/config.toml); the apps then read it from their .env.
 dev:
+	pnpm exec supabase start
 	pnpm dev
+
+db-stop:
+	pnpm exec supabase stop
+
+# Rebuild the local database from supabase/migrations and supabase/seed.sql.
+db-reset:
+	pnpm exec supabase db reset
 
 check: check-js check-py check-readme
 
@@ -96,3 +105,16 @@ video-scheduler:
 # The plant room meshes as they appear in the video, for three.js.
 video-glb:
 	$(VIDEO_BLENDER) --python scripts/video/export_glb.py -- --out docs/models/plantroom.glb
+
+# Render the economics charts for the pitch video with Blender 5.2 and ffmpeg (see
+# scripts/video/charts.py): one H.264 MP4 per chart and a PNG of its last frame.
+CHARTS_OUT ?= $(HOME)/.cache/kachel/video/charts
+
+video-charts:
+	mkdir -p $(CHARTS_OUT) $(HOME)/.cache/kachel/tmp
+	for chart in month breakeven sensitivity; do \
+		TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background --factory-startup \
+			--python scripts/video/charts.py -- --chart $$chart \
+			--out $(CHARTS_OUT)/frames/$$chart --mp4 $(CHARTS_OUT)/$$chart.mp4 \
+			--still $(CHARTS_OUT)/$$chart.png || exit 1; \
+	done
