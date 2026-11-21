@@ -12,7 +12,7 @@ export function Places({ scene }: { scene: Scene }) {
         <button
           key={view.name}
           type="button"
-          onClick={() => scene.flyTo(view, view.height > 100_000 ? 4 : 3)}
+          onClick={() => void scene.flyTo(view, view.height > 100_000 ? 4 : 3)}
           className="rounded px-3 py-1 text-left hover:bg-paper/10"
         >
           {view.name}
