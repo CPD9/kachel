@@ -56,6 +56,23 @@ houses, their servers, their heat for the day and the newest jobs, each on the h
 to a data centre. It reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the environment
 (`services/agent/.env`); `--dry-run` prints what it would write.
 
+## The fleet month by month: `make months`
+
+`make months` runs every house of the Basel and Bern fleet (`fleet_basel_bern`, 100 synthetic houses) through the
+one-house scheduler for the whole year, each with its own servers, tank, hot water and space heating, on its city's
+real 2025 weather. It does so once as the year was and once for every offset from 6 °C colder to 6 °C warmer: each
+hour moves by the offset and the brief's 20/12 heating-degree rule is applied again, so a warmer year has fewer
+heating days and less heat in each. Houses, jobs and prices stay the same, and the jobs keep the reference house's
+unlimited backlog. `out/fleet_months.json` holds, for each house, offset and month, the heat demand, the heat the
+servers delivered, the backup heat, the heat dumped and the server-hours, plus each city's peak servers running and
+mean temperature, and the prices with their source. The operator view (`apps/operator`) reads it.
+
+| Fleet, 2025 weather | Heat demand | From the servers | Backup    | Server-hours |
+| ------------------- | ----------- | ---------------- | --------- | ------------ |
+| 6 °C colder         | 5,492 MWh   | 2,712 MWh        | 2,781 MWh | 3,390,401    |
+| As it was           | 3,431 MWh   | 2,032 MWh        | 1,400 MWh | 2,540,484    |
+| 6 °C warmer         | 1,713 MWh   | 1,233 MWh        | 480 MWh   | 1,542,133    |
+
 ## Before you present: three things to replace
 
 1. `config.json → prices.electricity_chf_per_kwh` is a placeholder (Swiss H4 median 2026, 27.7 Rp). Put in IWB Basel H4.

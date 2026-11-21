@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet video-charts paper pitch-graphics
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months video-charts paper pitch-graphics
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -64,6 +64,12 @@ check-db:
 # (out/fleet_*.csv and fleet_*kpis.json).
 fleet:
 	cd $(SCHED) && uv run python run_fleet.py
+
+# The Basel and Bern fleet month by month on the saved 2025 weather, and what-ifs from 6 degrees
+# colder to 6 degrees warmer: every house through the scheduler for the year (out/fleet_months.json,
+# read by the operator view). About three minutes on eight cores.
+months:
+	cd $(SCHED) && uv run python run_months.py
 
 check-readme:
 	python3 scripts/pitch/voiceover.py --check
