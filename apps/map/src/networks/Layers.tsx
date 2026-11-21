@@ -1,32 +1,52 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { Fetch } from "../building/geoadmin";
-import type { Scene } from "../scene/viewer";
 import { FLEET, FLEET_SERVERS } from "../fleet/fleet";
+import type { Scene } from "../scene/viewer";
 import { loadNetworks, NETWORK_LIMIT } from "./thermal";
 
-/** Layer switches: SFOE's district heating networks, and our idea of home servers beside them. */
-export function Layers({ scene, fetcher = fetch }: { scene: Scene; fetcher?: Fetch }) {
-  const [networks, setNetworks] = useState<"off" | "loading" | number>("off");
+export type NetworkState = "off" | "loading" | number;
+
+/** The two layer switches' state, owned by the page so the tour can flip them too. */
+export function useLayers(scene: Scene | null, fetcher: Fetch = fetch) {
+  const [networks, setNetworks] = useState<NetworkState>("off");
   const [servers, setServers] = useState(false);
 
-  const toggleNetworks = (on: boolean) => {
-    if (!on) {
-      scene.showNetworks(null);
-      setNetworks("off");
-      return;
-    }
-    setNetworks("loading");
-    void loadNetworks(scene.viewArea(), fetcher).then((list) => {
-      scene.showNetworks(list);
-      setNetworks(list.length);
-    });
-  };
+  const setNetworksOn = useCallback(
+    (on: boolean) => {
+      if (scene === null) return;
+      if (!on) {
+        scene.showNetworks(null);
+        setNetworks("off");
+        return;
+      }
+      setNetworks("loading");
+      void loadNetworks(scene.viewArea(), fetcher).then((list) => {
+        scene.showNetworks(list);
+        setNetworks(list.length);
+      });
+    },
+    [scene, fetcher],
+  );
 
-  const toggleServers = (on: boolean) => {
-    scene.showHomeServers(on);
-    setServers(on);
-  };
+  const setServersOn = useCallback(
+    (on: boolean) => {
+      if (scene === null) return;
+      scene.showHomeServers(on);
+      setServers(on);
+    },
+    [scene],
+  );
 
+  return { networks, servers, setNetworksOn, setServersOn };
+}
+
+/** Layer switches: SFOE's district heating networks, and our idea of home servers beside them. */
+export function Layers({
+  networks,
+  servers,
+  setNetworksOn,
+  setServersOn,
+}: ReturnType<typeof useLayers>) {
   return (
     <section
       aria-label="Layers"
@@ -36,7 +56,7 @@ export function Layers({ scene, fetcher = fetch }: { scene: Scene; fetcher?: Fet
         <input
           type="checkbox"
           checked={networks !== "off"}
-          onChange={(e) => toggleNetworks(e.target.checked)}
+          onChange={(e) => setNetworksOn(e.target.checked)}
           className="mt-1 accent-[#e5484d]"
         />
         <span>
@@ -56,7 +76,7 @@ export function Layers({ scene, fetcher = fetch }: { scene: Scene; fetcher?: Fet
         <input
           type="checkbox"
           checked={servers}
-          onChange={(e) => toggleServers(e.target.checked)}
+          onChange={(e) => setServersOn(e.target.checked)}
           className="mt-1 accent-heat"
         />
         <span>

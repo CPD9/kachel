@@ -1,19 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BuildingCard } from "./building/BuildingCard";
 import { lookUp, type BuildingFacts } from "./building/geoadmin";
+import { latestOnly } from "./building/latest";
 import { swissTime } from "./clock";
 import { fleetHouse, type FleetHouse } from "./fleet/fleet";
-import { Layers } from "./networks/Layers";
+import { Layers, useLayers } from "./networks/Layers";
 import { Places } from "./Places";
 import { NetworkCard } from "./networks/NetworkCard";
 import type { Network } from "./networks/thermal";
 import type { Scene } from "./scene/viewer";
 import { CREDITS } from "./sources";
+import { TourBar } from "./tour/TourBar";
 
 export type StartScene = (container: HTMLElement) => Promise<Scene>;
 
 /** The heat map: Basel in 3D at dusk, the day passing, with the sources always on screen. */
-export function App({ start }: { start: StartScene }) {
+export function App({ start, autoTour = false }: { start: StartScene; autoTour?: boolean }) {
   const container = useRef<HTMLDivElement>(null);
   const [scene, setScene] = useState<Scene | null>(null);
   const [failed, setFailed] = useState(false);
@@ -22,24 +24,53 @@ export function App({ start }: { start: StartScene }) {
   const [building, setBuilding] = useState<BuildingFacts | "loading" | null>(null);
   const [network, setNetwork] = useState<Network | null>(null);
   const [house, setHouse] = useState<FleetHouse | null>(null);
+  const layers = useLayers(scene);
+  // Only the latest card request may fill the card.
+  const [requests] = useState(latestOnly);
+
+  /** Opens the card for a building: by click, or by the tour. */
+  const openBuilding = useCallback(
+    (egid: number | null, lon: number, lat: number) => {
+      setNetwork(null);
+      setHouse(fleetHouse(egid));
+      setBuilding("loading");
+      requests.run(lookUp({ egid, lon, lat }), setBuilding);
+    },
+    [requests],
+  );
+
+  const closeCards = useCallback(() => {
+    requests.cancel();
+    setBuilding(null);
+    setNetwork(null);
+  }, [requests]);
+
+  const { setNetworksOn, setServersOn } = layers;
+  const tourDeps = useMemo(
+    () =>
+      scene === null
+        ? null
+        : {
+            scene,
+            openBuilding: (h: FleetHouse) => openBuilding(h.egid, h.lon, h.lat),
+            closeCards,
+            setNetworksOn,
+            setServersOn,
+          },
+    [scene, openBuilding, closeCards, setNetworksOn, setServersOn],
+  );
 
   useEffect(() => {
     if (scene === null) return;
-    let latest = 0;
     return scene.onPick((picked) => {
-      const call = ++latest;
-      setNetwork(picked?.kind === "network" ? picked.network : null);
-      if (picked?.kind !== "building") {
-        setBuilding(null);
+      if (picked?.kind === "building") {
+        openBuilding(picked.building.egid, picked.building.lon, picked.building.lat);
         return;
       }
-      setHouse(fleetHouse(picked.building.egid));
-      setBuilding("loading");
-      void lookUp(picked.building).then((facts) => {
-        if (call === latest) setBuilding(facts);
-      });
+      closeCards();
+      if (picked?.kind === "network") setNetwork(picked.network);
     });
-  }, [scene]);
+  }, [scene, openBuilding, closeCards]);
 
   useEffect(() => {
     const el = container.current;
@@ -116,7 +147,8 @@ export function App({ start }: { start: StartScene }) {
 
       {network !== null && <NetworkCard network={network} onClose={() => setNetwork(null)} />}
 
-      {scene !== null && <Layers scene={scene} />}
+      {scene !== null && <Layers {...layers} />}
+      {tourDeps !== null && <TourBar deps={tourDeps} autoStart={autoTour} onPlaying={setPlaying} />}
       {scene !== null && <Places scene={scene} />}
 
       {failed && (

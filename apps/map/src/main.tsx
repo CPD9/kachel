@@ -8,10 +8,13 @@ import "./index.css";
 const atParam = new URLSearchParams(window.location.search).get("at");
 const at = atParam === null || Number.isNaN(Date.parse(atParam)) ? null : new Date(atParam);
 
+/** `?tour=1` starts the stage tour as soon as the map is up. */
+const autoTour = new URLSearchParams(window.location.search).get("tour") === "1";
+
 const root = document.getElementById("root");
 if (root === null) throw new Error("The page has no #root element.");
 createRoot(root).render(
   <StrictMode>
-    <App start={(el) => createScene(el, { at })} />
+    <App start={(el) => createScene(el, { at })} autoTour={autoTour} />
   </StrictMode>,
 );

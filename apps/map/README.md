@@ -37,6 +37,16 @@ neighbouring countries and to the globe.
 
 <p align="center"><img src="../../docs/images/map-switzerland.webp" width="720" alt="Switzerland from above on the OpenStreetMap map, thin canton borders from swissBOUNDARIES3D, with buttons for Basel, Bern, Switzerland, Neighbours and Globe"></p>
 
+## Tour for the stage
+
+Press **Tour** (top centre), or open http://localhost:5175/?tour=1 to start it on load. In about
+40 seconds it shows Basel at dusk, one real building's card, district heating with Kachel's fleet
+beside it, and all of Switzerland, with a caption for each stop. **Pause tour** holds the picture
+(the clock stops too); **Stop** ends it. Each stop waits for tiles at most 8 seconds, so a slow
+connection shortens the wait instead of stalling the tour.
+
+<p align="center"><img src="../../docs/images/map-tour.webp" width="720" alt="The tour's second stop: the caption reads One real building: its heat a year, from public data, beside the card for Erlenmattstrasse 3, Basel"></p>
+
 ## How it works
 
 - [CesiumJS](https://cesium.com/platform/cesiumjs/) 1.147 (Apache-2.0) draws the globe, the
