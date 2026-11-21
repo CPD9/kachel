@@ -67,6 +67,19 @@ const row = (label: string) => screen.getByText(label).closest("tr") as HTMLElem
 afterEach(cleanup);
 
 describe("JobTable", () => {
+  it("shows a deadline on a 24-hour clock in Basel's time", async () => {
+    const batch: LiveJob = {
+      ...job,
+      id: "j306",
+      label: "Transcription batch",
+      kind: "batch",
+      deadline_at: "2026-11-22T14:30:00+00:00",
+    };
+    const { feed } = fakeFeed([batch]);
+    render(<JobTable feed={feed} />);
+    expect(await screen.findByText("22 Nov, 15:30")).toBeTruthy();
+  });
+
   it("shows each job's state, house, server and heat delivered", async () => {
     const { feed } = fakeFeed([job, queued, moved]);
     render(<JobTable feed={feed} />);

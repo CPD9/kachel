@@ -22,6 +22,9 @@ describe("House", () => {
     ]);
     render(<House feed={feed} now={twoPm} />);
     expect(await screen.findByText(/Replay of 13 January 2025/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /The scheduler's day/ }).textContent).toMatch(
+      /Replay of 13 Jan 2025/,
+    );
     expect(reading("Outdoor")).toMatch(/^2\.0/);
     expect(reading("Demand")).toMatch(/^7\.5/);
     expect(reading("Servers")).toMatch(/^4\.8/);
@@ -34,7 +37,7 @@ describe("House", () => {
   it("gives every number its source", async () => {
     const { feed } = fakeHouse(day(janHour));
     render(<House feed={feed} now={twoPm} />);
-    await screen.findByText(/Replay of/);
+    await screen.findByText(/Replay of 13 January/);
     const notes = screen.getAllByRole("tooltip", { hidden: true }).map((n) => n.textContent);
     expect(notes.some((n) => n?.includes("heat_state.temp_c"))).toBe(true);
     expect(notes.some((n) => n?.includes("kpis.computing_income_chf"))).toBe(true);
@@ -53,7 +56,7 @@ describe("House", () => {
   it("updates when the scheduler writes the hour again", async () => {
     const { feed, push } = fakeHouse(day(janHour));
     render(<House feed={feed} now={twoPm} />);
-    await screen.findByText(/Replay of/);
+    await screen.findByText(/Replay of 13 January/);
     expect(reading("Backup")).toMatch(/^5\.0/);
     act(() => push(janHour(14, { backup_kwh: 1.2 })));
     expect(reading("Backup")).toMatch(/^1\.2/);
@@ -62,9 +65,11 @@ describe("House", () => {
   it("calls today live once its hours arrive", async () => {
     const { feed, push } = fakeHouse(day(janHour));
     render(<House feed={feed} now={twoPm} />);
-    await screen.findByText(/Replay of/);
+    await screen.findByText(/Replay of 13 January/);
     act(() => push(janHour(14, { time: "2026-11-21T14:00:00+01:00", heat_used: 3.2 })));
     expect(screen.getByText(/Live: today/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /Your house now/ })).toBeTruthy();
+    expect(document.querySelector("[data-replay]")).toBeNull();
     expect(reading("Servers")).toMatch(/^3\.2/);
   });
 
