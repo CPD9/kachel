@@ -75,10 +75,10 @@ def overlay(r, ctx, minute=0):
     heat = float(r["heat_used"])
     backup = float(r["backup_kwh"])
     x0 = c.W - 420
-    c.rounded(
-        d, (x0, 28, c.W - 28, 300 + (50 if "paused" in r["reason"] else 0)), c.PANEL
-    )
-    d.text((x0 + 22, 40), "Basement plant room", font=c.F["bodyb"], fill=c.INK)
+    # Bottom right, over the floor, clear of the pipes and ceiling.
+    top = c.H - 28 - 272 - (50 if "paused" in r["reason"] else 0)
+    c.rounded(d, (x0, top, c.W - 28, c.H - 28), c.PANEL)
+    d.text((x0 + 22, top + 12), "Basement plant room", font=c.F["bodyb"], fill=c.INK)
     items = [
         (
             "Servers running",
@@ -95,7 +95,7 @@ def overlay(r, ctx, minute=0):
     ]
     if "paused" in r["reason"]:
         items.append(("Backlog", "paused: tank full", c.AMBER))
-    y = 88
+    y = top + 60
     for k, v, col in items:
         d.text((x0 + 22, y), k, font=c.F["small"], fill=c.DIM)
         d.text(
