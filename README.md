@@ -25,6 +25,7 @@ Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase
 | `apps/host`          | React app for hosts: their house, their heat, their servers     |
 | `apps/console`       | React app for compute buyers: jobs and their state              |
 | `packages/ui`        | Shared components and design tokens                             |
+| `packages/db`        | Typed Supabase client and the generated database types          |
 | `packages/config`    | Shared ESLint and TypeScript settings                           |
 | `services/agent`     | Python agent on the server box: pauses and resumes the real job |
 | `services/scheduler` | Python scheduler: hourly decisions, yearly balance, live demo   |
