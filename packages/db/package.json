@@ -8,7 +8,8 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:realtime": "vitest run src/realtime.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.119.0"
