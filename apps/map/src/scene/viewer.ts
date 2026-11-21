@@ -148,7 +148,6 @@ export async function createScene(
     Cesium3DTileset.fromUrl(SWISS_BUILDINGS, {
       // Load the screen's edges as well as its centre, so the city runs to the horizon.
       foveatedScreenSpaceError: false,
-      cacheBytes: 768 * 1024 * 1024,
     }),
   ]);
   if (viewer.isDestroyed()) throw new Error("The map closed while it was loading.");
