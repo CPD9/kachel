@@ -202,6 +202,8 @@ describe("building card", () => {
     expect(screen.getByText("no figure for this building yet")).toBeTruthy();
     // 513,200 ÷ 31,231 × 6 = 98.6 servers.
     expect(screen.getByText("about 99")).toBeTruthy();
+    // Built after 2015: a renovation cannot lower its heat, and the card says so.
+    expect(screen.getByText(/so Renovated changes nothing here/)).toBeTruthy();
     // No degree days without a roof, so no month slider.
     expect(screen.queryByRole("slider")).toBeNull();
   });

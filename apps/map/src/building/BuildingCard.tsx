@@ -229,7 +229,7 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
             </Source>
           )}
           <Source>
-            {`Our estimate: heated floor area × space heating for its construction period and use${kind === null ? "" : ` (${USE_LABEL[kind]})`} + hot water. ${HOUSE_SOURCE}. ${fromOurs ? "Renovated halves its space heating, never under a new building's." : "Renovated also halves SFOE's space heating in the Kachel figures below, never under a new building's; SFOE's figure above stays as published."}`}
+            {`Our estimate: heated floor area × space heating for its construction period and use${kind === null ? "" : ` (${USE_LABEL[kind]})`} + hot water. ${HOUSE_SOURCE}. ${period === "after_2015" ? "Built after 2015, it already heats like a new building, so Renovated changes nothing here." : fromOurs ? "Renovated halves its space heating, never under a new building's." : "Renovated also halves SFOE's space heating in the Kachel figures below, never under a new building's; SFOE's figure above stays as published."}`}
           </Source>
         </section>
       )}
