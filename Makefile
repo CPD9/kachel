@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-readme heat-loop year video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year video-charts
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -21,7 +21,7 @@ db-stop:
 db-reset:
 	pnpm exec supabase db reset
 
-check: check-js check-py check-readme
+check: check-js check-py check-db check-readme
 
 check-js:
 	pnpm format:check
@@ -37,6 +37,12 @@ check-py:
 # January and July day CSVs (the animation reads those two), plus the plots.
 year:
 	cd $(SCHED) && uv run python run_year.py --weather tests/data/weather_basel_2025.csv
+
+# The row level security tests (supabase/tests) need the local stack from `make dev`. Without
+# it they are skipped here with a note; the Database CI job always runs them.
+check-db:
+	@if pnpm exec supabase status >/dev/null 2>&1; then pnpm exec supabase test db; \
+	else echo "check-db: local Supabase is not running (make dev); skipped, CI runs it."; fi
 
 check-readme:
 	node --test scripts/*.test.mjs
@@ -79,7 +85,7 @@ SETUP_SAMPLES ?= 32
 VIDEO_BLEND := scripts/video/assets/plantroom.blend
 VIDEO_BLENDER = TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(VIDEO_BLEND)
 
-.PHONY: video-setup video-scheduler video-glb
+.PHONY: video-setup video-scheduler video-daynight video-glb
 
 video-setup:
 	mkdir -p $(VIDEO_OUT)/work/setup $(HOME)/.cache/kachel/tmp
@@ -102,6 +108,27 @@ video-scheduler:
 		--days $(SCHED_OUT)/day_january.csv $(SCHED_OUT)/day_july.csv \
 		--mp4 $(VIDEO_OUT)/03-scheduler.mp4 --sheet $(VIDEO_OUT)/03-scheduler-sheet.png
 
+# Day-night split film: Basel outside (read from heat-atlas, never written there) and the
+# plant room, one still per hour of a day file. DAYNIGHT_DAY picks the day.
+DAYNIGHT_DAY ?= january
+DAYNIGHT_SAMPLES ?= 48
+DAYNIGHT_STEPS ?= 4
+DAYNIGHT_WORK = $(VIDEO_OUT)/work/daynight-$(DAYNIGHT_DAY)
+
+video-daynight:
+	test -f $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv || $(MAKE) year
+	mkdir -p $(DAYNIGHT_WORK) $(HOME)/.cache/kachel/tmp
+	scripts/video/gpu_wait.sh
+	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(HOME)/Projects/heat-atlas/renders/skyline.blend \
+		--python scripts/video/daynight.py -- --part outside --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
+		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS)
+	scripts/video/gpu_wait.sh
+	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
+		--day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv --out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES)
+	uv run --no-project --with pillow python scripts/video/compose_daynight.py \
+		--frames $(DAYNIGHT_WORK) --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
+		--mp4 $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY).mp4 --sheet $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY)-sheet.png
+
 # The plant room meshes as they appear in the video, for three.js.
 video-glb:
 	$(VIDEO_BLENDER) --python scripts/video/export_glb.py -- --out docs/models/plantroom.glb
@@ -112,7 +139,7 @@ CHARTS_OUT ?= $(HOME)/.cache/kachel/video/charts
 
 video-charts:
 	mkdir -p $(CHARTS_OUT) $(HOME)/.cache/kachel/tmp
-	for chart in month breakeven sensitivity; do \
+	for chart in month breakeven sensitivity payback; do \
 		TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background --factory-startup \
 			--python scripts/video/charts.py -- --chart $$chart \
 			--out $(CHARTS_OUT)/frames/$$chart --mp4 $(CHARTS_OUT)/$$chart.mp4 \

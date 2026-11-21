@@ -10,6 +10,7 @@ A job runs only when its heat is useful.
 <p align="center"><img src="docs/media/scheduler.gif" width="640" alt="The plant room through a January day and a July day: servers run when the house needs heat and pause when the tank is full"></p>
 
 More renders, the videos and the charts are in [docs/media](docs/media/README.md).
+Every value the model assumes, with its unit and source, is in [docs/assumptions.md](docs/assumptions.md).
 
 ## Run it
 
@@ -21,6 +22,7 @@ make check
 
 `make dev` starts the local Supabase stack (Docker) and serves the host app on http://localhost:5173 and the console on http://localhost:5174.
 Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
+Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test` with the password `kachel-demo` (local stack only).
 
 ## Repo map
 
