@@ -37,7 +37,7 @@ make check
 ```
 
 `pnpm exec supabase start` starts the local Supabase stack (Docker). Before `make dev`, copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
-`make dev` serves the host app on http://localhost:5173, the console on http://localhost:5174 and the 3D heat map on http://localhost:5175; the map needs internet.
+`make dev` serves the host app on http://localhost:5173, the console on http://localhost:5174, the 3D heat map on http://localhost:5175 and the operator view on http://localhost:5177; the map needs internet.
 Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test`, and to the console as the demo buyer, `buyer@kachel.test`, both with the password `kachel-demo` (local stack only).
 
 <p align="center"><img src="docs/media/app-host.png" width="640" alt="The host app signed in as the demo host: six servers, three running a job, one holding a paused job because the house needs no heat, two off"></p>
@@ -53,6 +53,7 @@ With both apps running, `pnpm screenshots` retakes these two images with headles
 | `apps/host`          | React app for hosts: their house, their heat, their servers     |
 | `apps/console`       | React app for compute buyers: jobs and their state              |
 | `apps/map`           | 3D map of Basel and Switzerland: buildings, heat, day and night |
+| `apps/operator`      | The business view: every house, the servers, heat and revenue   |
 | `packages/ui`        | Shared components and design tokens                             |
 | `packages/db`        | Typed Supabase client and the generated database types          |
 | `packages/config`    | Shared ESLint and TypeScript settings                           |
