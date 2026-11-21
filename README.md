@@ -2,7 +2,8 @@
 
 Your AI heats your home.
 
-<p align="center"><img src="docs/images/plantroom.webp" alt="A basement plant room: a server rack, a plate heat exchanger and a hot-water tank, joined by insulated supply and return pipes"></p>
+
+<p align="center"><img src="packages/ui/src/heat-loop.webp" width="360" alt="A basement server runs a job, its heat fills the hot-water tank and warms the house"></p>
 
 Small servers in a home's basement run AI jobs, and their heat goes into space heating and hot water.
 A job runs only when its heat is useful.
