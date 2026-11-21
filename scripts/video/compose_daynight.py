@@ -173,6 +173,10 @@ def flow_dots(img, flow, to_px, phase, speed):
 def halves(fr, r, minute=0, step=None):
     hh = int(r["hour"])
     left = sorted((fr / "outside").glob(f"{hh:02d}*.png"))
+    if (
+        not left
+    ):  # --orbit-frames renders: the caller takes the left half frame by frame
+        left = sorted((fr / "outside").glob("f*.png"))[:1]
     if step is None:
         lp = fr / "outside" / f"{hh:02d}{minute:02d}.png"
     else:
