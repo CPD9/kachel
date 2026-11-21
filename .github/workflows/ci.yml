@@ -66,6 +66,23 @@ jobs:
       - run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit,storage-api
       - run: pnpm exec supabase db reset
       - run: pnpm exec supabase db lint --fail-on warning
+      # packages/db/src/database.types.ts must match the schema. If it does not, download the
+      # database-types artifact from this run, or run `pnpm db:types` against a local stack.
+      - run: pnpm db:types
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: database-types
+          path: packages/db/src/database.types.ts
+      - run: git diff --exit-code -- packages/db/src/database.types.ts
+      # Realtime (#6): a change written with the agent's key reaches an app subscribed with the
+      # anon key within two seconds.
+      - name: Realtime reaches a subscribed client
+        run: |
+          eval "$(pnpm exec supabase status -o env)"
+          : "${API_URL:?}" "${ANON_KEY:?}" "${SERVICE_ROLE_KEY:?}"
+          SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" \
+            SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+            pnpm --filter @kachel/db test:realtime
       - if: always()
         run: pnpm exec supabase stop --no-backup
 

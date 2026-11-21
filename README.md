@@ -7,6 +7,10 @@ Your AI heats your home.
 Small servers in a home's basement run AI jobs, and their heat goes into space heating and hot water.
 A job runs only when its heat is useful.
 
+<p align="center"><img src="docs/media/scheduler.gif" width="640" alt="The plant room through a January day and a July day: servers run when the house needs heat and pause when the tank is full"></p>
+
+More renders, the videos and the charts are in [docs/media](docs/media/README.md).
+
 ## Run it
 
 ```sh
@@ -25,10 +29,11 @@ Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase
 | `apps/host`          | React app for hosts: their house, their heat, their servers     |
 | `apps/console`       | React app for compute buyers: jobs and their state              |
 | `packages/ui`        | Shared components and design tokens                             |
+| `packages/db`        | Typed Supabase client and the generated database types          |
 | `packages/config`    | Shared ESLint and TypeScript settings                           |
 | `services/agent`     | Python agent on the server box: pauses and resumes the real job |
 | `services/scheduler` | Python scheduler: hourly decisions, yearly balance, live demo   |
-| `supabase`           | Local Supabase config and schema migrations                     |
+| `supabase`           | Local Supabase config, schema migrations and synthetic seed     |
 | `scripts`            | Repository checks                                               |
 
 ## Team
@@ -36,7 +41,7 @@ Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase
 - Peter Dike ([@CPD9](https://github.com/CPD9))
 - Duc ([@bila9630](https://github.com/bila9630))
 - Loyola ([@Loyola-sk](https://github.com/Loyola-sk))
-- Nikolas
+- Nikolas ([@Ni93c42l](https://github.com/Ni93c42l))
 
 ## Licence
 
