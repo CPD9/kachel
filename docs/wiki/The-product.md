@@ -62,19 +62,28 @@ The jobs that show a house come from the seed or from one hour of a fleet run
 
 `apps/operator`, on http://localhost:5177 in development.
 
-![The operator view in November: the fleet's totals, the year month by month and every house](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/app-operator.png)
+![The operator view in November, signed in as the operator: the year's revenue top right, the month's figures, Basel and Bern with every home and the buyers between them, and the year month by month](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/app-operator.webp)
 
-- **Totals at the top.** Houses, servers running, heat delivered, backup heat, revenue for an
-  hour, a day and the year, and the margin before hardware.
-- **A month slider and a temperature slider.** Pick a month of 2025, or make every hour warmer or
+One screen, laid out for 1920 × 1080 in the dark look of the pitch app.
+
+- **The headline.** Revenue this year, top right, and the margin before hardware.
+- **A month bar and a temperature slider.** Pick a month of 2025, or make every hour warmer or
   colder by up to 6 °C. Heat demand, the servers it can use and the revenue follow.
-- **The year.** The fleet's heat each month: from the servers, and from the backup heaters.
-- **Every house.** Its servers (running on average, and installed), its size, its tank, and its
-  heat demand, server heat and backup in kW.
+- **The month in figures.** Revenue a day and an hour, servers running, heat delivered, backup
+  heat and the month's margin.
+- **The map.** Basel and Bern on swisstopo's grey map, darkened. Every home of the fleet is an
+  orange dot that glows with the heat its servers give that month; the homes in the database
+  are racks.
+- **Compute buyers, live.** Signed in as `operator@kachel.test`, every buyer with what they buy
+  and their jobs: running, paused, queued, done. A cyan line runs from each buyer to every rack
+  holding one of their jobs now (dashed: paused).
+- **The year and every home.** The fleet's heat each month, and each home's servers, size, tank,
+  demand, server heat and backup in kW.
 
-Every figure comes from `make months` (`services/scheduler/out/fleet_months.json`): the 100
-synthetic Basel and Bern houses of the fleet, each run through the scheduler for the year on its
-city's real 2025 weather. The view says it is a model; hover a number for its source.
+The home figures come from `make months` (`services/scheduler/out/fleet_months.json`): the 100
+synthetic Basel and Bern homes of the fleet, each run through the scheduler for the year on its
+city's real 2025 weather. The view says it is a model; hover a number for its source. The buyers
+and jobs come from Supabase and are synthetic too (`supabase/seed.sql`). The map needs internet.
 
 ## The heat map: Basel in 3D through the day
 

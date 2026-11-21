@@ -33,7 +33,7 @@ make check                        # every check CI runs
 | 3D heat map | http://localhost:5175 |
 | Operator    | http://localhost:5177 |
 
-Before `make dev`, copy each `.env.example` to `.env` (in `apps/host`, `apps/console` and
+Before `make dev`, copy each `.env.example` to `.env` (in `apps/host`, `apps/console`, `apps/operator` and
 `services/agent`) and fill in the keys from `pnpm exec supabase status -o env`. The apps read
 `.env` when they start, so restart `make dev` after changing it.
 

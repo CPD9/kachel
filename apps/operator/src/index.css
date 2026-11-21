@@ -1,3 +1,18 @@
 @import "tailwindcss";
 @import "@kachel/ui/tokens.css";
 @source "../../../packages/ui/src";
+
+/* The operator view's lines from buyers to racks: a running job's line flows. */
+@keyframes flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.flow {
+  animation: flow 1.2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow {
+    animation: none;
+  }
+}
