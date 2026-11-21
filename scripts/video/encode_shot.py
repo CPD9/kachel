@@ -45,6 +45,21 @@ def title(img, text):
     return Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
 
 
+def whip(img, k, sign):
+    """A whip-pan: the frame slides sideways and smears, k from 0 (still) to 1 (gone)."""
+    shift = int(sign * c.W * 0.5 * k * k)
+    out = Image.new("RGB", img.size)
+    taps = 9
+    acc = None
+    for t in range(taps):
+        dx = shift + int(sign * c.W * 0.18 * k * (t / (taps - 1) - 0.5))
+        layer = Image.new("RGB", img.size)
+        layer.paste(img, (dx, 0))
+        acc = layer if acc is None else Image.blend(acc, layer, 1 / (t + 1))
+    out.paste(acc)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--frames", required=True, nargs="+", help="one or more frame dirs")
@@ -57,6 +72,12 @@ def main():
     ap.add_argument("--title", default="", help="a label panel at the top left")
     ap.add_argument(
         "--title-part", type=int, default=0, help="show the title from this part on"
+    )
+    ap.add_argument(
+        "--title-last", type=float, default=0, help="show it only in the last N s"
+    )
+    ap.add_argument(
+        "--whip", type=int, default=0, help="frames of whip-pan into each part"
     )
     a = ap.parse_args()
     parts = [sorted(Path(d).glob("*.png")) for d in a.frames]
@@ -83,9 +104,14 @@ def main():
             if k + 1 < len(parts) and i >= len(files) - a.xfade:
                 j = i - (len(files) - a.xfade)
                 img = Image.blend(img, load(parts[k + 1][j]), (j + 1) / (a.xfade + 1))
+            if a.whip and k + 1 < len(parts) and i >= len(files) - a.whip:
+                img = whip(img, (i - (len(files) - a.whip) + 1) / a.whip, -1)
+            if a.whip and k and i < a.whip:
+                img = whip(img, 1 - i / a.whip, 1)
             if text:
                 img = credit(img, text)
-            if a.title and k >= a.title_part:
+            late = not a.title_last or n >= total - a.title_last * c.FPS
+            if a.title and k >= a.title_part and late:
                 img = title(img, a.title)
             ff.stdin.write(img.tobytes())
             if n in picks:

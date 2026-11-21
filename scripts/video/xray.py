@@ -36,7 +36,7 @@ LABEL_AT = {
     "tank": (3.0, 0.37, 1.5),
     "heater": None,  # filled from the heater object
 }
-CYAN = (0.25, 0.85, 1.0)
+CYAN = (0.04, 0.55, 1.0)  # deep cyan for the ghosted shells
 
 
 def ghost_material():
@@ -48,15 +48,15 @@ def ghost_material():
             nt.nodes.remove(n)
     out = next(n for n in nt.nodes if n.type == "OUTPUT_MATERIAL")
     lw = nt.nodes.new("ShaderNodeLayerWeight")
-    lw.inputs["Blend"].default_value = 0.35
+    lw.inputs["Blend"].default_value = 0.22
     em = nt.nodes.new("ShaderNodeEmission")
     em.inputs["Color"].default_value = (*CYAN, 1)
-    em.inputs["Strength"].default_value = 3.0
+    em.inputs["Strength"].default_value = 5.0
     tr = nt.nodes.new("ShaderNodeBsdfTransparent")
     mx = nt.nodes.new("ShaderNodeMixShader")
     pw = nt.nodes.new("ShaderNodeMath")
     pw.operation = "POWER"
-    pw.inputs[1].default_value = 2.2
+    pw.inputs[1].default_value = 3.0
     nt.links.new(lw.outputs["Facing"], pw.inputs[0])
     add = nt.nodes.new("ShaderNodeMath")
     add.operation = "ADD"

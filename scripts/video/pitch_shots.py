@@ -390,8 +390,8 @@ def shot_xray(a):
     # Dim the room so the ghosted shells and the water read as light.
     for o in sc.objects:
         if o.type == "LIGHT":
-            o.data.energy *= 0.22
-    sc.view_settings.exposure = -0.8
+            o.data.energy *= 0.14
+    sc.view_settings.exposure = -1.1
     cfg = dn.find_config(Path(a.sched_out))
     kpis = json.loads((Path(a.sched_out) / "kpis.json").read_text())
     n = int(kpis["servers_per_house"])
@@ -551,6 +551,10 @@ def shot_farm(a):
     sky.sun_elevation, sky.sun_rotation = math.radians(elev), math.radians(90 - az)
     nt.links.new(sky.outputs[0], nt.nodes["Background"].inputs[0])
     nt.nodes["Background"].inputs[1].default_value = 0.12
+    if hasattr(sky, "air_density"):
+        sky.air_density = 2.0  # a cooler, hazier winter sky
+    if hasattr(sky, "dust_density"):
+        sky.dust_density = 2.0  # a light horizon haze
     sd = bpy.data.lights.new("Farm_Sun", "SUN")
     sd.energy, sd.angle = 1.6, math.radians(1.5)
     sun = bpy.data.objects.new("Farm_Sun", sd)
@@ -563,25 +567,82 @@ def shot_farm(a):
         "Farm_Snow", tuple((0.3 + 0.32 * cover) * k for k in (1.0, 1.02, 1.08)), 0.7
     )
     gm = bpy.data.meshes.new("Farm_Ground")
-    gm.from_pydata(
-        [
-            (-400, -400, -0.02),
-            (400, -400, -0.02),
-            (400, 400, -0.02),
-            (-400, 400, -0.02),
-        ],
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=160, y_segments=160, size=160)
+    for v in bm.verts:  # gentle swells, flat round the buildings
+        r = math.hypot(v.co.x - 5, v.co.y - 5)
+        k = max(0.0, min(1.0, (r - 22) / 30))
+        v.co.z = k * (
+            0.6 * math.sin(v.co.x / 23) * math.cos(v.co.y / 31)
+            + 0.3 * math.sin(v.co.y / 9)
+        )
+        v.co.z -= 0.02
+    bm.to_mesh(gm)
+    bm.free()
+    gm.materials.append(snow)
+    for p_ in gm.polygons:
+        p_.use_smooth = True
+    coll.objects.link(bpy.data.objects.new("Farm_Ground", gm))
+    far = bpy.data.meshes.new("Farm_Far")
+    far.from_pydata(
+        [(-4e3, -4e3, -0.4), (4e3, -4e3, -0.4), (4e3, 4e3, -0.4), (-4e3, 4e3, -0.4)],
         [],
         [(0, 1, 2, 3)],
     )
-    gm.materials.append(snow)
-    coll.objects.link(bpy.data.objects.new("Farm_Ground", gm))
+    far.materials.append(snow)
+    coll.objects.link(bpy.data.objects.new("Farm_Far", far))
+    track = mat(
+        "Farm_Track", tuple((0.22 + 0.22 * cover) * k for k in (1.0, 1.0, 1.04)), 0.8
+    )
+    for dx in (-0.8, 0.8):  # tyre tracks from the lane to the barn door
+        xray.tube(
+            f"Farm_Track{dx}",
+            [(-30 + dx, -4.0, 0.0), (-4 + dx, -4.0, 0.0), (1.25 + dx, -3.2, 0.0)],
+            0.18,
+            track,
+            coll,
+            4,
+        )
     # The shed round the plant room, and the farmhouse.
-    wood = mat("Farm_Wood", (0.25, 0.14, 0.08), 0.8)
+    wood = mat("Farm_Wood", (0.22, 0.035, 0.025), 0.85)  # barn red timber
     plaster = mat("Farm_Plaster", (0.75, 0.7, 0.6), 0.8)
     roof_snow = mat("Farm_RoofSnow", tuple(0.25 + 0.35 * cover for _ in range(3)), 0.6)
     shed = [gable("Shed", 5.4, 4.7, 2.85, 1.2, (1.25, -0.5, 0), wood, roof_snow, coll)]
     shed.append(bpy.data.objects["Shed_Walls"])
+    shed.append(
+        block(
+            "Shed_Door",
+            (2.4, 0.08, 2.5),
+            (1.25, -2.89, 1.25),
+            mat("Farm_Door", (0.08, 0.03, 0.02), 0.8),
+            coll,
+        )
+    )
     gable("House", 11.0, 13.0, 6.5, 3.6, (14.0, 19.0, 0), plaster, roof_snow, coll)
+    for o in (bpy.data.objects["Shed_Roof"], bpy.data.objects["House_Roof"]):
+        m = o.modifiers.new("Snow", "SOLIDIFY")
+        m.thickness, m.offset = 0.18, 1.0  # snow with a visible edge on the overhang
+    # Bare winter trees and a fence line along the field.
+    bark = mat("Farm_Bark", (0.05, 0.04, 0.035), 0.9)
+    for i, (tx, ty, th) in enumerate(((-16, 6, 7), (-14, 12, 8.5), (24, 8, 9), (26, 16, 7.5),
+                                      (-20, -16, 6.5), (22, -22, 8), (6, 30, 9))):  # fmt: skip
+        xray.tube(f"Tree{i}", [(tx, ty, 0), (tx, ty, th)], 0.22, bark, coll, 8)
+        for j in range(5):
+            ang = 1.3 * j + i
+            z0 = th * (0.45 + 0.1 * j)
+            tip = (tx + 2.2 * math.cos(ang), ty + 2.2 * math.sin(ang), z0 + 1.8)
+            xray.tube(f"Tree{i}_{j}", [(tx, ty, z0), tip], 0.07, bark, coll, 6)
+    rail = mat("Farm_Fence", (0.18, 0.12, 0.08), 0.9)
+    for y_f in (-6.0, -29.0):
+        for k in range(16):
+            block(
+                f"Fence_{y_f}_{k}",
+                (0.12, 0.12, 1.2),
+                (-12 + 1.9 * k, y_f, 0.6),
+                rail,
+                coll,
+            )
+        block(f"FenceRail_{y_f}", (28.5, 0.06, 0.1), (2.25, y_f, 0.95), rail, coll)
     warm = mat("Farm_Window", (0.2, 0.15, 0.1), 0.2, (1.0, 0.7, 0.4), 6.0)
     for k in range(4):
         for z in (1.6, 4.4):
@@ -609,6 +670,9 @@ def shot_farm(a):
             block(
                 f"PV_Leg_{r_}_{k}", (0.06, 0.06, 1.1), (x, y + 0.2, 0.55), frame, coll
             )
+            if cover > 0.5:  # snow slid to the lower edge; the panel stays clear
+                block(f"PV_Snow_{r_}_{k}", (1.7, 0.1, 0.05), (x, y - 0.46, 0.86), roof_snow, coll,
+                      (math.radians(30), 0, 0))  # fmt: skip
     # Warm water to the farmhouse and back, in the ground.
     hot, cold = (
         xray.flow_material("Farm_FlowHot", (1.0, 0.25, 0.06)),
@@ -839,66 +903,151 @@ def shot_tower(a):
     return sc, n
 
 
+PLATE = (
+    Path.home() / "Projects/heat-atlas/renders/skyline_dusk.png"
+)  # Basel at dusk, a render
+
+
 def shot_plantfloor(a):
-    """Shot 12b, second half: a plant floor in a tall building, with rows of server racks and
-    hot-water tanks, as an illustration of scale (built from the plant-room models)."""
+    """Shot 12b, second half: a plant level high in a tall building. Two rows of server racks
+    face a polished aisle under cable trays and the red supply and blue return; two tanks and
+    a heat exchanger stand at the end, and a glass facade looks out on Basel at dusk (a
+    still rendered from skyline.blend). An illustration of scale, from the plant-room models."""
     h = ks.prepare(6)
     sc = h["scene"]
     ks.setup_render(sc, a.width, a.height, a.samples)
     sc.render.use_persistent_data = True
+    sets = {"TankSet": ("Tank_", "Heater_"), "HXSet": ("HX_", "Valve_HX")}
+    made = {}
+    for name, pre in sets.items():
+        col = bpy.data.collections.new(name)
+        for o in list(sc.objects):
+            if o.name.startswith(pre):
+                homes = list(o.users_collection)
+                col.objects.link(o)
+                for c_ in homes:  # only the instances of the set are drawn
+                    c_.objects.unlink(o)
+        made[name] = col
+    made["TankSet"].instance_offset = (3.0, 0.75, 0)
+    made["HXSet"].instance_offset = (1.52, 1.2, 0)
     for o in sc.objects:
-        room = o.users_collection and o.users_collection[0].name in (
+        home = o.users_collection and o.users_collection[0].name in (
             "Room",
             "Tray",
             "Pipes",
         )
-        if room and not o.name.startswith(("Tank_", "Heater_")):
+        if home:
             o.hide_render = True
-    tank = bpy.data.collections.new("TankSet")
-    for o in list(sc.objects):
-        if o.name.startswith(("Tank_", "Heater_")):
-            homes = list(o.users_collection)
-            tank.objects.link(o)
-            for c_ in homes:  # only the instances of the set are drawn
-                c_.objects.unlink(o)
-    tank.instance_offset = (3.0, 0.75, 0)
     rack = bpy.data.collections["Rack"]
     rack.instance_offset = (-0.55, 0, 0)
     sc.collection.children.unlink(rack)  # drawn only through its instances
     coll = bpy.data.collections.new("Floor")
     sc.collection.children.link(coll)
-    for i in range(10):
-        for row, y in enumerate((-3.0, 3.0)):
-            e = bpy.data.objects.new(f"Rack_{row}_{i}", None)
-            e.instance_type, e.instance_collection = "COLLECTION", rack
-            e.location = (-12 + 1.0 * i, y, 0)
-            e.rotation_euler = (0, 0, 0 if row else math.pi)  # fronts face the aisle
-            coll.objects.link(e)
-    for i in range(4):
-        e = bpy.data.objects.new(f"Tank_{i}", None)
-        e.instance_type, e.instance_collection = "COLLECTION", tank
-        e.location = (-12 + 3.0 * i, 6.5, 0)
+
+    def place(name, col, loc, rz=0.0):
+        e = bpy.data.objects.new(name, None)
+        e.instance_type, e.instance_collection = "COLLECTION", col
+        e.location, e.rotation_euler = loc, (0, 0, rz)
         coll.objects.link(e)
-    concrete = mat("Floor_Concrete", (0.42, 0.42, 0.4), 0.7)
-    block("Floor_Slab", (40, 20, 0.2), (0, 0, -0.1), concrete, coll)
-    block("Floor_Ceiling", (40, 20, 0.3), (0, 0, 3.6), concrete, coll)
-    for k in range(10):
-        for y in (-2.0, 2.0):
-            ld = bpy.data.lights.new(f"Floor_Light{k}{y}", "AREA")
-            ld.energy, ld.size = 90, 1.6
-            lo = bpy.data.objects.new(f"Floor_Light{k}{y}", ld)
-            lo.location = (-14 + 2.5 * k, y, 3.4)
-            coll.objects.link(lo)
+
+    for i in range(10):
+        place(
+            f"Rack_A{i}", rack, (-12 + 0.62 * i, -1.6, 0), math.pi
+        )  # fronts face the aisle
+        place(f"Rack_B{i}", rack, (-12 + 0.62 * i, 1.6, 0))
+    place("Tank_A", made["TankSet"], (-2.0, -2.4, 0))
+    place("Tank_B", made["TankSet"], (-2.0, 2.4, 0))
+    place("HX_A", made["HXSet"], (-4.2, 2.6, 0))
+    floor = mat("Floor_Polished", (0.025, 0.027, 0.03), 0.12)
+    concrete = mat("Floor_Concrete", (0.12, 0.12, 0.12), 0.8)
+    block("Floor_Slab", (30, 12, 0.2), (-6, 0, -0.1), floor, coll)
+    block("Floor_Ceiling", (30, 12, 0.3), (-6, 0, 3.9), concrete, coll)
+    for y in (-6.0, 6.0):
+        block(f"Floor_Wall{y}", (30, 0.2, 4.0), (-6, y, 2.0), concrete, coll)
+    block("Floor_WallBack", (0.2, 12, 4.0), (-21, 0, 2.0), concrete, coll)
+    # Overhead: a cable tray and the supply and return along the aisle.
+    tray = mat("Floor_Tray", (0.5, 0.52, 0.55), 0.4, metal=1.0)
+    block("Floor_CableTray", (22, 0.5, 0.08), (-9, -0.6, 3.2), tray, coll)
+    red = mat("Floor_Supply", (0.6, 0.05, 0.03), 0.4)
+    blue = mat("Floor_Return", (0.03, 0.12, 0.55), 0.4)
+    for y, m in ((0.5, red), (0.85, blue)):
+        o = xray_tube_cyl(
+            f"Floor_Pipe{y}", (-20, y, 3.25), (1.5, y, 3.25), 0.09, m, coll
+        )
+    # Warm-white linear lights along both sides of the aisle.
+    strip = mat("Floor_Strip", (1, 1, 1), 0.3, (1.0, 0.86, 0.68), 30.0)
+    for k in range(9):
+        for y in (-1.0, 1.0):
+            block(
+                f"Floor_Strip{k}{y}",
+                (1.5, 0.07, 0.04),
+                (-19 + 2.4 * k, y, 3.82),
+                strip,
+                coll,
+            )
+        ld = bpy.data.lights.new(f"Floor_Light{k}", "AREA")
+        ld.energy, ld.size = 140, 1.5
+        lo = bpy.data.objects.new(f"Floor_Light{k}", ld)
+        lo.location = (-19 + 2.4 * k, 0, 3.7)
+        coll.objects.link(lo)
+    # The glass facade at the end, with Basel at dusk outside.
+    img = bpy.data.images.load(str(PLATE))
+    plate = bpy.data.materials.new("Floor_City")
+    plate.use_nodes = True
+    nt = plate.node_tree
+    for n_ in list(nt.nodes):
+        if n_.type != "OUTPUT_MATERIAL":
+            nt.nodes.remove(n_)
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = img
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Strength"].default_value = 1.4
+    nt.links.new(tex.outputs["Color"], em.inputs["Color"])
+    nt.links.new(
+        em.outputs[0],
+        next(n_ for n_ in nt.nodes if n_.type == "OUTPUT_MATERIAL").inputs[0],
+    )
+    me = bpy.data.meshes.new("Floor_View")
+    me.from_pydata(
+        [(9, -9, -1.5), (9, 9, -1.5), (9, 9, 8.6), (9, -9, 8.6)], [], [(0, 1, 2, 3)]
+    )
+    uv = me.uv_layers.new()
+    for li, (u, v) in zip(
+        range(4), ((0, 0.08), (1, 0.08), (1, 1), (0, 1)), strict=True
+    ):
+        uv.data[li].uv = (
+            u,
+            v,
+        )  # the bottom strip of the still carries its credit; leave it out
+    me.materials.append(plate)
+    coll.objects.link(bpy.data.objects.new("Floor_View", me))
+    mull = mat("Floor_Mullion", (0.02, 0.02, 0.025), 0.4, metal=0.6)
+    for y in (-4.5, -1.5, 1.5, 4.5):
+        block(f"Floor_Mullion{y}", (0.1, 0.1, 4.0), (8.9, y, 2.0), mull, coll)
+    block("Floor_Transom", (0.1, 12, 0.1), (8.9, 0, 3.0), mull, coll)
     for o in sc.objects:
         if o.name.startswith("Server_U"):
             o["on"] = 1.0
-    cam = new_camera(sc, "Pitch_Floor", 24)
+    w = sc.world
+    if w and w.use_nodes:
+        w.node_tree.nodes["Background"].inputs[1].default_value = 0.02
+    sc.view_settings.exposure = 0.2
+    cam = new_camera(sc, "Pitch_Floor", 22)
     n = 96
     path_keys(
         cam,
-        [(1, (-16, 0.3, 1.6), (-8, 0, 1.2), 22), (n, (-6, 0.5, 2.2), (2, 3, 1.0), 22)],
+        [
+            (1, (-19.5, 0.1, 1.65), (0, 0, 1.4), 22),
+            (n, (-8.0, 0.2, 1.75), (9, 0, 1.6), 24),
+        ],
     )
     return sc, n
+
+
+def xray_tube_cyl(name, a, b, r, m, coll):
+    import xray
+
+    return xray.tube(name, [a, b], r, m, coll, 16)
 
 
 SHOTS = {

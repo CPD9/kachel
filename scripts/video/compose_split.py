@@ -109,9 +109,21 @@ def stats_panel(r, ctx, k):
     return p
 
 
+BIG = c.F["label"].font_variant(size=36)  # 1.6x the day-night labels, to read in a hall
+
+
 def label(d, at, text):
+    """A device label with a leader dot, sized to read from the back of a hall."""
     x, y = at[0] * HALF + HALF, at[1] * c.H
-    c.label(d, (x / c.W, y / c.H), text, None, c.INK, (30, -70))
+    tw = d.textlength(text, font=BIG)
+    bx = min(max(x + 40, HALF + 20), c.W - tw - 40)
+    by = max(30, y - 110)
+    c.rounded(d, (bx - 16, by - 10, bx + tw + 16, by + 50), (16, 19, 24, 200), 10)
+    d.line((x, y, bx - 16, by + 40), fill=(*c.INK, 220), width=3)
+    d.ellipse(
+        (x - 9, y - 9, x + 9, y + 9), fill=c.INK, outline=(16, 19, 24, 255), width=3
+    )
+    d.text((bx, by - 2), text, font=BIG, fill=c.INK)
 
 
 def main():
