@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Protect main on GitHub: squash-only merging, one approval, code-owner review,
 # green and up-to-date checks, linear and signed history, no force pushes or deletion.
+# Admins may merge a pull request past the rules in an emergency; nobody may push to main directly.
 #
 #   scripts/protect-main.sh            show what would be set
 #   scripts/protect-main.sh --apply    set it (needs gh logged in as a repo admin)
@@ -29,7 +30,7 @@ ruleset=$(cat <<JSON
   "target": "branch",
   "enforcement": "active",
   "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
-  "bypass_actors": [],
+  "bypass_actors": [ { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request" } ],
   "rules": [
     { "type": "deletion" },
     { "type": "non_fast_forward" },
