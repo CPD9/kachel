@@ -50,6 +50,8 @@ jobs:
       - run: node --test scripts/*.test.mjs
       - run: node scripts/readme-check.mjs
       - run: node scripts/readme-figures.mjs --check
+      # docs/assumptions.md must match services/scheduler/config.json (pnpm assumptions).
+      - run: node scripts/assumptions.mjs --check
 
   # The local Supabase stack in Docker: migrations and seed apply cleanly, and the schema lints.
   database:
@@ -66,6 +68,8 @@ jobs:
       - run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit,storage-api
       - run: pnpm exec supabase db reset
       - run: pnpm exec supabase db lint --fail-on warning
+      # Row level security (#3, #7): each policy's allow and deny, in supabase/tests.
+      - run: pnpm exec supabase test db
       # packages/db/src/database.types.ts must match the schema. If it does not, download the
       # database-types artifact from this run, or run `pnpm db:types` against a local stack.
       - run: pnpm db:types
@@ -83,6 +87,15 @@ jobs:
           SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" \
             SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
             pnpm --filter @kachel/db test:realtime
+      # The fleet writer (#81): one hour of `make fleet` fits the schema and its constraints.
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+      - name: Fleet writer puts one hour into the database
+        run: |
+          eval "$(pnpm exec supabase status -o env)"
+          : "${API_URL:?}" "${SERVICE_ROLE_KEY:?}"
+          cd services/scheduler
+          SUPABASE_URL="$API_URL" SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+            uv run python fleet_write.py --day july --hour 20
       - if: always()
         run: pnpm exec supabase stop --no-backup
 

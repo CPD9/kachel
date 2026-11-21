@@ -4,8 +4,10 @@ import pandas as pd
 from .scheduler import Signal, decide
 
 class House:
-    def __init__(self, profile, cfg, n_servers, horizon=24):
+    def __init__(self, profile, cfg, n_servers, horizon=24, pv=None):
+        """pv: kWh of own roof PV in each hour. When given, the scheduler keeps tank room for sunny hours."""
         self.p, self.cfg, self.n, self.H = profile, cfg, n_servers, horizon
+        self.pv = pv
         self.h = cfg["server"]["power_kw"] * cfg["server"]["heat_recovery"]
         self.tank = cfg["house"]["tank_kwh"]
         self.soc = 0.0
@@ -26,7 +28,12 @@ class House:
             dem = [self.dem[i] for i in idx]
         else:                                  # persistence: tomorrow looks like the last 24 h
             dem = [self.dem[max(0, i - 24)] for i in idx]
-        return dem, [self.arr_i.get(int(self.hour[i]), 0) for i in idx]
+        inter = [self.arr_i.get(int(self.hour[i]), 0) for i in idx]
+        if self.pv is None:
+            return dem, inter, []
+        kw = self.cfg["server"]["power_kw"]          # same forecast rule as demand: perfect, or yesterday's sun
+        sun = [self.pv[i] if self.cfg.get("forecast") == "perfect" else self.pv[max(0, i - 24)] for i in idx]
+        return dem, inter, [min(self.n, x / kw) for x in sun]
 
     def signal(self, t):
         hr = int(self.hour[t])
@@ -36,10 +43,10 @@ class House:
         else:
             self._arrived_b = 0
         self.batch.sort()
-        fd, fi = self._forecast(t)
+        fd, fi, fp = self._forecast(t)
         return Signal(self.n, self.h, float(self.dem[t]), self.soc, self.tank,
                       self.arr_i.get(hr, 0), [(dl - t, w) for dl, w in self.batch],
-                      fd, fi, self.policy, self.opp_unlimited)
+                      fd, fi, self.policy, self.opp_unlimited, forecast_pv=fp)
 
     def apply(self, t, s, d):
         # remove batch work that ran or was moved/missed, earliest deadline first

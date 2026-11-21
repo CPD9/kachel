@@ -1,0 +1,93 @@
+{
+  "profile_source": "Open-Meteo archive, Basel and Bern 2025",
+  "cities": ["Basel", "Bern"],
+  "houses": 100,
+  "servers": 481,
+  "synthetic": true,
+  "routing": {
+    "fleet": "each job to the house that can use its heat most, data centre only when none can in time",
+    "home_only": "each job only on the house it was sent to, else the data centre"
+  },
+  "days": {
+    "january": {
+      "date": "2025-01-13",
+      "jobs_arrived": 2000,
+      "fleet": {
+        "jobs": 2000,
+        "server_hours_in_houses": 5013,
+        "server_hours_in_datacentre": 0,
+        "compute_heat_used_pct": 100.0,
+        "heat_dumped_kwh": 0.0,
+        "house_heat_covered_pct": 17.4,
+        "jobs_moved_offsite": 0,
+        "jobs_moved_offsite_pct": 0.0,
+        "deadline_misses": 0,
+        "jobs_unfinished": 0,
+        "job_moves_between_houses": 329,
+        "jobs_moved_offsite_by_kind": {
+          "interactive": 0,
+          "batch": 0,
+          "backlog": 0
+        }
+      },
+      "home_only": {
+        "jobs": 2000,
+        "server_hours_in_houses": 5008,
+        "server_hours_in_datacentre": 5,
+        "compute_heat_used_pct": 99.9,
+        "heat_dumped_kwh": 0.0,
+        "house_heat_covered_pct": 17.1,
+        "jobs_moved_offsite": 5,
+        "jobs_moved_offsite_pct": 0.2,
+        "deadline_misses": 0,
+        "jobs_unfinished": 0,
+        "job_moves_between_houses": 0,
+        "jobs_moved_offsite_by_kind": {
+          "interactive": 5,
+          "batch": 0,
+          "backlog": 0
+        }
+      }
+    },
+    "july": {
+      "date": "2025-07-15",
+      "jobs_arrived": 2000,
+      "fleet": {
+        "jobs": 2000,
+        "server_hours_in_houses": 2846,
+        "server_hours_in_datacentre": 2207,
+        "compute_heat_used_pct": 56.3,
+        "heat_dumped_kwh": 0.0,
+        "house_heat_covered_pct": 100.0,
+        "jobs_moved_offsite": 636,
+        "jobs_moved_offsite_pct": 31.8,
+        "deadline_misses": 0,
+        "jobs_unfinished": 0,
+        "job_moves_between_houses": 835,
+        "jobs_moved_offsite_by_kind": {
+          "interactive": 38,
+          "batch": 189,
+          "backlog": 409
+        }
+      },
+      "home_only": {
+        "jobs": 2000,
+        "server_hours_in_houses": 2854,
+        "server_hours_in_datacentre": 2199,
+        "compute_heat_used_pct": 56.5,
+        "heat_dumped_kwh": 0.0,
+        "house_heat_covered_pct": 100.0,
+        "jobs_moved_offsite": 949,
+        "jobs_moved_offsite_pct": 47.5,
+        "deadline_misses": 0,
+        "jobs_unfinished": 0,
+        "job_moves_between_houses": 0,
+        "jobs_moved_offsite_by_kind": {
+          "interactive": 206,
+          "batch": 208,
+          "backlog": 535
+        }
+      }
+    }
+  }
+}

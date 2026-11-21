@@ -18,7 +18,7 @@ const WITHIN_MS = 2000;
 type Table = "servers" | "jobs" | "heat_state";
 type Heard = { table: Table; row: Record<string, unknown>; at: number };
 
-/** Subscribe as an app would (anon key) and resolve once the channel is live. */
+/** Subscribe as the host screen would (anon key, signed in) and resolve once the channel is live. */
 async function listen(app: KachelClient, heard: Heard[]) {
   const channel = app.channel("realtime-test");
   for (const table of ["servers", "jobs", "heat_state"] as const) {
@@ -48,7 +48,13 @@ async function hear(heard: Heard[], match: (h: Heard) => boolean, ms: number) {
 
 describe.skipIf(!url || !anonKey || !serviceKey)("Realtime on servers, jobs and heat_state", () => {
   it("brings the agent's change to a subscribed app within two seconds", async () => {
+    // Row level security (#3) lets a signed-in host hear their own house only (supabase/seed.sql).
     const app = createKachelClient(url, anonKey);
+    await app.auth
+      .signInWithPassword({ email: "host@kachel.test", password: "kachel-demo" })
+      .then(({ error }) => {
+        if (error) throw error;
+      });
     const agent = createKachelClient(url, serviceKey);
     const heard: Heard[] = [];
     const channel = await listen(app, heard);

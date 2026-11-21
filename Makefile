@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-readme heat-loop year video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year fleet video-charts
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -21,7 +21,7 @@ db-stop:
 db-reset:
 	pnpm exec supabase db reset
 
-check: check-js check-py check-readme
+check: check-js check-py check-db check-readme
 
 check-js:
 	pnpm format:check
@@ -37,6 +37,18 @@ check-py:
 # January and July day CSVs (the animation reads those two), plus the plots.
 year:
 	cd $(SCHED) && uv run python run_year.py --weather tests/data/weather_basel_2025.csv
+
+# The row level security tests (supabase/tests) need the local stack from `make dev`. Without
+# it they are skipped here with a note; the Database CI job always runs them.
+check-db:
+	@if pnpm exec supabase status >/dev/null 2>&1; then pnpm exec supabase test db; \
+	else echo "check-db: local Supabase is not running (make dev); skipped, CI runs it."; fi
+
+# Synthetic fleets on the January and July days, on the saved 2025 weather: 50 houses in Basel, 50 in
+# Bern, and both as one fleet. Where every job ran, each house's heat by the hour and the KPIs
+# (out/fleet_*.csv and fleet_*kpis.json).
+fleet:
+	cd $(SCHED) && uv run python run_fleet.py
 
 check-readme:
 	node --test scripts/*.test.mjs
@@ -133,7 +145,7 @@ CHARTS_OUT ?= $(HOME)/.cache/kachel/video/charts
 
 video-charts:
 	mkdir -p $(CHARTS_OUT) $(HOME)/.cache/kachel/tmp
-	for chart in month breakeven sensitivity; do \
+	for chart in month breakeven sensitivity payback; do \
 		TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background --factory-startup \
 			--python scripts/video/charts.py -- --chart $$chart \
 			--out $(CHARTS_OUT)/frames/$$chart --mp4 $(CHARTS_OUT)/$$chart.mp4 \

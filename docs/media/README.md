@@ -4,6 +4,13 @@ Renders for the pitch video, made in Blender. Every figure on screen is read fro
 scheduler's output or from [docs/economics/data](../economics/data) at render time, never
 typed by hand. The videos are in the [media-v1 release](https://github.com/CPD9/kachel/releases/tag/media-v1).
 
+## One day in Basel
+
+![Split screen at 09:00 on 13 January 2025: Basel outside in morning light, the plant room inside with six servers running](daynight.webp)
+
+One January day, outside and inside on the same clock. Sun, temperature, heat demand, servers and backup heater all come from the scheduler's output for 13 January 2025.
+[Video, 36 s](https://github.com/CPD9/kachel/releases/download/media-v1/daynight-january.mp4)
+
 ## In the basement
 
 ![The plant room with each part labelled: server rack, pump, heat exchanger, tank and backup heater](setup.webp)
@@ -20,6 +27,27 @@ house can use their heat, and the backlog pauses when the tank is full.
 [Video, 25 s](https://github.com/CPD9/kachel/releases/download/media-v1/scheduler.mp4)
 
 ![A close-up of one server in the rack](server-closeup-34.webp)
+
+## Live demo
+
+![The host app with six servers: Server 4 runs its embeddings job](live-running.webp)
+
+![The same screen a moment later: Server 4's job is paused, no heat sink](live-paused.webp)
+
+The host app on the local stack. The agent follows a real embedding job on Server 4. When its
+signal file says pause, it stops the process and writes the change to Supabase, and the pill
+turns Paused under a second later (agent run with `--tick 0.2`; the default is 1 s). On run it
+turns back.
+[Video, 27 s](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
+
+![The console signed in as the demo buyer: the submit form and the live table of jobs](app-console.png)
+
+The console, where a buyer submits jobs and sees where each one runs and the heat it has
+given. Both app screenshots come from `pnpm screenshots` (scripts/screenshots.mjs).
+
+![The host screen: the house at 14:00 on the replayed January day, today's heat hour by hour, the money for the day and the year, and the six servers](host-house.webp)
+
+The host screen with the house, its day and its money, live from `heat_state`, `kpis` and `assumptions`. Until the scheduler writes today's hours it replays a stored day at the clock's hour and says so; hover any number for its source.
 
 ## The numbers
 

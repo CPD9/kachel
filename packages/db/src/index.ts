@@ -1,4 +1,31 @@
+export { DEMO_BUYER, DEMO_HOST, isLocalStack, supabaseAuth, type AppAuth } from "./auth";
 export { createKachelClient, type KachelClient } from "./client";
+export {
+  EMPTY,
+  heatKwh,
+  newest,
+  supabaseFeed,
+  upsert,
+  watch,
+  type JobFeed,
+  type LiveJob,
+  type LiveServer,
+  type LiveSite,
+  type LiveState,
+} from "./live";
+export {
+  NO_HOUSE,
+  placeHour,
+  supabaseHouseFeed,
+  watchHouse,
+  type HouseAssumption,
+  type HouseFeed,
+  type HouseHour,
+  type HouseRows,
+  type HouseSite,
+  type HouseState,
+  type HouseYear,
+} from "./house";
 export {
   Constants,
   type Database,

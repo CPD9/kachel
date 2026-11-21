@@ -1,6 +1,7 @@
-export type JobState = "RUNNING" | "PAUSED" | "MOVED" | "DONE";
+export type JobState = "QUEUED" | "RUNNING" | "PAUSED" | "MOVED" | "DONE";
 
 const LABELS: Record<JobState, string> = {
+  QUEUED: "Queued",
   RUNNING: "Running",
   PAUSED: "Paused: no heat sink",
   MOVED: "Moved",
@@ -8,6 +9,7 @@ const LABELS: Record<JobState, string> = {
 };
 
 const STYLES: Record<JobState, string> = {
+  QUEUED: "bg-paper text-ink ring-1 ring-inset ring-idle",
   RUNNING: "bg-heat text-paper",
   PAUSED: "bg-paused text-ink",
   MOVED: "bg-heat-soft text-ink",
