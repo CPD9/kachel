@@ -33,7 +33,7 @@ export function residentialNearest(results, lon, lat, n) {
     .map((r) => r.properties ?? r.attributes ?? {})
     .filter((p) => RESIDENTIAL.has(Number(p.gkat)) && p.egid != null)
     .map((p) => {
-      const [x, y] = [Number(p.dkode ?? p.gkode), Number(p.dkodn ?? p.gkodn)];
+      const [x, y] = [Number(p.gkode ?? p.dkode), Number(p.gkodn ?? p.dkodn)];
       return { egid: Number(p.egid), lv95: [x, y], wgs: wgs84(x, y) };
     })
     .filter((b) => !seen.has(b.egid) && seen.add(b.egid))
