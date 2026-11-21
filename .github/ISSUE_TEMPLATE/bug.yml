@@ -1,0 +1,26 @@
+name: Bug
+description: Something does not work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: What you did and what you saw. Paste the error if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to see it
+      description: The commands or clicks, starting from make dev.
+      placeholder: |
+        1. make dev
+        2. Open http://localhost:5174
+        3. …
