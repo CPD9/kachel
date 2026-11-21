@@ -1,0 +1,38 @@
+# Kachel
+
+Your AI heats your shower.
+
+Small servers in a home's basement run AI jobs, and their heat warms the house and its hot water.
+A job runs only when its heat is useful.
+
+## Run it
+
+```sh
+make bootstrap
+make dev
+make check
+```
+
+`make dev` serves the host app on http://localhost:5173 and the console on http://localhost:5174.
+
+## Repo map
+
+| Path              | What it is                                                      |
+| ----------------- | --------------------------------------------------------------- |
+| `apps/host`       | React app for hosts: their house, their heat, their servers     |
+| `apps/console`    | React app for compute buyers: jobs and their state              |
+| `packages/ui`     | Shared components and design tokens                             |
+| `packages/config` | Shared ESLint and TypeScript settings                           |
+| `services/agent`  | Python agent on the server box: pauses and resumes the real job |
+| `scripts`         | Repository checks                                               |
+
+## Team
+
+- Peter Dike ([@CPD9](https://github.com/CPD9))
+- Duc ([@bila9630](https://github.com/bila9630))
+- Loyola ([@Loyola-sk](https://github.com/Loyola-sk))
+- Nikolas
+
+## Licence
+
+MIT. Copyright (c) 2026 the Kachel team.
