@@ -52,6 +52,13 @@ describe("building card", () => {
     expect(slider.getAttribute("aria-valuetext")).toBe("January: 66.9 MWh");
   });
 
+  it("scales the Kachel reference house to the building", () => {
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    // 386,067 kWh ÷ 31,231 kWh × 6 servers = 74.2, so about 74 servers.
+    expect(screen.getByText("about 74")).toBeTruthy();
+    expect(screen.getByText(/scaled from Kachel's Basel reference house/)).toBeTruthy();
+  });
+
   it("says so when nothing is published", () => {
     render(
       <BuildingCard
