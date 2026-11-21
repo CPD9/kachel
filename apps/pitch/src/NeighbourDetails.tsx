@@ -1,3 +1,4 @@
+import { TARGET } from "./target";
 import {
   ArrowLeft,
   Cable,
@@ -117,7 +118,7 @@ export function NeighbourDetails({ n, onBack }: { n: Neighbour; onBack: () => vo
         onClick={onBack}
         className="pointer-events-auto absolute top-6 left-6 flex animate-pill-in items-center gap-1.5 rounded-full border border-white/10 bg-[#1b1d21]/85 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:text-clay"
       >
-        <ArrowLeft size={14} /> Back to Byfangweg 18
+        <ArrowLeft size={14} /> Back to {TARGET.name}
       </button>
 
       {/* Bottom left: who they are */}
@@ -157,7 +158,7 @@ export function NeighbourDetails({ n, onBack }: { n: Neighbour; onBack: () => vo
           </p>
           <h3 className="mt-1 text-[17px] leading-tight font-semibold">{n.name}</h3>
           <p className="mt-0.5 text-[11.5px] text-white/55">
-            {n.what} · {metres} m from Byfangweg 18
+            {n.what} · {metres} m from {TARGET.name}
           </p>
           <dl className="mt-3 space-y-1.5 text-[11.5px]">
             {n.facts.map(({ icon: FactIcon, k, v }) => (
@@ -268,7 +269,7 @@ export function NeighbourDetails({ n, onBack }: { n: Neighbour; onBack: () => vo
         <article className={`${card} mt-auto`} style={{ animationDelay: "400ms" }}>
           <div className="px-2 pt-2 pb-1.5">
             <p className={label}>
-              <Flame size={12} /> {n.heatTitle} heat Byfangweg 18
+              <Flame size={12} /> {n.heatTitle} heat {TARGET.name}
             </p>
 
             {/* Load per hour: the same bars are heat for the house */}

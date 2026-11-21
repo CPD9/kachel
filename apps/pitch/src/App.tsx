@@ -1,3 +1,4 @@
+import { TARGET } from "./target";
 import { ArrowRight, Building2, Check, Heater, LoaderCircle, MapPin } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
@@ -186,7 +187,9 @@ export function App() {
             className="edge-glow animate-edge-glow"
           />
         )}
-        {stage === "building" && !inside && !gamer && <BuildingDetails />}
+        {stage === "building" && !inside && !gamer && TARGET.showBuildingCard && (
+          <BuildingDetails />
+        )}
         {stage === "building" && (houseShown || houseMounted) && (
           <HouseView visible={houseShown} onExit={() => setInside(false)} onNext={toGamer} />
         )}

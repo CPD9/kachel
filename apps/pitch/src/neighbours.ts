@@ -1,3 +1,4 @@
+import { BYFANGWEG_AT, TARGET } from "./target";
 import {
   Box,
   BrainCircuit,
@@ -16,7 +17,7 @@ import {
 } from "lucide-react";
 
 /** The presenter's home, hard-coded for the demo: [lng, lat]. */
-export const HOME: [number, number] = [7.58215, 47.55212];
+export const HOME: [number, number] = TARGET.at;
 
 export type Plan = {
   id: string;
@@ -60,7 +61,7 @@ export type Neighbour = {
   hint: string;
 };
 
-export const NEIGHBOURS: Neighbour[] = [
+const PLACED: Neighbour[] = [
   {
     id: "noah",
     at: [7.581800279272595, 47.55543369350158],
@@ -357,6 +358,12 @@ export const NEIGHBOURS: Neighbour[] = [
     hint: "Servers run around the clock: a steady base load of heat, all year.",
   },
 ];
+
+/** The neighbours keep their places relative to the target, wherever the demo points. */
+export const NEIGHBOURS: Neighbour[] = PLACED.map((n) => ({
+  ...n,
+  at: [n.at[0] + HOME[0] - BYFANGWEG_AT[0], n.at[1] + HOME[1] - BYFANGWEG_AT[1]],
+}));
 
 /** Straight-line distance from HOME in metres. */
 export function distanceFromHome([lng, lat]: [number, number]): number {
