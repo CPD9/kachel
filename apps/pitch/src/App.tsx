@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
 import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
 import { HouseView } from "./HouseView";
+import { MarketHouses, MarketSetup, useMarket } from "./MarketView";
 import { NeighbourDetails, NeighbourSwitch } from "./NeighbourDetails";
 import { NEIGHBOURS } from "./neighbours";
 import { SimulationView, useSimulation } from "./SimulationView";
@@ -82,6 +83,9 @@ export function App() {
   // Which neighbour is picked, switched with the bar at the top
   const [who, setWho] = useState(0);
   const [atGamer, setAtGamer] = useState(false);
+  // The buyer's side, after the simulation (see below)
+  const market = useMarket();
+  const closeMarket = market.close;
   const toGamer = useCallback(() => {
     setGamer(true);
     setInside(false);
@@ -90,12 +94,16 @@ export function App() {
     setGamer(false);
     setAtGamer(false);
     setSim(false);
+    closeMarket();
     setInside(true);
-  }, []);
+  }, [closeMarket]);
 
   // "a" over the neighbours: the weather and earnings simulation over the whole block
   const simulation = useSimulation();
-  const endSim = useCallback(() => setSim(false), []);
+  const endSim = useCallback(() => {
+    setSim(false);
+    closeMarket();
+  }, [closeMarket]);
   useEffect(() => {
     if (!atGamer || sim) return;
     const onKey = (e: KeyboardEvent) => {
@@ -107,6 +115,21 @@ export function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [atGamer, sim]);
+
+  // "a" in the simulation: the other side, someone who wants to run their computing in a house
+  const openMarket = market.open;
+  const inMarket = market.page !== null;
+  useEffect(() => {
+    if (!sim || inMarket) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey)
+        return;
+      if (e.key.toLowerCase() === "a") openMarket();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sim, inMarket, openMarket]);
 
   useEffect(() => {
     if (stage !== "building" || inside || gamer) return;
@@ -142,13 +165,23 @@ export function App() {
             neighbour={gamer ? who : null}
             onArrive={() => setAtGamer(true)}
             onPick={sim ? simulation.toggle : setWho}
-            sim={sim ? simulation.view : null}
+            sim={sim && !inMarket ? simulation.view : null}
+            market={
+              sim && inMarket
+                ? {
+                    pins: market.pins,
+                    picked: market.current?.offer.id ?? null,
+                    houses: market.page === "houses",
+                    onPick: market.pick,
+                  }
+                : null
+            }
           />
         </div>
         {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
         {stage && (
           <div
-            key={sim ? "sim" : atGamer ? `neighbour-${who}` : stage}
+            key={sim ? `sim-${market.page ?? ""}` : atGamer ? `neighbour-${who}` : stage}
             aria-hidden
             className="edge-glow animate-edge-glow"
           />
@@ -157,7 +190,11 @@ export function App() {
         {stage === "building" && (houseShown || houseMounted) && (
           <HouseView visible={houseShown} onExit={() => setInside(false)} onNext={toGamer} />
         )}
-        {atGamer && sim && <SimulationView s={simulation} onBack={endSim} />}
+        {atGamer && sim && !inMarket && <SimulationView s={simulation} onBack={endSim} />}
+        {atGamer && sim && market.page === "setup" && (
+          <MarketSetup m={market} onBack={market.close} />
+        )}
+        {atGamer && sim && market.page === "houses" && <MarketHouses m={market} />}
         {atGamer && !sim && NEIGHBOURS[who] && (
           <NeighbourDetails key={who} n={NEIGHBOURS[who]} onBack={backFromGamer} />
         )}
@@ -192,6 +229,7 @@ export function App() {
               setGamer(false);
               setAtGamer(false);
               setSim(false);
+              market.close();
               setHouseMounted(false);
             }}
           />

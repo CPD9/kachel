@@ -3,6 +3,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Flame, Globe2, Plus, Zap } from "lucide-react";
 import { HOME, NEIGHBOURS } from "./neighbours";
+import type { MarketPin } from "./MarketView";
 import { REMOTE_COLOR, REMOTE_FROM, type SimView } from "./simulation";
 
 /** One full turn every this many seconds. */
@@ -552,6 +553,69 @@ function removeRemoteLink(map: mapboxgl.Map) {
   if (map.getSource(REMOTE_LINK)) map.removeSource(REMOTE_LINK);
 }
 
+/** A house offering compute: its price if it fits what's asked, a faded dot if not. */
+function HousePin({
+  pin,
+  picked,
+  onPick,
+}: {
+  pin: MarketPin;
+  picked: boolean;
+  onPick?: ((id: string) => void) | undefined;
+}) {
+  if (!pin.fit)
+    return (
+      <span className="flex animate-pill-in flex-col items-center opacity-35 grayscale transition-all">
+        <span className="grid size-6 place-items-center rounded-full border border-white/15 bg-[#1b1d21]/80 text-[11px]">
+          {pin.emoji}
+        </span>
+        <span className="h-2 w-px bg-white/30" />
+      </span>
+    );
+  return (
+    <button
+      onClick={() => onPick?.(pin.id)}
+      disabled={!onPick}
+      className="group flex animate-pill-in flex-col items-center font-sans"
+    >
+      <span
+        className={`flex items-center gap-1.5 rounded-full border py-1 pr-2.5 pl-1 font-semibold whitespace-nowrap text-white shadow-[0_6px_20px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all group-enabled:group-hover:scale-105 ${
+          picked
+            ? "scale-110 border-white/70 text-[12.5px]"
+            : "border-white/15 bg-[#1b1d21]/90 text-[11px]"
+        }`}
+        style={
+          picked ? { background: REMOTE_COLOR, boxShadow: `0 0 28px ${REMOTE_COLOR}` } : undefined
+        }
+      >
+        <span
+          className={`grid place-items-center rounded-full ${picked ? "size-6 bg-white/25 text-[14px]" : "size-5 text-[12px]"}`}
+          style={picked ? undefined : { background: `${REMOTE_COLOR}55` }}
+        >
+          {pin.emoji}
+        </span>
+        <span className="tabular-nums">{pin.price}</span>
+      </span>
+      <span
+        className={picked ? "h-6 w-0.5" : "h-3 w-px bg-white/40"}
+        style={picked ? { background: `linear-gradient(${REMOTE_COLOR}, transparent)` } : undefined}
+      />
+      {picked && (
+        <span className="relative flex size-3">
+          <span
+            className="absolute inset-0 animate-ping rounded-full"
+            style={{ background: REMOTE_COLOR }}
+          />
+          <span
+            className="size-3 rounded-full ring-2 ring-white/80"
+            style={{ background: REMOTE_COLOR }}
+          />
+        </span>
+      )}
+    </button>
+  );
+}
+
 /** A small pin on the other neighbours' roofs: click to switch to them. */
 function Pin({ i, onPick }: { i: number; onPick: (i: number) => void }) {
   const n = NEIGHBOURS[i];
@@ -615,6 +679,7 @@ export function Globe({
   onArrive,
   onPick,
   sim = null,
+  market = null,
 }: {
   token: string;
   onStage?: (stage: Stage) => void;
@@ -628,6 +693,16 @@ export function Globe({
   onPick?: (i: number) => void;
   /** The weather and earnings simulation, shown over every neighbour at once. */
   sim?: SimView | null;
+  /**
+   * Someone looking for compute: every house offering it across Basel. While they're still
+   * choosing what to run (houses false) the map just frames the city; then it flies to the pick.
+   */
+  market?: {
+    pins: MarketPin[];
+    picked: string | null;
+    houses: boolean;
+    onPick: (id: string) => void;
+  } | null;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -635,10 +710,12 @@ export function Globe({
   const onStageRef = useRef(onStage);
   const onArriveRef = useRef(onArrive);
   const neighbourRef = useRef(neighbour);
+  const pinsRef = useRef<MarketPin[]>([]);
   useEffect(() => {
     onStageRef.current = onStage;
     onArriveRef.current = onArrive;
     neighbourRef.current = neighbour;
+    if (market) pinsRef.current = market.pins;
   });
   const away = neighbour !== null;
   // Set once the neighbours' buildings have risen, for the roof tags
@@ -648,6 +725,7 @@ export function Globe({
     home: number;
   } | null>(null);
   const simOn = sim !== null;
+  const marketOn = market !== null;
   const raisedRef = useRef<Raised | null>(null);
 
   useEffect(() => {
@@ -792,7 +870,7 @@ export function Globe({
   useEffect(() => {
     const map = mapRef.current;
     const n = neighbour === null ? undefined : NEIGHBOURS[neighbour];
-    if (!map || !n || !raisedRef.current) return;
+    if (!map || !n || !raisedRef.current || marketOn) return;
     if (!simOn) {
       map.flyTo({ ...neighbourCamera(n.at), duration: SWITCH_FLY_MS, essential: true });
       return;
@@ -826,7 +904,39 @@ export function Globe({
       map.off("wheel", stop);
       map.off("touchstart", stop);
     };
-  }, [neighbour, simOn]);
+  }, [neighbour, simOn, marketOn]);
+
+  // Looking for compute: frame every house in Basel, then fly to the picked one
+  const houses = market?.houses ?? false;
+  const picked = market?.picked ?? null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !marketOn) return;
+    const at = pinsRef.current.find((p) => p.id === picked)?.at;
+    if (houses && at) {
+      map.flyTo({
+        center: at,
+        zoom: 15.4,
+        pitch: 58,
+        bearing: map.getBearing(),
+        padding: { left: 340, right: 330, top: 90, bottom: 90 },
+        duration: 2200,
+        essential: true,
+      });
+      return;
+    }
+    const bounds = new mapboxgl.LngLatBounds();
+    for (const p of pinsRef.current) bounds.extend(p.at);
+    map.fitBounds(bounds, {
+      padding: houses
+        ? { left: 380, right: 360, top: 120, bottom: 110 }
+        : { left: 90, right: 90, top: 110, bottom: 140 },
+      pitch: 45,
+      bearing: -15,
+      duration: 2600,
+      essential: true,
+    });
+  }, [marketOn, houses, picked]);
 
   // The work from far away: its line into HOME, only in the simulation
   const remoteKw = sim ? Math.round(sim.remote * 10) / 10 : null;
@@ -905,7 +1015,19 @@ export function Globe({
         </OnRoof>
       )}
       {roofs &&
+        market &&
+        market.pins.map((p) => (
+          <OnRoof key={p.id} map={roofs.map} at={p.at} height={12} front={p.id === market.picked}>
+            <HousePin
+              pin={p}
+              picked={market.houses && p.id === market.picked}
+              onPick={market.houses ? market.onPick : undefined}
+            />
+          </OnRoof>
+        ))}
+      {roofs &&
         neighbour !== null &&
+        !market &&
         NEIGHBOURS.map((n, i) => {
           const height = roofs.heights[i];
           if (height === undefined) return null;
