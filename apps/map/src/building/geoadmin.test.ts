@@ -95,6 +95,22 @@ describe("look-up", () => {
     expect(facts).toEqual({ register: null, roof: null, hectare: null, osmSolar: null });
   });
 
+  it("asks Overpass again on its own when it was busy", async () => {
+    const calls: string[] = [];
+    let busy = true;
+    const f: Fetch = async (url) => {
+      calls.push(url);
+      if (url.includes("overpass")) return { ok: !busy, json: async () => ({ elements: [] }) };
+      return { ok: true, json: async () => ({ results: [{ attributes: GWR }] }) };
+    };
+    const picked = { egid: 4, lon: 7.5, lat: 47.5 };
+    expect((await lookUp(picked, f)).osmSolar).toBeNull();
+    busy = false;
+    expect((await lookUp(picked, f)).osmSolar).toEqual({ photovoltaic: 0, thermal: 0, other: 0 });
+    expect(calls.filter((u) => u.includes("overpass"))).toHaveLength(2);
+    expect(calls.filter((u) => u.includes("geo.admin"))).toHaveLength(3);
+  });
+
   it("does not wait for Overpass beyond its time limit", async () => {
     vi.useFakeTimers();
     const f: Fetch = async (url) =>
