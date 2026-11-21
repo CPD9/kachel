@@ -5,7 +5,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
-    "./heat-loop.svg": "./src/heat-loop.svg"
+    "./heat-loop.webp": "./src/heat-loop.webp",
+    "./heat-loop-still.png": "./src/heat-loop-still.png"
   },
   "scripts": {
     "lint": "eslint .",
