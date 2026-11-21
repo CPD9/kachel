@@ -61,15 +61,15 @@ values
   ('00000000-0000-4000-8000-000000000305', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000100', null, 'interactive', 'Evening chat session',
    false, 4.0, null, 'QUEUED', null, null, 0, null, 0.0);
 
--- What the agent reported for the paused job: running, then paused by its signal file. On stage
--- that file is flipped by hand, so the reason says so; it is not a tank reading (the January
--- day below has the tank empty and heat needed).
+-- What the agent reported, each change on its signal file: both jobs running, then one paused.
+-- On stage that file is flipped by hand, so the reasons say so; they are not tank readings (the
+-- January day below has the tank empty and heat needed).
 -- The agent ticks once a second (--tick 1.0), so tick 7200 is two hours after tick 0.
 insert into public.job_runs (job_id, server_id, tick, run, state, items_done, reason, at)
 values
-  ('00000000-0000-4000-8000-000000000304', '00000000-0000-4000-8000-000000000204', 0, true, 'RUNNING', 0, 'heat needed', now() - interval '3 hours'),
+  ('00000000-0000-4000-8000-000000000304', '00000000-0000-4000-8000-000000000204', 0, true, 'RUNNING', 0, 'running on its signal file (demo switch)', now() - interval '3 hours'),
   ('00000000-0000-4000-8000-000000000304', '00000000-0000-4000-8000-000000000204', 7200, false, 'PAUSED', 30720, 'paused by its signal file (demo switch, not the tank)', now() - interval '1 hour'),
-  ('00000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000201', 0, true, 'RUNNING', 0, 'heat needed', now() - interval '3 hours');
+  ('00000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000201', 0, true, 'RUNNING', 0, 'running on its signal file (demo switch)', now() - interval '3 hours');
 
 -- The January day from the scheduler's yearly run (out/day_january.csv), local time.
 insert into public.heat_state (site_id, time, temp_c, demand_kwh, interactive, batch, opportunistic, server_hours, heat_produced, heat_used, served_kwh, backup_kwh, dumped_kwh, soc_kwh, reserve_kwh, arr_interactive, arr_batch, moved, missed, reason)

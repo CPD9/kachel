@@ -18,10 +18,10 @@ from .loop import Change
 from .process import State
 
 # What the house view shows as the reason (supabase/seed.sql writes the same). The agent only
-# sees its signal file, not the tank, so a pause says where it came from rather than guessing
+# sees its signal file, not the tank, so each reason says where it came from rather than guessing
 # why: on stage the file is flipped by hand.
 REASONS = {
-    State.RUNNING: "heat needed",
+    State.RUNNING: "running on its signal file (demo switch)",
     State.PAUSED: "paused by its signal file (demo switch, not the tank)",
     State.GONE: "job ended",
 }
