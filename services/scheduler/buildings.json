@@ -1,0 +1,79 @@
+{
+  "_note": "Reference buildings and tariffs for issue #28. economics.py runs the yearly balance for each building and writes packages/economics/src/buildings.json, which the map's building card imports. Areas are energy reference areas (EBF). Specific demand is for Basel's climate; climate_factor scales space heat for another place. Anything marked OUR GUESS has no outside source yet. Sources: docs/economics/README.md",
+  "buildings": {
+    "basel_house": {
+      "name": "Reference house, Basel",
+      "kind": "house",
+      "place": "Basel",
+      "reference": true,
+      "default_tariff": "iwb_h4_2027",
+      "source": "DigitalHeat case brief: the heating formula and 12 kWh hot water a day on Basel 2025 weather; no floor area."
+    },
+    "bern_block": {
+      "name": "Flat block, Bern (1970s)",
+      "kind": "flats",
+      "place": "Bern",
+      "area_m2": 1000,
+      "space_heat_kwh_per_m2": 100,
+      "hot_water_kwh_per_m2": 21,
+      "climate_factor": 1.19,
+      "default_tariff": "swiss_median_2027",
+      "source": "Area: OUR GUESS of 8 flats of 102 m² (BFS, average occupied dwelling, 15 Sep 2026) plus stairs and walls. Space heat 100 kWh/m²: OUR GUESS within the BFE band of 120-150 kWh/m² for heat and hot water in buildings from before 1970. Hot water 21 kWh/m²: SIA 380/1 standard value for flats (Kanton Thurgau Energieordner, Tabelle 6). Climate: Bern-Zollikofen had 1.19 times Basel-Binningen's heating degree days in 2025 (HEV Schweiz, Heizgradtage). Tariff: ewb Bern not checked yet, so the Swiss 2027 median."
+    },
+    "basel_office": {
+      "name": "Office building, Basel",
+      "kind": "office",
+      "place": "Basel",
+      "area_m2": 2000,
+      "space_heat_kwh_per_m2": 65,
+      "hot_water_kwh_per_m2": 7,
+      "climate_factor": 1.0,
+      "default_tariff": "iwb_c3_2027",
+      "source": "Area: OUR GUESS. Space heat 65 kWh/m²: OUR GUESS, twice the SIA 380/1:2016 new-build limit for offices (13 + 15 × 1.3 = 32.5 kWh/m², Kanton Zürich Anforderungsprofil), which is GEAK class D (GEAK-Kodifizierung 3.0, Tab. 41). Hot water 7 kWh/m²: SIA 380/1 standard value for offices (Kanton Thurgau Energieordner, Tabelle 6)."
+    },
+    "fhnw_dreispitz": {
+      "name": "FHNW Campus Dreispitz, HGK tower",
+      "kind": "campus",
+      "place": "Münchenstein",
+      "area_m2": 10176,
+      "space_heat_kwh_per_m2": 14.7,
+      "hot_water_kwh_per_m2": 7,
+      "climate_factor": 1.0,
+      "default_tariff": "iwb_c3_2027",
+      "source": "Hochbauamt Basel-Stadt project sheet, Jan 2016: energy reference area 10,176 m² (gross floor area 11,923 m²), heating demand Qh 53 MJ/m² = 14.7 kWh/m² (SIA 380/1 design value), Minergie-P-ECO. The 20,000 m² often quoted is the tower and the Zollfreilager next to it together (about 28,800 m² gross). Hot water 7 kWh/m²: SIA 380/1 standard value for schools (Kanton Thurgau Energieordner, Tabelle 6). It is in Basel-Landschaft, so IWB's tariff is OUR GUESS for its power."
+    }
+  },
+  "tariffs": {
+    "swiss_median_2026": {
+      "name": "Swiss median 2026, households (H4)",
+      "chf_per_kwh": 0.277,
+      "source": "ElCom, 9 Sep 2025: H4 median 27.7 Rp/kWh."
+    },
+    "swiss_median_2027": {
+      "name": "Swiss median 2027, households (H4)",
+      "chf_per_kwh": 0.265,
+      "source": "ElCom, 8 Sep 2026: H4 median 26.5 Rp/kWh."
+    },
+    "iwb_h4_2026": {
+      "name": "IWB Basel 2026, households (H4)",
+      "chf_per_kwh": 0.3325,
+      "source": "ElCom, strompreis.elcom.admin.ch, Basel (2701), H4 total without VAT, checked 21 Nov 2026."
+    },
+    "iwb_h4_2027": {
+      "name": "IWB Basel 2027, households (H4)",
+      "chf_per_kwh": 0.3342,
+      "source": "ElCom, strompreis.elcom.admin.ch, Basel (2701), H4 total without VAT, checked 21 Nov 2026. Matches IWB's own CHF 1,504 for 4,500 kWh (release of 25 Aug 2026)."
+    },
+    "iwb_c3_2027": {
+      "name": "IWB Basel 2027, business (C3)",
+      "chf_per_kwh": 0.32597,
+      "source": "ElCom, strompreis.elcom.admin.ch, Basel (2701), C3 total without VAT, checked 21 Nov 2026."
+    }
+  },
+  "scaling": {
+    "tank_kwh_per_kwh_of_daily_demand": "same as the reference house",
+    "hardware": "per server as in the reference house's hardware case, so fitting hours grow with the number of servers",
+    "jobs": "the reference house's evening and batch jobs, plus the unlimited backlog",
+    "source": "OUR GUESS: everything scales with heat demand or with the number of servers."
+  }
+}
