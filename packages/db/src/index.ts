@@ -1,5 +1,18 @@
 export { createKachelClient, type KachelClient } from "./client";
 export {
+  EMPTY,
+  heatKwh,
+  newest,
+  supabaseFeed,
+  upsert,
+  watch,
+  type JobFeed,
+  type LiveJob,
+  type LiveServer,
+  type LiveSite,
+  type LiveState,
+} from "./live";
+export {
   Constants,
   type Database,
   type Enums,
