@@ -184,13 +184,27 @@ important as the compute price.
     <https://www.pv-magazine.de/2026/03/02/schweiz-legt-neue-kapitalkostensaetze-fuer-erneuerbare-und-stromnetze-fest/>.
 18. ECB euro reference rates, 20 Nov 2026, used for USD and GBP to CHF:
     <https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html>.
+19. Srivastav et al., "Open ASR Leaderboard", arXiv:2510.06961, Table 3: Whisper large-v3 at
+    RTFx 145.51 on one A100-SXM4-80GB, batch 64 <https://arxiv.org/abs/2510.06961>.
+20. NVIDIA A100 datasheet, June 2021: 400 W maximum TDP for the A100 80GB SXM
+    <https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/nvidia-a100-datasheet-us-nvidia-1758950-r4-web.pdf>.
+21. Red Hat, "Red Hat AI tops MLPerf Inference v6.0", 1 Apr 2026: Whisper large-v3 speech to
+    text on LibriSpeech (1,633 samples, about 30 h), offline scenario
+    <https://www.redhat.com/en/blog/red-hat-ai-tops-mlperf-inference-v60-vllm-qwen3-vl-whisper-and-gpt-oss-120b>.
+22. OpenAI, Batch API guide, read 21 Nov 2026: a 24 h completion window only, at half the
+    synchronous price <https://developers.openai.com/api/docs/guides/batch>.
+23. Alibaba, cluster-trace-gpu-v2020: over 6,500 GPUs, July and August 2020, training and
+    inference jobs <https://github.com/alibaba/clusterdata/tree/master/cluster-trace-gpu-v2020>.
+24. Our own measurement of the embedding job on an Intel Core i7-9700K, 21 Nov 2026:
+    [measurements.md](../measurements.md).
 
 Our own assumptions, with no outside source yet:
 
 - Compute sells at 0.50 CHF per server-hour.
 - There is always a backlog of flexible work.
 - A paused server draws nothing.
-- Each house has one 4-hour evening session and 8 server-hours of batch work a day.
+- Each house has one 4-hour evening session and 8 server-hours of batch work a day (the
+  batch job itself is sourced: [job-types.md](../job-types.md)).
 - Each server in the three hardware cases draws about 1 kW.
 - A plate heat exchanger to the tank costs about what the water loop's radiator does.
 - Fitting six servers takes 6, 10 or 16 fitter hours and 2, 3 or 4 electrician hours.

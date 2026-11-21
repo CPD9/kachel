@@ -56,27 +56,27 @@ Note in config.json: OUR scenario: one evening session block of 4 h per house an
 
 ## Batch jobs
 
-| What                           | Key                    | Value                               | Unit         | Source    |
-| ------------------------------ | ---------------------- | ----------------------------------- | ------------ | --------- |
-| What it is                     | `label`                | Batch with deadline (transcription) |              | our guess |
-| Can be paused                  | `interruptible`        | true                                |              | our guess |
-| Deadline after arrival         | `deadline_h`           | 24 h                                |              | our guess |
-| Server-hours arriving each day | `arrivals_server_h`    | 8 at 06:00                          | server-hours | our guess |
-| When the house needs no heat   | `when_heat_not_needed` | move                                |              | our guess |
+| What                           | Key                    | Value                               | Unit         | Source                                                                      |
+| ------------------------------ | ---------------------- | ----------------------------------- | ------------ | --------------------------------------------------------------------------- |
+| What it is                     | `label`                | Batch with deadline (transcription) |              | [21] MLPerf Inference v6.0, [19] Open ASR Leaderboard                       |
+| Can be paused                  | `interruptible`        | true                                |              | [21] MLPerf Inference v6.0 (offline: the whole batch is there at the start) |
+| Deadline after arrival         | `deadline_h`           | 24 h                                |              | [22] OpenAI Batch API                                                       |
+| Server-hours arriving each day | `arrivals_server_h`    | 8 at 06:00                          | server-hours | our guess                                                                   |
+| When the house needs no heat   | `when_heat_not_needed` | move                                |              | our guess                                                                   |
 
-Note in config.json: OUR scenario: 8 server-hours arrive at 06:00, due 24 h later. Job size from measurements.json.
+Note in config.json: Whisper large-v3 speech to text, the MLPerf Inference speech benchmark since v5.1. Interruptible per recording. Deadline 24 h: OpenAI Batch API completion window. Size: 24.7 GPU-s per audio hour (Open ASR Leaderboard RTFx 145.51 on A100), 2.75 Wh for the GPU at its 400 W TDP, host not counted, about 360 audio hours per 1 kW server-hour. 8 server-hours at 06:00 is OUR scenario. Sources: docs/job-types.md
 
 ## Backlog jobs
 
-| What                         | Key                    | Value                              | Unit | Source    |
-| ---------------------------- | ---------------------- | ---------------------------------- | ---- | --------- |
-| What it is                   | `label`                | Opportunistic backlog (embeddings) |      | our guess |
-| Can be paused                | `interruptible`        | true                               |      | our guess |
-| Deadline after arrival       | `deadline_h`           | none                               |      | our guess |
-| Backlog never runs out       | `unlimited`            | true                               |      | our guess |
-| When the house needs no heat | `when_heat_not_needed` | pause                              |      | our guess |
+| What                         | Key                    | Value                              | Unit | Source                                              |
+| ---------------------------- | ---------------------- | ---------------------------------- | ---- | --------------------------------------------------- |
+| What it is                   | `label`                | Opportunistic backlog (embeddings) |      | [24] our measurement                                |
+| Can be paused                | `interruptible`        | true                               |      | [24] our measurement: it checkpoints every 64 items |
+| Deadline after arrival       | `deadline_h`           | none                               |      | our guess                                           |
+| Backlog never runs out       | `unlimited`            | true                               |      | our guess                                           |
+| When the house needs no heat | `when_heat_not_needed` | pause                              |      | our guess                                           |
 
-Note in config.json: ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model.
+Note in config.json: ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model. Job size measured on our machine: 0.113 Wh and 34.2 CPU-s per 200,000 items, about 8,840 jobs per 1 kW server-hour (docs/measurements.md).
 
 ## Hardware
 
