@@ -61,6 +61,22 @@ describe("building card", () => {
     expect(screen.getByText(/scaled from Kachel's Basel reference house/)).toBeTruthy();
   });
 
+  it("says a fleet house is synthetic and the building real", () => {
+    const house = {
+      id: "house-07",
+      city: "Basel",
+      servers: 6,
+      heatDemandKwh: 30_000,
+      egid: 441428,
+      lon: 7.5754,
+      lat: 47.5608,
+      hectareHeatMwh: 4562,
+    };
+    render(<BuildingCard facts={FACTS} month={10} fleet={house} onClose={() => undefined} />);
+    expect(screen.getByText(/synthetic Kachel house house-07 \(6 servers\)/)).toBeTruthy();
+    expect(screen.getByText(/the house's servers are not/)).toBeTruthy();
+  });
+
   it("says so when nothing is published", () => {
     render(
       <BuildingCard

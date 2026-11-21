@@ -244,7 +244,13 @@ export async function createScene(
     highlighted = hit instanceof Cesium3DTileFeature ? hit : null;
     if (highlighted !== null) highlighted.color = HIGHLIGHT;
     const network = networks.networkOf(hit);
-    const building = highlighted === null ? null : readFeature(highlighted);
+    const house = homeServers.houseOf(hit);
+    const building =
+      house !== null
+        ? { egid: house.egid, lon: house.lon, lat: house.lat }
+        : highlighted === null
+          ? null
+          : readFeature(highlighted);
     const picked: Pick =
       network !== null
         ? { kind: "network", network }

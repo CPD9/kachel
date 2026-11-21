@@ -12,7 +12,7 @@ import {
   type Viewer,
 } from "cesium";
 import type { Network } from "../networks/thermal";
-import { ORIGIN } from "../places";
+import { FLEET, type FleetHouse } from "../fleet/fleet";
 
 const NETWORK_COLOUR = Color.fromCssColorString("#e5484d");
 const SERVER_COLOUR = Color.fromCssColorString("#ffb347");
@@ -66,48 +66,40 @@ export function networkLayer(viewer: Viewer) {
   };
 }
 
-/** A small, fixed pseudo-random scatter: the same picture every time. */
-function scatter(count: number, radiusDeg: number): Array<[number, number]> {
-  let seed = 7;
-  const next = () => {
-    seed = (seed * 16807) % 2147483647;
-    return seed / 2147483647;
-  };
-  return Array.from({ length: count }, () => {
-    const r = radiusDeg * Math.sqrt(next());
-    const a = 2 * Math.PI * next();
-    return [
-      ORIGIN.lon + (r * Math.cos(a)) / Math.cos((ORIGIN.lat * Math.PI) / 180),
-      ORIGIN.lat + r * Math.sin(a),
-    ];
-  });
-}
-
 /**
- * Our idea, not data: Kachel servers in many homes, each a small heat source, drawn as warm
- * dots scattered over Basel. The legend labels it as an illustration.
+ * Our idea, not data: the scheduler's synthetic fleet, each house drawn as a warm dot on the real
+ * residential building it was placed on (see fleet/fleet.ts). Bigger dots, more servers.
+ * The legend labels it as an illustration.
  */
 export function homeServerLayer(viewer: Viewer) {
   const source = new CustomDataSource("kachel-home-servers");
   source.show = false;
   void viewer.dataSources.add(source);
-  for (const [lon, lat] of scatter(160, 0.03)) {
-    source.entities.add({
-      position: Cartesian3.fromDegrees(lon, lat),
+  const byEntity = new Map<Entity, FleetHouse>();
+  for (const house of FLEET) {
+    const entity = source.entities.add({
+      position: Cartesian3.fromDegrees(house.lon, house.lat, 18),
       point: {
-        pixelSize: 7,
-        color: SERVER_COLOUR.withAlpha(0.9),
+        pixelSize: 5 + house.servers,
+        color: SERVER_COLOUR.withAlpha(0.95),
         outlineColor: SERVER_COLOUR.withAlpha(0.35),
         outlineWidth: 5,
-        heightReference: HeightReference.CLAMP_TO_GROUND,
+        heightReference: HeightReference.RELATIVE_TO_GROUND,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        scaleByDistance: new NearFarScalar(500, 1.4, 20_000, 0.5),
+        scaleByDistance: new NearFarScalar(500, 1.3, 30_000, 0.4),
       },
     });
+    byEntity.set(entity, house);
   }
   return {
     setShown(on: boolean): void {
       source.show = on;
+    },
+    /** The fleet house behind a picked object, if it is one of ours and the layer is on. */
+    houseOf(picked: unknown): FleetHouse | null {
+      if (!source.show) return null;
+      const id = (picked as { id?: unknown } | undefined)?.id;
+      return id instanceof Entity ? (byEntity.get(id) ?? null) : null;
     },
   };
 }

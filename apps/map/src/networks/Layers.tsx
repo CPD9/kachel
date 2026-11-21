@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Fetch } from "../building/geoadmin";
 import type { Scene } from "../scene/viewer";
+import { FLEET, FLEET_SERVERS } from "../fleet/fleet";
 import { loadNetworks, NETWORK_LIMIT } from "./thermal";
 
 /** Layer switches: SFOE's district heating networks, and our idea of home servers beside them. */
@@ -61,8 +62,7 @@ export function Layers({ scene, fetcher = fetch }: { scene: Scene; fetcher?: Fet
         <span>
           <span className="font-medium">Kachel: heat from home servers</span>
           <span className="block text-xs text-paper/60">
-            Our idea, drawn as an illustration, not data: many small servers in many homes instead
-            of one central plant.
+            {`Our idea, as an illustration, not data: the scheduler's synthetic fleet, ${FLEET.length} houses with ${FLEET_SERVERS} servers, placed on real homes in Basel and Bern in hectares with high heat demand. Click a dot.`}
           </span>
         </span>
       </label>

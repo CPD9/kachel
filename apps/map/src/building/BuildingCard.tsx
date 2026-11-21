@@ -1,4 +1,5 @@
 import { formatEnergy, heatEstimate } from "./estimate";
+import type { FleetHouse } from "../fleet/fleet";
 import type { BuildingFacts } from "./geoadmin";
 import { ASSUMPTIONS_URL, formatChf, kachelEstimate } from "./kachel";
 import { MonthSlider } from "./MonthSlider";
@@ -23,11 +24,14 @@ function Source({ children }: { children: string }) {
 export function BuildingCard({
   facts,
   month,
+  fleet = null,
   onClose,
 }: {
   facts: BuildingFacts | "loading";
   /** The month on the map's clock, 0 for January: where the month slider starts. */
   month: number;
+  /** The synthetic fleet house placed on this building, if any. */
+  fleet?: FleetHouse | null;
   onClose: () => void;
 }) {
   return (
@@ -43,6 +47,11 @@ export function BuildingCard({
       >
         ×
       </button>
+      {fleet !== null && (
+        <p className="mr-8 mb-2 rounded border border-heat/50 px-2 py-1 text-xs text-paper/80">
+          {`Illustration: synthetic Kachel house ${fleet.id} (${fleet.servers} servers) from the scheduler's ${fleet.city} fleet run is placed on this real building. The building and its figures below are real; the house's servers are not.`}
+        </p>
+      )}
       {facts === "loading" ? (
         <p>Looking the building up…</p>
       ) : (
