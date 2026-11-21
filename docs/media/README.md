@@ -4,6 +4,13 @@ Renders for the pitch video, made in Blender. Every figure on screen is read fro
 scheduler's output or from [docs/economics/data](../economics/data) at render time, never
 typed by hand. The videos are in the [media-v1 release](https://github.com/CPD9/kachel/releases/tag/media-v1).
 
+## The two-minute film
+
+January day-night, setup, scheduler, break-even and payback, the live demo, and the July
+evening to close, in the order of the [talk track](../pitch.md).
+[1080p](https://github.com/CPD9/kachel/releases/download/media-v1/kachel-film-2min.mp4) or
+[720p](https://github.com/CPD9/kachel/releases/download/media-v1/kachel-film-2min-720p.mp4).
+
 ## One day in Basel
 
 ![Split screen at 09:00 on 13 January 2025: Basel outside in morning light, the plant room inside with six servers running](daynight.webp)
@@ -32,13 +39,13 @@ house can use their heat, and the backlog pauses when the tank is full.
 
 ![The host app with six servers: Server 4 runs its embeddings job](live-running.webp)
 
-![The same screen a moment later: Server 4's job is paused, no heat sink](live-paused.webp)
+![The same screen a moment later: Server 4's job is paused by its signal file, the demo switch](live-paused.webp)
 
 The host app on the local stack. The agent follows a real embedding job on Server 4. When its
 signal file says pause, it stops the process and writes the change to Supabase, and the pill
 turns Paused under a second later (agent run with `--tick 0.2`; the default is 1 s). On run it
 turns back.
-[Video, 27 s](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
+[Video, 30 s](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
 
 ![The console signed in as the demo buyer: the submit form and the live table of jobs](app-console.png)
 

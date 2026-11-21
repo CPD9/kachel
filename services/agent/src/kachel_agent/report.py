@@ -17,10 +17,12 @@ import httpx
 from .loop import Change
 from .process import State
 
-# What the house view shows as the reason, matching the scheduler's wording (supabase/seed.sql).
+# What the house view shows as the reason (supabase/seed.sql writes the same). The agent only
+# sees its signal file, not the tank, so each reason says where it came from rather than guessing
+# why: on stage the file is flipped by hand.
 REASONS = {
-    State.RUNNING: "heat needed",
-    State.PAUSED: "tank full / no heat sink: backlog paused",
+    State.RUNNING: "running on its signal file (demo switch)",
+    State.PAUSED: "paused by its signal file (demo switch, not the tank)",
     State.GONE: "job ended",
 }
 

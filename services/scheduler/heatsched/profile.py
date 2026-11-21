@@ -20,6 +20,15 @@ def download_weather(path="out/weather_basel_2025.csv", place="basel"):
     df.to_csv(path, index=False)
     return df
 
+def weather_source(path):
+    """The label for a saved Open-Meteo file, from the place named in its file name."""
+    name = str(path).rsplit("/", 1)[-1].lower()
+    place = next((p for p in PLACES if p in name), None)
+    if place is None:
+        raise ValueError(f"{path}: name the place (one of {', '.join(PLACES)}) in the file name")
+    return f"Open-Meteo archive, {place.capitalize()} 2025"
+
+
 def load_weather(path):
     """Read an Open-Meteo CSV saved by download_weather (time, temp_c, solar_wm2)."""
     return pd.read_csv(path)

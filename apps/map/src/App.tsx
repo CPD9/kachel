@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { BuildingCard } from "./building/BuildingCard";
 import { lookUp, type BuildingFacts } from "./building/geoadmin";
 import { swissTime } from "./clock";
+import { Layers } from "./networks/Layers";
+import { Places } from "./Places";
+import { NetworkCard } from "./networks/NetworkCard";
+import type { Network } from "./networks/thermal";
 import type { Scene } from "./scene/viewer";
 import { CREDITS } from "./sources";
 
@@ -15,18 +19,20 @@ export function App({ start }: { start: StartScene }) {
   const [time, setTime] = useState<Date | null>(null);
   const [playing, setPlaying] = useState(true);
   const [building, setBuilding] = useState<BuildingFacts | "loading" | null>(null);
+  const [network, setNetwork] = useState<Network | null>(null);
 
   useEffect(() => {
     if (scene === null) return;
     let latest = 0;
     return scene.onPick((picked) => {
       const call = ++latest;
-      if (picked === null) {
+      setNetwork(picked?.kind === "network" ? picked.network : null);
+      if (picked?.kind !== "building") {
         setBuilding(null);
         return;
       }
       setBuilding("loading");
-      void lookUp(picked).then((facts) => {
+      void lookUp(picked.building).then((facts) => {
         if (call === latest) setBuilding(facts);
       });
     });
@@ -96,7 +102,18 @@ export function App({ start }: { start: StartScene }) {
         </button>
       </section>
 
-      {building !== null && <BuildingCard facts={building} onClose={() => setBuilding(null)} />}
+      {building !== null && (
+        <BuildingCard
+          facts={building}
+          month={(time ?? new Date()).getMonth()}
+          onClose={() => setBuilding(null)}
+        />
+      )}
+
+      {network !== null && <NetworkCard network={network} onClose={() => setNetwork(null)} />}
+
+      {scene !== null && <Layers scene={scene} />}
+      {scene !== null && <Places scene={scene} />}
 
       {failed && (
         <p

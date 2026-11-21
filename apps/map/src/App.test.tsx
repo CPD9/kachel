@@ -13,6 +13,9 @@ function fakeScene(): Scene {
     },
     flyTo: vi.fn(),
     onPick: () => () => undefined,
+    viewArea: () => ({ west: 7.5, south: 47.5, east: 7.7, north: 47.6 }),
+    showNetworks: vi.fn(),
+    showHomeServers: vi.fn(),
     destroy: vi.fn(),
   };
 }
@@ -35,6 +38,16 @@ describe("map app", () => {
     });
     expect(scene.playing()).toBe(false);
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
+  });
+
+  it("flies out from Basel to the globe", async () => {
+    const scene = fakeScene();
+    render(<App start={() => Promise.resolve(scene)} />);
+    const places = await screen.findByRole("navigation", { name: "Places" });
+    const names = Array.from(places.querySelectorAll("button")).map((b) => b.textContent);
+    expect(names).toEqual(["Basel", "Bern", "Switzerland", "Neighbours", "Globe"]);
+    fireEvent.click(screen.getByRole("button", { name: "Switzerland" }));
+    expect(scene.flyTo).toHaveBeenCalledWith(expect.objectContaining({ name: "Switzerland" }), 4);
   });
 
   it("says so when the map cannot start", async () => {

@@ -1,5 +1,7 @@
 import { formatEnergy, heatEstimate } from "./estimate";
 import type { BuildingFacts } from "./geoadmin";
+import { ASSUMPTIONS_URL, formatChf, kachelEstimate } from "./kachel";
+import { MonthSlider } from "./MonthSlider";
 
 const NETWORK_THRESHOLD_MWH = 700;
 
@@ -19,9 +21,12 @@ function Source({ children }: { children: string }) {
 /** A clicked building: its estimated heat and energy use, and the published facts behind them. */
 export function BuildingCard({
   facts,
+  month,
   onClose,
 }: {
   facts: BuildingFacts | "loading";
+  /** The month on the map's clock, 0 for January: where the month slider starts. */
+  month: number;
   onClose: () => void;
 }) {
   return (
@@ -37,12 +42,16 @@ export function BuildingCard({
       >
         ×
       </button>
-      {facts === "loading" ? <p>Looking the building up…</p> : <Facts facts={facts} />}
+      {facts === "loading" ? (
+        <p>Looking the building up…</p>
+      ) : (
+        <Facts facts={facts} month={month} />
+      )}
     </aside>
   );
 }
 
-function Facts({ facts }: { facts: BuildingFacts }) {
+function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
   const { register, roof, hectare } = facts;
   if (register === null && roof === null && hectare === null) {
     return <p>No published data found for this building.</p>;
@@ -79,11 +88,22 @@ function Facts({ facts }: { facts: BuildingFacts }) {
               }
             />
           </dl>
+          {roof !== null && (
+            <MonthSlider
+              key={register?.egid ?? "building"}
+              heatingKwh={roof.heatingKwh}
+              hotWaterKwh={roof.hotWaterKwh}
+              degreeDays={roof.degreeDays}
+              initialMonth={month}
+            />
+          )}
           <Source>
-            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023). Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
+            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023); months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
           </Source>
         </section>
       )}
+
+      {estimate !== null && <WithKachel heatKwh={estimate.heatKwh} />}
 
       {register !== null && (
         <section className="mt-3">
@@ -130,5 +150,40 @@ function Facts({ facts }: { facts: BuildingFacts }) {
         </section>
       )}
     </>
+  );
+}
+
+/** What Kachel home servers could do here, scaled from the scheduler's reference house. */
+function WithKachel({ heatKwh }: { heatKwh: number }) {
+  const k = kachelEstimate(heatKwh);
+  return (
+    <section className="mt-3 rounded-md border border-heat/50 p-3">
+      <h3 className="font-medium text-heat">With Kachel, estimated</h3>
+      {k === null ? (
+        <p>Too little heat for one 1 kW server.</p>
+      ) : (
+        <dl className="mt-1 space-y-0.5">
+          <Row label="Home servers, 1 kW each" value={`about ${k.servers}`} />
+          <Row
+            label="Server heat used"
+            value={`${formatEnergy(k.heatFromServersKwh)} (${Math.round(k.sharePct)}%)`}
+          />
+          <Row label="Electricity the servers draw" value={formatEnergy(k.electricityKwh)} />
+          <Row label="A year, before hardware" value={formatChf(k.beforeHardwareChf)} />
+          <Row label="A year, after hardware (mid)" value={formatChf(k.afterHardwareChf.mid)} />
+          <Row label="… cheap hardware (low)" value={formatChf(k.afterHardwareChf.low)} />
+          <Row label="… dear hardware (high)" value={formatChf(k.afterHardwareChf.high)} />
+          <Row label="Payback (mid)" value={`${k.paybackYearsMid} years`} />
+        </dl>
+      )}
+      <p className="mt-1 text-xs text-paper/60">
+        {
+          "Estimate, scaled from Kachel's Basel reference house (6 servers, 31,231 kWh, Basel 2025 weather) in proportion to this building's heat. It assumes interruptible AI work is always waiting and 0.50 CHF a server-hour. "
+        }
+        <a href={ASSUMPTIONS_URL} target="_blank" rel="noreferrer" className="underline">
+          Assumptions and sources
+        </a>
+      </p>
+    </section>
   );
 }

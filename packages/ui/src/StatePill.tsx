@@ -3,7 +3,7 @@ export type JobState = "QUEUED" | "RUNNING" | "PAUSED" | "MOVED" | "DONE";
 const LABELS: Record<JobState, string> = {
   QUEUED: "Queued",
   RUNNING: "Running",
-  PAUSED: "Paused: no heat sink",
+  PAUSED: "Paused",
   MOVED: "Moved",
   DONE: "Done",
 };
