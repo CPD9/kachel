@@ -41,7 +41,8 @@ Each day also runs with every job kept at the house it was sent to, for comparis
 
 Compute heat used is the share of the jobs' heat that went into a house. House heat covered is the share of the
 houses' heat demand that day the jobs met; the rest came from their own heating. In January the job stream is far
-smaller than what the houses could absorb.
+smaller than what the houses could absorb. Each run takes its first city's coldest January day: 13 January in Basel,
+14 January in Bern, so the combined run uses Basel's.
 
 In July the houses can only take what hot water and the tanks absorb, so routing cannot raise the heat used much;
 it sends about a third fewer jobs off-site by putting each where there is room. Outputs in `out/`, with `<run>` =
