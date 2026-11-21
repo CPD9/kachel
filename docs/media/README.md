@@ -21,6 +21,17 @@ house can use their heat, and the backlog pauses when the tank is full.
 
 ![A close-up of one server in the rack](server-closeup-34.webp)
 
+## Live demo
+
+![The host app with six servers: Server 4 runs its embeddings job](live-running.webp)
+
+![The same screen a moment later: Server 4's job is paused, no heat sink](live-paused.webp)
+
+The host app on the local stack. The agent follows a real embedding job on Server 4. When its
+signal file says pause, it stops the process and writes the change to Supabase, and the pill
+turns Paused under a second later; on run it turns back.
+[Video, 27 s](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
+
 ## The numbers
 
 ![Heat from servers and backup, month by month, with utilisation](chart-month.webp)
