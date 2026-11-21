@@ -6,6 +6,53 @@
     "hot_water_shape": "flat",
     "source": "DigitalHeat case brief (reference house). hot_water_shape=flat is OUR assumption; overridden when the case CSV is passed with --profile."
   },
+  "house_quality": {
+    "_note": "Heat a building needs by when it was built, for the map's building card (issue #159): heated floor area (GWR gebf) times its class's space heating times its period's factor (GWR gbaup), plus hot water by class. The method and numbers SFOE's Sonnendach uses, without its climate and boiler-efficiency steps. Used by heatDemand() in packages/economics and heatsched/house.py.",
+    "space_heating_kwh_per_m2": {
+      "single": 156,
+      "multi": 94,
+      "office": 70,
+      "shop": 50,
+      "restaurant": 121,
+      "industry": 86,
+      "assembly": 101,
+      "school": 105,
+      "hospital": 75,
+      "sport": 87
+    },
+    "hot_water_kwh_per_m2": {
+      "single": 12,
+      "multi": 16,
+      "office": 2,
+      "shop": 1,
+      "restaurant": 59,
+      "industry": 2,
+      "assembly": 4,
+      "school": 3,
+      "hospital": 31,
+      "sport": 33
+    },
+    "period_factor": {
+      "before_1919": 0.89,
+      "1919_1945": 1.17,
+      "1946_1960": 1.17,
+      "1961_1970": 1.15,
+      "1971_1980": 1.15,
+      "1981_1990": 0.81,
+      "1991_2000": 0.53,
+      "2001_2005": 0.42,
+      "2006_2010": 0.42,
+      "2011_2015": 0.33,
+      "after_2015": 0.31
+    },
+    "renovated_factor": 0.5,
+    "source": {
+      "space_heating_kwh_per_m2": "Space heating per m² of energy reference area, mean of today's stock (SIA 2024, as Sonnendach uses it): by GWR building class: single-family houses 156 kWh (1110, 1121), flats 94 (1122, 1130, and hotels 1211, 1212), offices 70 (1220), shops 50 (1230), restaurants 121 (1231), industry 86 (1251), halls and churches 101 (1261, 1272), schools, museums and libraries 105 (1262, 1263), hospitals 75 (1264), sports halls 87 (1265) (Egon AG for SFOE, 'Abschätzung der Heizenergiekennzahl für die Bauperiode ab 2016', 20 Aug 2021, Tabelle 1, annex to Meteotest, 'Solarpotentialanalyse für Sonnendach.ch', Schlussbericht, 27 Jul 2022). Garages, stores, farm buildings and the other classes the table gives 0 get no estimate of ours.",
+      "hot_water_kwh_per_m2": "Hot water per m², same classes: 12, 16, 2, 1, 59, 2, 4, 3, 31 and 33 kWh (same report, Tabelle 2, from SIA 2024).",
+      "period_factor": "A period's space heating against the stock's mean: 0.89 before 1919, 1.17 for 1919-1960, 1.15 for 1961-1980, 0.81 for 1981-1990, 0.53 for 1991-2000, 0.42 for 2001-2010, 0.33 for 2011-2015 (Meteotest, Tabelle 8, as reprinted by Egon AG, Tabelle 2); 0.31 from 2016 (Egon AG, Tabelle 3, from TEP Energy 2021 for BAFU and EnDK).",
+      "renovated_factor": "A comprehensive renovation at least halves an unrenovated building's energy use (EnergieSchweiz and EnFK, 'Gebäude erneuern: Energieverbrauch halbieren', 01.2019). Applied to space heating only, and never below a new building's (after 2015): OUR rule."
+    }
+  },
   "server": {
     "power_kw": 1.0,
     "heat_recovery": 0.8,

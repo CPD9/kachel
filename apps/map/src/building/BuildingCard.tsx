@@ -1,3 +1,12 @@
+import { useState } from "react";
+import {
+  HOUSE_SOURCE,
+  heatDemand,
+  periodFactor,
+  periodLabel,
+  USE_LABEL,
+  type PeriodId,
+} from "@kachel/economics/house";
 import { formatEnergy, heatEstimate } from "./estimate";
 import { FLEET, type FleetHouse } from "../fleet/fleet";
 import type { BuildingFacts } from "./geoadmin";
@@ -61,14 +70,25 @@ export function BuildingCard({
       {facts === "loading" ? (
         <p>Looking the building up…</p>
       ) : (
-        <Facts facts={facts} month={month} />
+        <Facts key={facts.register?.egid ?? "building"} facts={facts} month={month} />
       )}
     </aside>
   );
 }
 
+/**
+ * What a renovation does to SFOE's space heating: Sonnendach's figure is the average for the
+ * building's period, unrenovated, so the box applies our period's renovated factor to it.
+ */
+function renovationScale(period: PeriodId | null, renovated: boolean): number {
+  if (!renovated) return 1;
+  const p = period ?? "1961_1970";
+  return periodFactor(p, true) / periodFactor(p);
+}
+
 function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
   const { register, roof, hectare, osmSolar, group } = facts;
+  const [renovated, setRenovated] = useState(false);
   if (register === null && roof === null && hectare === null && osmSolar === null) {
     return <p>No published data found for this building.</p>;
   }
@@ -78,6 +98,14 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
   const share = group !== null && group.egids.length > 1 ? shareOf(group, area) : null;
   const scale = share ?? 1;
   const groupHeatKwh = roof === null ? 0 : roof.heatingKwh + roof.hotWaterKwh;
+  const period = register?.period ?? null;
+  const kind = register?.kind ?? null;
+  // Our own estimate from the register, for homes: floor area and construction period (#159).
+  const ours =
+    area !== null && area > 0 && period !== null && kind !== null
+      ? heatDemand(area, period, renovated, kind)
+      : null;
+  const renovation = renovationScale(period, renovated);
   const estimate =
     roof === null
       ? null
@@ -135,7 +163,27 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
                 estimate.energyKwh === null ? "heating not known" : formatEnergy(estimate.energyKwh)
               }
             />
+            {period !== null && (
+              <Row
+                label={`Our estimate, built ${periodLabel(period)}${renovated ? ", renovated" : ""}`}
+                value={
+                  ours !== null
+                    ? formatEnergy(ours.totalKwh)
+                    : kind === null
+                      ? "no heat for this use"
+                      : "no floor area"
+                }
+              />
+            )}
           </dl>
+          <label className="mt-1 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={renovated}
+              onChange={(e) => setRenovated(e.target.checked)}
+            />
+            <span>Renovated (walls, roof, windows)?</span>
+          </label>
           {roof !== null && (
             <MonthSlider
               key={register?.egid ?? "building"}
@@ -148,10 +196,18 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
           <Source>
             {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023), for a whole swissBUILDINGS3D building${share !== null ? `, here split among its ${group?.egids.length ?? 0} GWR buildings by floor area (our split)` : groupFigure ? `; it may cover neighbouring buildings too, so the per-m² figure shows only when plausible` : ""}. Months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
           </Source>
+          <Source>
+            {`Our estimate: heated floor area × space heating for its construction period and use${kind === null ? "" : ` (${USE_LABEL[kind]})`} + hot water. ${HOUSE_SOURCE}. Renovated also halves SFOE's space heating in the Kachel figures below, never under a new building's; SFOE's figure above stays as published.`}
+          </Source>
         </section>
       )}
 
-      {estimate !== null && <WithKachel heatKwh={estimate.heatKwh} />}
+      {estimate !== null && roof !== null && (
+        <WithKachel
+          heatKwh={roof.heatingKwh * scale * renovation + roof.hotWaterKwh * scale}
+          renovated={renovated}
+        />
+      )}
 
       {register !== null && (
         <section className="mt-3">
@@ -214,11 +270,15 @@ function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
 }
 
 /** What Kachel home servers could do here, scaled from the scheduler's reference house. */
-function WithKachel({ heatKwh }: { heatKwh: number }) {
+function WithKachel({ heatKwh, renovated }: { heatKwh: number; renovated: boolean }) {
   const k = kachelEstimate(heatKwh);
   return (
     <section className="mt-3 rounded-md border border-heat/50 p-3">
-      <h3 className="font-medium text-heat">If Kachel heated the whole building, estimated</h3>
+      <h3 className="font-medium text-heat">
+        {renovated
+          ? "If Kachel heated the whole building, renovated, estimated"
+          : "If Kachel heated the whole building, estimated"}
+      </h3>
       {k === null ? (
         <p>Too little heat for one 1 kW server.</p>
       ) : (

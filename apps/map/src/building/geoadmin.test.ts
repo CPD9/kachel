@@ -55,10 +55,22 @@ describe("building register", () => {
     expect(r?.heatingKind).toBe("district");
     expect(r?.heatedAreaM2).toBe(668);
     expect(r?.built).toBe("1874");
+    expect(r?.period).toBe("before_1919");
+  });
+
+  it("tells a house from flats by the building class, else by the dwellings", () => {
+    expect(parseRegister({ ...GWR, gklas: 1110 })?.kind).toBe("single");
+    expect(parseRegister({ ...GWR, gklas: 1122 })?.kind).toBe("multi");
+    expect(parseRegister({ ...GWR, gklas: null, ganzwhg: 2 })?.kind).toBe("single");
+    expect(parseRegister({ ...GWR, gklas: null, ganzwhg: 8 })?.kind).toBe("multi");
+    expect(parseRegister({ ...GWR, gklas: 1220 })?.kind).toBe("office");
+    expect(parseRegister({ ...GWR, gklas: 1242 })?.kind).toBeNull(); // a garage
+    expect(parseRegister({ ...GWR, gklas: null, ganzwhg: null })?.kind).toBeNull();
   });
 
   it("falls back to the build period when the year is missing", () => {
     expect(parseRegister({ ...GWR, gbauj: null })?.built).toBe("before 1919");
+    expect(parseRegister({ ...GWR, gbauj: null, gbaup: 8014 })?.period).toBe("1961_1970");
   });
 });
 

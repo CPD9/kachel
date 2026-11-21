@@ -4,6 +4,8 @@
 import data from "./buildings.json" with { type: "json" };
 import solarData from "./solar.json" with { type: "json" };
 
+export * from "./house";
+
 export type TariffId = keyof typeof data.tariffs;
 
 export interface Tariff {

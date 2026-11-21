@@ -219,6 +219,27 @@ the tower and the Zollfreilager together (about 28,800 m² gross [33]); we use t
 the one with a published heating figure. All results, at five tariffs, are in
 [`data/buildings.csv`](data/buildings.csv) and in the `@kachel/economics` package for the apps.
 
+### House quality: heat by construction period
+
+The map's building card shows SFOE's published heat estimate (Sonnendach) and, next to it, our
+period-based estimate from the building register: heated floor area times the space heating of
+the period it was built in, plus hot water, with the figures for its use (house, flats,
+offices, schools and more, by GWR class). These are the numbers Sonnendach itself starts from
+[38]; we leave out its climate and boiler-efficiency steps. A "renovated" box halves space
+heating [39], never below a new building's (our rule). `heatDemand()` in `@kachel/economics`
+and `heatsched/house.py` read the same block of `config.json`.
+
+| Built                    | Before 1919 | 1919–60 | 1961–80 | 1981–90 | 1991–2000 | 2001–10 | 2011–15 | After 2015 |
+| ------------------------ | ----------- | ------- | ------- | ------- | --------- | ------- | ------- | ---------- |
+| Times the stock's mean   | 0.89        | 1.17    | 1.15    | 0.81    | 0.53      | 0.42    | 0.33    | 0.31       |
+| House, kWh/m² space heat | 139         | 183     | 179     | 126     | 83        | 66      | 51      | 48         |
+| Flats, kWh/m² space heat | 84          | 110     | 108     | 76      | 50        | 39      | 31      | 29         |
+| Renovated house, kWh/m²  | 69          | 91      | 90      | 63      | 48        | 48      | 48      | 48         |
+
+Hot water adds 12 kWh/m² in a house and 16 in flats [38]; offices take 70 kWh/m² space heating
+and 2 hot water, schools 105 and 3, and so on (`config.json`, `house_quality`). A 150 m²
+house from the 1960s needs about 28.7 MWh a year, a new one about 9.1 MWh.
+
 ## Sources
 
 1. DigitalHeat case brief, reference house: 35 kWh tank, 12 kWh hot water a day, 1 kW server,
@@ -339,6 +360,16 @@ the one with a published heating figure. All results, at five tariffs, are in
 37. ElCom tariffs for Basel (2701), without VAT, checked 21 Nov 2026: H4 33.25 Rp (2026) and
     33.42 Rp (2027), C3 32.597 Rp (2027)
     <https://www.strompreis.elcom.admin.ch/municipality/2701?period=2027&priceComponent=total&category=C3&product=standard>.
+38. Meteotest for SFOE, "Solarpotentialanalyse für Sonnendach.ch", Schlussbericht, 27 Jul
+    2022, section 7.4, with its annex by Egon AG, "Abschätzung der Heizenergiekennzahl für die
+    Bauperiode ab 2016", 20 Aug 2021: space heating of today's stock from SIA 2024, 156 kWh/m²
+    for single-family houses and 94 for flats (Tabelle 1), hot water 12 and 16 (Tabelle 2), and
+    each period's factor against the stock's mean (Tabelle 2, from Meteotest's Tabelle 8; 0.31
+    from 2016 in Tabelle 3, from TEP Energy 2021 for BAFU and EnDK)
+    <https://pubdb.bfe.admin.ch/de/publication/download/8196>.
+39. EnergieSchweiz and EnFK, "Gebäude erneuern: Energieverbrauch halbieren", 01.2019: a
+    comprehensive renovation at least halves an unrenovated building's energy use
+    <https://energie.so.ch/fileadmin/energie/_pdf/Gebaeude_erneuern_-_Energieverbrauch_halbieren.pdf>.
 
 Our own assumptions, with no outside source yet:
 
