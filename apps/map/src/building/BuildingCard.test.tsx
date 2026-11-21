@@ -80,6 +80,15 @@ describe("building card", () => {
     expect(screen.getByText("about 44")).toBeTruthy();
   });
 
+  it("halves space heating for a renovated building with no period in the register", () => {
+    if (FACTS.register === null) throw new Error("the fixture has a register");
+    const noPeriod = { ...FACTS, register: { ...FACTS.register, period: null } };
+    render(<BuildingCard facts={noPeriod} month={10} onClose={() => undefined} />);
+    expect(screen.queryByText(/^Our estimate, built/)).toBeNull();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Renovated/ }));
+    expect(screen.getByText("about 44")).toBeTruthy();
+  });
+
   it("says a fleet house is synthetic and the building real", () => {
     const house = {
       id: "house-07",

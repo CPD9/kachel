@@ -4,6 +4,7 @@ import {
   heatDemand,
   periodFactor,
   periodLabel,
+  RENOVATED_FACTOR,
   USE_LABEL,
   type PeriodId,
 } from "@kachel/economics/house";
@@ -78,12 +79,12 @@ export function BuildingCard({
 
 /**
  * What a renovation does to SFOE's space heating: Sonnendach's figure is the average for the
- * building's period, unrenovated, so the box applies our period's renovated factor to it.
+ * building's period, unrenovated, so the box applies our period's renovated factor to it. With
+ * no period in the register, the plain factor.
  */
 function renovationScale(period: PeriodId | null, renovated: boolean): number {
   if (!renovated) return 1;
-  const p = period ?? "1961_1970";
-  return periodFactor(p, true) / periodFactor(p);
+  return period === null ? RENOVATED_FACTOR : periodFactor(period, true) / periodFactor(period);
 }
 
 function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {

@@ -102,6 +102,9 @@ export interface HeatDemand {
   totalKwh: number;
 }
 
+/** Space heating after a renovation against before (EnergieSchweiz and EnFK 2019). */
+export const RENOVATED_FACTOR = Q.renovated_factor;
+
 /** A period's space heating against the stock's mean, after a renovation if there was one. */
 export function periodFactor(period: PeriodId, renovated = false): number {
   const f = Q.period_factor[period];
