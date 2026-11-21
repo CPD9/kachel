@@ -135,29 +135,28 @@ important as the compute price.
    SIA 381/3 with station Basel-Binningen:
    <https://www.gesetzessammlung.bs.ch/frontend/annex_document_dictionaries/190>.
 3. ElCom, "Leicht sinkende Strompreise 2026", 9 Sep 2025: H4 median 27.7 Rp/kWh
-   <https://www.admin.ch/de/newnsb/8nuE_fvwnfqCu8OHNOwKu>.
-   ElCom, Stromtarife: H4 median IWB in 2027: 33.42 Rp/kWh
-   <https://www.strompreis.elcom.admin.ch/municipality/2701?period=2027&priceComponent=total&category=H4&product=standard#main-content>
-   ElCom, "Leicht sinkende
+   <https://www.admin.ch/de/newnsb/8nuE_fvwnfqCu8OHNOwKu>. ElCom, "Leicht sinkende
    Strompreise 2027", 8 Sep 2026: H4 median 26.5 Rp/kWh
    <https://www.admin.ch/de/newnsb/1miE201yRzoA>. The range across municipalities
    (10.6 to 45.9 Rp) is as reported by Blick:
    <https://www.blick.ch/politik/medienkonferenz-um-11-uhr-das-zahlst-du-2027-fuer-den-strom-id22242708.html>.
    Tariffs per municipality, including Basel (IWB): <https://www.strompreis.elcom.admin.ch>.
-5. Fraunhofer ISE, "WP-QS im Bestand", press release 3 Nov 2025: 61 air/water heat pumps in
+   For Basel, ElCom lists IWB's 2027 H4 total tariff at 33.42 Rp/kWh, checked 21 Nov 2026:
+   <https://www.strompreis.elcom.admin.ch/municipality/2701?period=2027&priceComponent=total&category=H4&product=standard>.
+4. Fraunhofer ISE, "WP-QS im Bestand", press release 3 Nov 2025: 61 air/water heat pumps in
    existing houses, seasonal COP 3.4 on average, 2.6 to 4.9
    <https://www.ise.fraunhofer.de/de/presse-und-medien/presseinformationen/2025/waermepumpen-heizen-auch-im-altbau-klimafreundlich-forschungsprojekt-des-fraunhofer-ise-abgeschlossen.html>.
-6. Weather: Zippenfenig, P. (2023). Open-Meteo.com Weather API. Zenodo.
+5. Weather: Zippenfenig, P. (2023). Open-Meteo.com Weather API. Zenodo.
    <https://doi.org/10.5281/ZENODO.7970649>. Based on Hersbach, H. et al. (2023). ERA5 hourly
    data on single levels from 1940 to present. ECMWF. <https://doi.org/10.24381/cds.adbb2d47>.
    Data licence CC BY 4.0.
-7. Heat recovery up to 95% is Qarnot's own claim for its water-cooled boilers, not a measured
+6. Heat recovery up to 95% is Qarnot's own claim for its water-cooled boilers, not a measured
    average:
    <https://techcrunch.com/2023/01/09/qarnot-creates-green-data-centers-by-putting-servers-in-central-heating-boilers/>.
-8. Context: data centres used about 415 TWh in 2024, about 1.5% of world electricity, and the
+7. Context: data centres used about 415 TWh in 2024, about 1.5% of world electricity, and the
    IEA expects about 945 TWh by 2030. IEA, Energy and AI (2025):
    <https://www.iea.org/reports/energy-and-ai/executive-summary>.
-9. Context: Basel-Stadt voted on 27 Nov 2022 for net zero by 2037:
+8. Context: Basel-Stadt voted on 27 Nov 2022 for net zero by 2037:
    <https://www.srf.ch/news/abstimmungen-27-november/abstimmungen-basel-stadt-bis-2037-klimaneutral-basel-macht-vorwaerts-beim-klimaschutz>.
 9. PCSP, "How much does a server cost in 2026?", 21 Aug 2026: a refurbished single-GPU
    inference host costs about USD 3,000 to 8,000 (low and high case):
