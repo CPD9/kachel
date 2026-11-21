@@ -1,5 +1,6 @@
 import { ArrowRight, Building2, Check, Heater, LoaderCircle, MapPin } from "lucide-react";
 import { type ReactNode, useCallback, useState } from "react";
+import { BuildingDetails } from "./BuildingDetails";
 import { Globe, type Stage } from "./Globe";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
 
@@ -73,6 +74,7 @@ export function App() {
         </div>
         {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
         {stage && <div key={stage} aria-hidden className="edge-glow animate-edge-glow" />}
+        {stage === "building" && <BuildingDetails />}
         {stage && (
           <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
             <Pill icon={<MapPin size={13} />} label="Basel identified" />

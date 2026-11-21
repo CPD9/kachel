@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Waveform } from "./Waveform";
 
 /** What the presenter "says" in the mock. */
-export const MOCK_TRANSCRIPT = "I'm living in Basel, in street XYZ.";
+export const MOCK_TRANSCRIPT = "I'm living in Basel, at Byfangweg 18.";
 /** Interim guesses in uneven chunks, including a misheard word: [ms after start, text]. */
 const MOCK_INTERIM: [number, string][] = [
   [700, "I'm living"],

@@ -34,6 +34,19 @@
       opacity: 0;
     }
   }
+  /* Building cards sliding up over the map */
+  --animate-card-in: card-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
   @keyframes pill-in {
     from {
       opacity: 0;
@@ -67,6 +80,16 @@
   }
 }
 
+/* Bars in the heat chart (outside @theme, since it's used from an arbitrary animate-[…] class) */
+@keyframes grow-up {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
 /* Lets the border's colours turn around the screen */
 @property --glow-angle {
   syntax: "<angle>";
@@ -81,6 +104,15 @@
 }
 
 @layer components {
+  /* Dark frosted glass for the cards over the map (like baselhack_2026_adobe's spatial-glass) */
+  .edge-card {
+    background: color-mix(in srgb, #30302e 62%, transparent);
+    backdrop-filter: blur(24px) saturate(1.6);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.55),
+      inset 0 0 0 1px rgb(255 255 255 / 0.18),
+      0 12px 32px -12px rgb(0 0 0 / 0.35);
+  }
   /* Glowing screen border, like an assistant thinking: a thin rotating gradient line on every
      edge, plus a blurred copy of it that glows a little way into the page. */
   .edge-glow {

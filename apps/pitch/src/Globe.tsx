@@ -10,7 +10,7 @@ const MAX_SPIN_ZOOM = 5;
 const SLOW_SPIN_ZOOM = 3;
 
 /** The presenter's home, hard-coded for the demo: [lng, lat]. */
-const HOME: [number, number] = [7.582274078903723, 47.55215559200269];
+const HOME: [number, number] = [7.58215, 47.55212];
 
 // Timeline, like baselhack_2026_adobe's GlobeView: spin, fly to the city, then dive at the building
 /** How long the globe spins before flying in (GLOBE_INTRO_MS in baselhack_2026_adobe). */
@@ -70,26 +70,64 @@ function add3dBuildings(map: mapboxgl.Map) {
   );
 }
 
+/** Ray-casting test: is [lng, lat] inside the ring? */
+function inRing([x, y]: [number, number], ring: GeoJSON.Position[]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi = 0, yi = 0] = ring[i] ?? [];
+    const [xj = 0, yj = 0] = ring[j] ?? [];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function inGeometry(pt: [number, number], geometry: GeoJSON.Geometry): boolean {
+  const polygons =
+    geometry.type === "Polygon"
+      ? [geometry.coordinates]
+      : geometry.type === "MultiPolygon"
+        ? geometry.coordinates
+        : [];
+  // Inside the outer ring and outside every hole
+  return polygons.some(
+    ([outer = [], ...holes]) => inRing(pt, outer) && !holes.some((h) => inRing(pt, h)),
+  );
+}
+
+/**
+ * The id of the building whose footprint contains HOME. Uses the source footprints rather than
+ * the rendered pixels: at a steep pitch, the pixel above HOME's ground point is covered by the
+ * wall of whatever building stands in front of it.
+ */
+function findHomeBuildingId(map: mapboxgl.Map): string | number | undefined {
+  const features = map.querySourceFeatures("composite", {
+    sourceLayer: "building",
+    filter: EXTRUDED,
+  });
+  const withId = features.filter((f) => f.id !== undefined);
+  const containing = withId.find((f) => inGeometry(HOME, f.geometry));
+  if (containing) return containing.id;
+  // HOME sits on a street or courtyard: fall back to the building with the closest corner
+  let best: { id: string | number | undefined; d: number } = { id: undefined, d: Infinity };
+  for (const f of withId) {
+    const g = f.geometry;
+    const rings =
+      g.type === "Polygon" ? g.coordinates : g.type === "MultiPolygon" ? g.coordinates.flat() : [];
+    for (const [x = Infinity, y = Infinity] of rings.flat()) {
+      const d = (x - HOME[0]) ** 2 + (y - HOME[1]) ** 2;
+      if (d < best.d) best = { id: f.id, d };
+    }
+  }
+  return best.id;
+}
+
 /**
  * Replace the building under HOME with a solid coloured block: take it out of the grey layer
- * and draw it again in HOME_COLOR. Returns false if no building has rendered there yet.
+ * and draw it again in HOME_COLOR. Returns false if no building has loaded there yet.
  */
 function highlightHome(map: mapboxgl.Map): boolean {
   if (map.getLayer(HOME_BUILDING)) return true;
-  const p = map.project(HOME);
-  // Widen the search until we hit a building (the point may sit on a street)
-  let id: string | number | undefined;
-  for (const r of [2, 8, 16, 32]) {
-    const [found] = map.queryRenderedFeatures(
-      [
-        [p.x - r, p.y - r],
-        [p.x + r, p.y + r],
-      ],
-      { layers: [BUILDINGS] },
-    );
-    id = found?.id;
-    if (id !== undefined) break;
-  }
+  const id = findHomeBuildingId(map);
   if (id === undefined) return false;
 
   map.setFilter(BUILDINGS, ["all", EXTRUDED, ["!=", ["id"], id]]);
