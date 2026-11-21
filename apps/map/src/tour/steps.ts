@@ -1,5 +1,5 @@
 import { beforeSunset } from "../clock";
-import { BASEL, ORIGIN, SWITZERLAND_VIEW, type View } from "../places";
+import { BASEL, ORIGIN, SWITZERLAND_VIEW, type View } from "../views";
 import type { Scene } from "../scene/viewer";
 import type { TourStep } from "./tour";
 
