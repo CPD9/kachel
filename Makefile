@@ -66,10 +66,20 @@ heat-loop:
 VIDEO_OUT ?= $(HOME)/.cache/kachel/video
 SCHED_OUT ?= services/scheduler/out
 VIDEO_SAMPLES ?= 64
+SETUP_SAMPLES ?= 32
 VIDEO_BLEND := scripts/video/assets/plantroom.blend
 VIDEO_BLENDER = TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(VIDEO_BLEND)
 
-.PHONY: video-scheduler video-glb
+.PHONY: video-setup video-scheduler video-glb
+
+video-setup:
+	mkdir -p $(VIDEO_OUT)/work/setup $(HOME)/.cache/kachel/tmp
+	scripts/video/gpu_wait.sh
+	$(VIDEO_BLENDER) --python scripts/video/setup.py -- \
+		--out $(VIDEO_OUT)/work/setup --samples $(SETUP_SAMPLES)
+	uv run --no-project --with pillow python scripts/video/compose_setup.py \
+		--frames $(VIDEO_OUT)/work/setup \
+		--mp4 $(VIDEO_OUT)/02-setup.mp4 --sheet $(VIDEO_OUT)/02-setup-sheet.png
 
 video-scheduler:
 	test -f $(SCHED_OUT)/hourly.csv || (cd services/scheduler && uv run python run_year.py)
