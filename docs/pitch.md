@@ -6,7 +6,8 @@ goal. Two slides, one Blender film we talk over, one live moment, then the ask.
 - Slides: [docs/pitch/slides.md](pitch/slides.md) (Marp), rendered to
   [slides.pdf](pitch/slides.pdf). Every figure on them comes from
   `services/scheduler/out/kpis.json` or `docs/economics/data/summary.json`, with the source on
-  the slide.
+  the slide. Render with
+  `npx @marp-team/marp-cli docs/pitch/slides.md --pdf --allow-local-files`.
 - Film segments: [docs/media](media/README.md) and the
   [media-v1 release](https://github.com/CPD9/kachel/releases/tag/media-v1).
 - How the parts fit: [docs/architecture.md](architecture.md).
