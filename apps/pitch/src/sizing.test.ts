@@ -1,5 +1,17 @@
 import { expect, it } from "vitest";
-import { defaultParams, RACKS, size } from "./sizing";
+import { DEFAULT_ANSWERS, defaultParams, ourModel, RACKS, size } from "./sizing";
+
+it("gives Byfangweg 18's SFOE heat demand for the default answers", () => {
+  // SFOE Sonnendach: 30,321 kWh space heating + 9,288 kWh hot water, as on the map's card
+  expect(Math.round(size(DEFAULT_ANSWERS).demand)).toBe(39_609);
+});
+
+it("shows Kachel's own model in 1 kW servers at IWB's 2027 household price", () => {
+  const m = ourModel(39_609);
+  expect(m.servers).toBe(8);
+  expect(m.tariff).toBe("iwb_h4_2027");
+  expect(m.chfPerKwh).toBeCloseTo(0.3342);
+});
 
 const base = {
   windows: "double",

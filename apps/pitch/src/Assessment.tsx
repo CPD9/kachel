@@ -41,6 +41,7 @@ import {
   type Rack,
   type Result,
   type Windows,
+  ourModel,
   size,
 } from "./sizing";
 import { RackArt } from "./RackArt";
@@ -225,9 +226,12 @@ function Slider({
   step,
   format,
   onChange,
+  check = false,
 }: {
   icon: Icon;
   name: string;
+  /** No published source yet: say so under the name. */
+  check?: boolean;
   value: number;
   min: number;
   max: number;
@@ -254,6 +258,7 @@ function Slider({
       />
       <span className="flex justify-between text-[9.5px] text-muted tabular-nums">
         <span>{format(min)}</span>
+        {check && <span className="font-medium text-rust">assumption, to check</span>}
         <span>{format(max)}</span>
       </span>
     </label>
@@ -307,6 +312,7 @@ function AssumptionsCard({
         <Slider
           icon={Flame}
           name={`Heat today (${FUELS[answers.fuel].name.toLowerCase()})`}
+          check
           value={params.heatPrice}
           min={0.05}
           max={0.4}
@@ -317,6 +323,7 @@ function AssumptionsCard({
         <Slider
           icon={Server}
           name="Kachel heat"
+          check
           value={params.kachelPrice}
           min={0}
           max={0.15}
@@ -327,6 +334,7 @@ function AssumptionsCard({
         <Slider
           icon={TrendingUp}
           name="Energy prices rise"
+          check
           value={params.priceRise}
           min={0}
           max={0.08}
@@ -337,6 +345,7 @@ function AssumptionsCard({
         <Slider
           icon={Wrench}
           name="Installation"
+          check
           value={params.installCost}
           min={2000}
           max={15000}
@@ -347,6 +356,7 @@ function AssumptionsCard({
         <Slider
           icon={Landmark}
           name="Subsidy (Basel-Stadt)"
+          check
           value={params.subsidy}
           min={0}
           max={6000}
@@ -445,6 +455,9 @@ function ProjectionCard({ r }: { r: Result }) {
         <Stat icon={Timer} value={payback} name="payback" />
         <Stat icon={Leaf} value={`${r.co2Tonnes.toFixed(1)} t`} name="CO₂ / yr" />
       </div>
+      <p className="px-2 pb-1.5 text-[9.5px] leading-snug text-muted">
+        {`Heat demand ${Math.round(r.demand).toLocaleString("en-GB")} kWh a year, from SFOE Sonnendach for Byfangweg 18 (330 m², BFS GWR). Prices, install cost, subsidy and CO₂ per kWh: assumptions, to check.`}
+      </p>
     </article>
   );
 }
@@ -544,8 +557,19 @@ function ProductCard({
               ? `Smaller than your ${r.peakKw.toFixed(1)} kW peak: your ${FUELS[answers.fuel].name.toLowerCase()} does more of the work.`
               : "More than you need: the extra heat has nowhere to go."}
         </p>
+        <OurModelNote demandKwh={r.demand} />
       </div>
     </article>
+  );
+}
+
+/** Kachel's own model beside the racks: it sizes in 1 kW servers (packages/economics). */
+function OurModelNote({ demandKwh }: { demandKwh: number }) {
+  const m = ourModel(demandKwh);
+  return (
+    <p className="mb-1 rounded-xl bg-black/[0.04] px-2 py-1.5 text-[10px] leading-snug text-muted">
+      {`Kachel's model: about ${m.servers} servers of 1 kW, ${m.shareOfHeatCoveredPct}% of the heat, ${chf(m.netBeforeHardwareChf)} a year before hardware, ${chf(m.netAfterHardwareChf)} after (${m.tariffName}, ${(m.chfPerKwh * 100).toFixed(1)} Rp/kWh; scaled from the Basel reference house).`}
+    </p>
   );
 }
 

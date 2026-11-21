@@ -1,6 +1,15 @@
+import { estimate, type Estimate, TARIFFS, tariffFor } from "@kachel/economics";
+
 /**
- * Mock sizing for the pitch: from a few answers about the home, how much heat it needs, which
- * Kachel rack fits and what it saves. Rough, plausible numbers, not an engineering calculation.
+ * Sizing for the pitch: from a few answers about the home, how much heat it needs, which
+ * Kachel rack fits and what it saves. Rough numbers, not an engineering calculation.
+ *
+ * Anchored on Byfangweg 18's published figures: heated area from the building register (BFS GWR,
+ * EGID 442141: 330 m²) and heat demand from SFOE Sonnendach (30,321 kWh space heating and 9,288
+ * kWh hot water a year, 39.6 MWh in all, as on the map's card). The default answers give exactly
+ * that demand; other answers scale it by Duc's factors. The money side (prices, install cost,
+ * subsidy, CO₂) is assumptions, to check, and says so on screen. Kachel's own model
+ * (packages/economics) sizes in 1 kW servers; ourModel() shows its figures beside the racks.
  */
 
 export type Windows = "single" | "double" | "triple";
@@ -26,19 +35,33 @@ export const DEFAULT_ANSWERS: Answers = {
 
 export type Rack = { id: string; name: string; kw: number; servers: number; size: string };
 
-/** Heated area of the demo building, in m². */
-export const AREA = 300;
+/** Heated area of the demo building, in m²: BFS GWR, EGID 442141, as of 19.11.2026. */
+export const AREA = 330;
 
-/** Space heating need per m² and year, by how well the windows keep the heat in (kWh). */
-const DEMAND_PER_M2: Record<Windows, number> = { single: 150, double: 115, triple: 90 };
+/** SFOE Sonnendach's yearly heat demand for Byfangweg 18, kWh (data status 21.02.2023). */
+export const SFOE_SPACE_HEAT_KWH = 30_321;
+export const SFOE_HOT_WATER_KWH = 9_288;
+
+/**
+ * Space heating need per m² and year, by how well the windows keep the heat in (kWh). Double
+ * glazing is SFOE's figure for the building (30,321 kWh / 330 m²); single and triple keep Duc's
+ * ratios to it (150 : 115 : 90), which are assumptions, to check.
+ */
+const SFOE_PER_M2 = SFOE_SPACE_HEAT_KWH / AREA;
+const DEMAND_PER_M2: Record<Windows, number> = {
+  single: (SFOE_PER_M2 * 150) / 115,
+  double: SFOE_PER_M2,
+  triple: (SFOE_PER_M2 * 90) / 115,
+};
 /** Underfloor heating runs at a lower water temperature, so server heat covers more of it. */
 const EMITTER_FACTOR: Record<Emitters, number> = { radiators: 1, mixed: 0.97, underfloor: 0.93 };
-/** Hot water per person and year (kWh). */
-const HOT_WATER_PER_PERSON = 800;
+/** Hot water per person and year (kWh): SFOE's figure for the building, shared over the
+ * default 4 residents. */
+const HOT_WATER_PER_PERSON = SFOE_HOT_WATER_KWH / DEFAULT_ANSWERS.residents;
 /** Full-load hours a year: turns yearly heat into the size of the heater. */
 const FULL_LOAD_HOURS = 2000;
 
-/** Cost of a kWh of heat today, in CHF, and CO₂ per kWh of heat, in kg. */
+/** Cost of a kWh of heat today, in CHF, and CO₂ per kWh of heat, in kg. Assumptions, to check. */
 export const FUELS: Record<Fuel, { name: string; price: number; co2: number }> = {
   oil: { name: "Oil boiler", price: 0.15, co2: 0.32 },
   gas: { name: "Gas boiler", price: 0.14, co2: 0.24 },
@@ -61,6 +84,7 @@ export type Params = {
   years: number;
 };
 
+/** The money side's defaults: no published source yet, so each is shown as "assumption, to check". */
 export const defaultParams = (fuel: Fuel): Params => ({
   heatPrice: FUELS[fuel].price,
   kachelPrice: 0.05,
@@ -103,6 +127,19 @@ export type Result = {
   /** Money saved so far after each year, install cost already taken off (year 0 = −install). */
   cumulative: number[];
 };
+
+/** What Kachel's model says for this heat demand: 1 kW servers, at IWB's 2027 household price. */
+export interface OurModel extends Estimate {
+  tariffName: string;
+  chfPerKwh: number;
+  tariffSource: string;
+}
+
+export function ourModel(demandKwh: number): OurModel {
+  const e = estimate(demandKwh, tariffFor("house"));
+  const t = TARIFFS[e.tariff];
+  return { ...e, tariffName: t.name, chfPerKwh: t.chfPerKwh, tariffSource: t.source };
+}
 
 export function size(
   a: Answers,
