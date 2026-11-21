@@ -1,6 +1,7 @@
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useEffect, useRef } from "react";
+import { Gamepad2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 /** One full turn every this many seconds. */
 const SECONDS_PER_REVOLUTION = 120;
@@ -11,6 +12,9 @@ const SLOW_SPIN_ZOOM = 3;
 
 /** The presenter's home, hard-coded for the demo: [lng, lat]. */
 const HOME: [number, number] = [7.58215, 47.55212];
+/** A neighbour who games on the rack at HOME (like the mall in baselhack_2026_adobe). */
+export const GAMER: [number, number] = [7.581800279272595, 47.55543369350158];
+export const GAMER_COLOR = "#8b5cf6";
 
 // Timeline, like baselhack_2026_adobe's GlobeView: spin, fly to the city, then dive at the building
 /** How long the globe spins before flying in (GLOBE_INTRO_MS in baselhack_2026_adobe). */
@@ -26,6 +30,17 @@ const HOME_FLY_MS = 3000;
 /** Pressing "a": dive at the building, steep and close, before the 3D house takes over. */
 const INSIDE_CAMERA = { center: HOME, zoom: 19.8, pitch: 72, bearing: -25 };
 export const INSIDE_DIVE_MS = 1400;
+/** On to the gamer: looking south, so their building is up front and HOME behind it. */
+const GAMER_CAMERA = {
+  center: [GAMER[0] * 0.75 + HOME[0] * 0.25, GAMER[1] * 0.75 + HOME[1] * 0.25] as [number, number],
+  zoom: 17,
+  pitch: 58,
+  bearing: 165,
+};
+const GAMER_FLY_MS = 3000;
+const GAMER_RISE_MS = 1400;
+const GAMER_BUILDING = "gamer-building";
+const LINK = "rack-link";
 
 const BUILDINGS = "3d-buildings";
 const HOME_BUILDING = "home-building";
@@ -102,13 +117,13 @@ function inGeometry(pt: [number, number], geometry: GeoJSON.Geometry): boolean {
  * the rendered pixels: at a steep pitch, the pixel above HOME's ground point is covered by the
  * wall of whatever building stands in front of it.
  */
-function findHomeBuildingId(map: mapboxgl.Map): string | number | undefined {
+function findBuildingId(map: mapboxgl.Map, point: [number, number]): string | number | undefined {
   const features = map.querySourceFeatures("composite", {
     sourceLayer: "building",
     filter: EXTRUDED,
   });
   const withId = features.filter((f) => f.id !== undefined);
-  const containing = withId.find((f) => inGeometry(HOME, f.geometry));
+  const containing = withId.find((f) => inGeometry(point, f.geometry));
   if (containing) return containing.id;
   // HOME sits on a street or courtyard: fall back to the building with the closest corner
   let best: { id: string | number | undefined; d: number } = { id: undefined, d: Infinity };
@@ -117,11 +132,149 @@ function findHomeBuildingId(map: mapboxgl.Map): string | number | undefined {
     const rings =
       g.type === "Polygon" ? g.coordinates : g.type === "MultiPolygon" ? g.coordinates.flat() : [];
     for (const [x = Infinity, y = Infinity] of rings.flat()) {
-      const d = (x - HOME[0]) ** 2 + (y - HOME[1]) ** 2;
+      const d = (x - point[0]) ** 2 + (y - point[1]) ** 2;
       if (d < best.d) best = { id: f.id, d };
     }
   }
   return best.id;
+}
+
+/** Buildings drawn by their own layer, kept out of the grey one so the walls don't z-fight. */
+const excluded = new WeakMap<mapboxgl.Map, Set<string | number>>();
+function exclude(map: mapboxgl.Map, id: string | number, on: boolean) {
+  const ids = excluded.get(map) ?? new Set();
+  if (on) ids.add(id);
+  else ids.delete(id);
+  excluded.set(map, ids);
+  if (!map.getLayer(BUILDINGS)) return;
+  map.setFilter(BUILDINGS, ["all", EXTRUDED, ["!", ["in", ["id"], ["literal", [...ids]]]]]);
+}
+
+/**
+ * The gamer's building rises out of the ground in violet, with a glowing fibre line back to
+ * HOME. Returns the building's height (for the roof tag) and a cleanup.
+ */
+function raiseGamer(map: mapboxgl.Map): { height: number; cleanup: () => void } | null {
+  const id = findBuildingId(map, GAMER);
+  if (id === undefined || map.getLayer(GAMER_BUILDING)) return null;
+  const feature = map
+    .querySourceFeatures("composite", { sourceLayer: "building", filter: ["==", ["id"], id] })
+    .at(0);
+  const height = Number(feature?.properties?.["height"] ?? 15);
+  exclude(map, id, true);
+  map.addLayer({
+    id: GAMER_BUILDING,
+    type: "fill-extrusion",
+    source: "composite",
+    "source-layer": "building",
+    filter: ["==", ["id"], id],
+    paint: {
+      "fill-extrusion-color": GAMER_COLOR,
+      "fill-extrusion-base": ["get", "min_height"],
+      "fill-extrusion-height": ["get", "min_height"],
+      "fill-extrusion-opacity": 1,
+    },
+  });
+  // The fibre between the two buildings: a wide soft glow and a bright dashed core
+  map.addSource(LINK, {
+    type: "geojson",
+    data: {
+      type: "Feature",
+      properties: {},
+      geometry: { type: "LineString", coordinates: [HOME, GAMER] },
+    },
+  });
+  map.addLayer({
+    id: `${LINK}-glow`,
+    type: "line",
+    source: LINK,
+    paint: { "line-color": GAMER_COLOR, "line-width": 14, "line-blur": 10, "line-opacity": 0.6 },
+  });
+  map.addLayer({
+    id: LINK,
+    type: "line",
+    source: LINK,
+    layout: { "line-cap": "round" },
+    paint: { "line-color": "#fbbf24", "line-width": 3, "line-dasharray": [1, 2] },
+  });
+  // Rise with an ease-out, like the mall in baselhack_2026_adobe
+  const start = performance.now();
+  let frame = requestAnimationFrame(function tick(now) {
+    if (!map.getLayer(GAMER_BUILDING)) return;
+    const t = Math.min(1, (now - start) / GAMER_RISE_MS);
+    const k = 1 - (1 - t) ** 3;
+    map.setPaintProperty(GAMER_BUILDING, "fill-extrusion-height", [
+      "+",
+      ["get", "min_height"],
+      ["*", ["-", ["get", "height"], ["get", "min_height"]], k],
+    ]);
+    if (t < 1) frame = requestAnimationFrame(tick);
+  });
+  return {
+    height,
+    cleanup: () => {
+      cancelAnimationFrame(frame);
+      for (const layer of [GAMER_BUILDING, LINK, `${LINK}-glow`])
+        if (map.getLayer(layer)) map.removeLayer(layer);
+      if (map.getSource(LINK)) map.removeSource(LINK);
+      exclude(map, id, false);
+    },
+  };
+}
+
+const EARTH_M = 40075016.686;
+
+/**
+ * A glowing tag floating on the gamer's roof (as on baselhack_2026_adobe's mall): project the
+ * ground point, lift it by the building's height in pixels, every frame.
+ */
+function Beacon({ map, height }: { map: mapboxgl.Map; height: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const [lng, lat] = GAMER;
+    const place = () => {
+      if (!ref.current) return;
+      const p = map.project([lng, lat]);
+      const pxPerMeter = (512 * 2 ** map.getZoom()) / (EARTH_M * Math.cos((lat * Math.PI) / 180));
+      const lift = height * pxPerMeter * Math.sin((map.getPitch() * Math.PI) / 180);
+      ref.current.style.transform = `translate(${p.x}px, ${p.y - lift - 14}px) translate(-50%, -100%)`;
+    };
+    place();
+    map.on("render", place);
+    return () => {
+      map.off("render", place);
+    };
+  }, [map, height]);
+  return (
+    <div
+      ref={ref}
+      className="pointer-events-none absolute top-0 left-0 flex animate-pill-in flex-col items-center font-sans"
+    >
+      <span className="flex items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/90 py-1.5 pr-3.5 pl-1.5 text-sm font-medium whitespace-nowrap text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
+        <span
+          className="grid size-6 place-items-center rounded-full"
+          style={{ background: GAMER_COLOR }}
+        >
+          <Gamepad2 size={13} />
+        </span>
+        Noah · plays on your rack
+      </span>
+      <span
+        className="h-5 w-px"
+        style={{ background: `linear-gradient(${GAMER_COLOR}, transparent)` }}
+      />
+      <span className="relative flex size-3">
+        <span
+          className="absolute inset-0 animate-ping rounded-full"
+          style={{ background: GAMER_COLOR }}
+        />
+        <span
+          className="size-3 rounded-full ring-2 ring-white/70"
+          style={{ background: GAMER_COLOR }}
+        />
+      </span>
+    </div>
+  );
 }
 
 /**
@@ -130,10 +283,10 @@ function findHomeBuildingId(map: mapboxgl.Map): string | number | undefined {
  */
 function highlightHome(map: mapboxgl.Map): boolean {
   if (map.getLayer(HOME_BUILDING)) return true;
-  const id = findHomeBuildingId(map);
+  const id = findBuildingId(map, HOME);
   if (id === undefined) return false;
 
-  map.setFilter(BUILDINGS, ["all", EXTRUDED, ["!=", ["id"], id]]);
+  exclude(map, id, true);
   map.addLayer({
     id: HOME_BUILDING,
     type: "fill-extrusion",
@@ -161,19 +314,29 @@ export function Globe({
   token,
   onStage,
   inside = false,
+  gamer = false,
+  onGamer,
 }: {
   token: string;
   onStage?: (stage: Stage) => void;
   /** Diving into the building (true) or back out to the street view (false). */
   inside?: boolean;
+  /** Off to the neighbour who games on the rack (true), or back home (false). */
+  gamer?: boolean;
+  /** The gamer's building has risen: time for its cards. */
+  onGamer?: () => void;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   // Latest callback without re-running the map effect
   const onStageRef = useRef(onStage);
+  const onGamerRef = useRef(onGamer);
   useEffect(() => {
     onStageRef.current = onStage;
+    onGamerRef.current = onGamer;
   });
+  // Set once the gamer's building has risen, for the roof tag
+  const [gamerTag, setGamerTag] = useState<{ map: mapboxgl.Map; height: number } | null>(null);
 
   useEffect(() => {
     if (container.current === null) return;
@@ -262,16 +425,49 @@ export function Globe({
     };
   }, [token]);
 
-  // Into the building and back out again (only after we've been inside, not on first load)
+  // Into the building and back out again (only after we've been inside, not on first load).
+  // Leaving the house for the gamer is handled below.
   const wasInside = useRef(false);
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (inside) map.flyTo({ ...INSIDE_CAMERA, duration: INSIDE_DIVE_MS, essential: true });
-    else if (wasInside.current)
+    else if (wasInside.current && !gamer)
       map.flyTo({ ...HOME_CAMERA, duration: INSIDE_DIVE_MS, essential: true });
     wasInside.current = inside;
-  }, [inside]);
+  }, [inside, gamer]);
 
-  return <div ref={container} className="h-full w-full" />;
+  // On to the gamer: fly across, then their building rises and the fibre lights up
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !gamer) return;
+    add3dBuildings(map);
+    map.flyTo({ ...GAMER_CAMERA, duration: GAMER_FLY_MS, essential: true });
+    let cleanup: (() => void) | undefined;
+    // Building tiles may still be loading: try on the next few idles, then show the cards anyway
+    let tries = 0;
+    const onIdle = () => {
+      const raised = raiseGamer(map);
+      if (raised) {
+        cleanup = raised.cleanup;
+        setGamerTag({ map, height: raised.height });
+      } else if (++tries < 3) return void map.once("idle", onIdle);
+      onGamerRef.current?.();
+    };
+    const onArrive = () => map.once("idle", onIdle);
+    map.once("moveend", onArrive);
+    return () => {
+      map.off("moveend", onArrive);
+      map.off("idle", onIdle);
+      cleanup?.();
+      setGamerTag(null);
+    };
+  }, [gamer]);
+
+  return (
+    <div className="relative h-full w-full">
+      <div ref={container} className="h-full w-full" />
+      {gamerTag && <Beacon map={gamerTag.map} height={gamerTag.height} />}
+    </div>
+  );
 }

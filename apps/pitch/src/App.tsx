@@ -1,6 +1,16 @@
-import { ArrowRight, Building2, Check, Heater, LoaderCircle, MapPin } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Cable,
+  Check,
+  Gamepad2,
+  Heater,
+  LoaderCircle,
+  MapPin,
+} from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
+import { GamerDetails } from "./GamerDetails";
 import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
 import { HouseView } from "./HouseView";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
@@ -59,17 +69,36 @@ export function App() {
   const [inside, setInside] = useState(false);
   // The house takes over once the map has finished diving at the building
   const [houseShown, setHouseShown] = useState(false);
+  // The house keeps its answers once opened: it stays mounted, hidden while on the map
+  const [houseMounted, setHouseMounted] = useState(false);
   useEffect(() => {
     if (!inside) return;
-    const t = setTimeout(() => setHouseShown(true), INSIDE_DIVE_MS);
+    const t = setTimeout(() => {
+      setHouseShown(true);
+      setHouseMounted(true);
+    }, INSIDE_DIVE_MS);
     return () => {
       clearTimeout(t);
       setHouseShown(false);
     };
   }, [inside]);
 
+  // The house keeps its answers once opened: it stays mounted, hidden while on the map
+  // "a" on the result page: on to the neighbour who games on the rack (like adobe's mall)
+  const [gamer, setGamer] = useState(false);
+  const [atGamer, setAtGamer] = useState(false);
+  const toGamer = useCallback(() => {
+    setGamer(true);
+    setInside(false);
+  }, []);
+  const backFromGamer = useCallback(() => {
+    setGamer(false);
+    setAtGamer(false);
+    setInside(true);
+  }, []);
+
   useEffect(() => {
-    if (stage !== "building" || inside) return;
+    if (stage !== "building" || inside || gamer) return;
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (el.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey)
@@ -78,7 +107,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [stage, inside]);
+  }, [stage, inside, gamer]);
 
   if (!token) {
     return (
@@ -95,13 +124,40 @@ export function App() {
     return (
       <main className="relative h-screen w-screen overflow-hidden bg-black font-sans">
         <div className="absolute inset-0 animate-globe-in">
-          <Globe token={token} onStage={setStage} inside={inside} />
+          <Globe
+            token={token}
+            onStage={setStage}
+            inside={inside}
+            gamer={gamer}
+            onGamer={() => setAtGamer(true)}
+          />
         </div>
         {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
-        {stage && <div key={stage} aria-hidden className="edge-glow animate-edge-glow" />}
-        {stage === "building" && !inside && <BuildingDetails />}
-        {stage === "building" && houseShown && <HouseView onExit={() => setInside(false)} />}
-        {stage && !inside && (
+        {stage && (
+          <div
+            key={atGamer ? "gamer" : stage}
+            aria-hidden
+            className="edge-glow animate-edge-glow"
+          />
+        )}
+        {stage === "building" && !inside && !gamer && <BuildingDetails />}
+        {stage === "building" && (houseShown || houseMounted) && (
+          <HouseView visible={houseShown} onExit={() => setInside(false)} onNext={toGamer} />
+        )}
+        {atGamer && <GamerDetails onBack={backFromGamer} />}
+        {gamer && (
+          <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
+            {atGamer ? (
+              <>
+                <Pill key="neighbour" icon={<Gamepad2 size={13} />} label="Gamer next door" />
+                <Pill key="link" icon={<Cable size={13} />} label="370 m of fibre to your rack" />
+              </>
+            ) : (
+              <Pill key="looking" label="Finding who could use your rack…" loading />
+            )}
+          </div>
+        )}
+        {stage && !inside && !gamer && (
           <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
             <Pill icon={<MapPin size={13} />} label="Basel identified" />
             {stage === "building" ? (
@@ -120,6 +176,9 @@ export function App() {
               setSaid(null);
               setStage(null);
               setInside(false);
+              setGamer(false);
+              setAtGamer(false);
+              setHouseMounted(false);
             }}
           />
         </div>

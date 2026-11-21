@@ -72,8 +72,18 @@ function Setting({ icon, name, children }: { icon: ReactNode; name: string; chil
 /**
  * Inside the building: the house in 3D in the middle, the step-by-step questions on the left and
  * its floors on the right (like baselhack_2026_adobe's /vendor). Esc steps back: floor → house → map.
+ * Stays mounted (hidden) while away at the gamer, so the answers survive the trip.
  */
-export function HouseView({ onExit }: { onExit: () => void }) {
+export function HouseView({
+  visible,
+  onExit,
+  onNext,
+}: {
+  visible: boolean;
+  onExit: () => void;
+  /** "a" on the result page: on to the neighbour who games on the rack. */
+  onNext: () => void;
+}) {
   const [open, setOpen] = useState<FloorId | null>(null);
   const [hover, setHover] = useState<FloorId | null>(null);
   // The step-by-step questions, kept here so the house can show the answers
@@ -87,16 +97,27 @@ export function HouseView({ onExit }: { onExit: () => void }) {
     setHover(null);
   }, []);
   const back = useCallback(() => (open ? openFloor(null) : onExit()), [open, openFloor, onExit]);
+  const atResult = STEPS[step] === "Result";
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && back();
+    if (!visible) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return back();
+      // Sliders keep focus after a drag, so they don't block "a"
+      const el = e.target as HTMLElement;
+      if (el.closest("textarea, [contenteditable], input:not([type=range])")) return;
+      if (atResult && !e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "a")
+        onNext();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [back]);
+  }, [visible, back, atResult, onNext]);
 
   const floor = FLOORS.find((f) => f.id === open);
 
   return (
-    <div className="absolute inset-0 animate-[house-in_700ms_ease-out_both] bg-[radial-gradient(80%_60%_at_50%_0%,#ffffff,#f5f5f7_60%,#e8e8ed)]">
+    <div
+      className={`absolute inset-0 animate-[house-in_700ms_ease-out_both] ${visible ? "" : "hidden"} bg-[radial-gradient(80%_60%_at_50%_0%,#ffffff,#f5f5f7_60%,#e8e8ed)]`}
+    >
       {/* Right-click on the house steps back too */}
       <div
         className="absolute inset-0 cursor-grab active:cursor-grabbing"
@@ -209,6 +230,25 @@ export function HouseView({ onExit }: { onExit: () => void }) {
           </article>
         }
       />
+
+      {/* On the result page the floors card is gone: a pill under the steps leads back out */}
+      {floor && STEPS[step] === "Result" && (
+        <div className="pointer-events-none absolute inset-x-0 top-[76px] flex justify-center">
+          <button
+            key={floor.id}
+            onClick={() => openFloor(null)}
+            className={`${card} flex items-center gap-2 !rounded-full !py-1.5 !pr-2 !pl-3 text-[12px] font-medium hover:bg-white`}
+          >
+            <ChevronLeft size={14} className="text-clay" />
+            Whole house
+            <span className="text-ink/30">·</span>
+            <span className="text-muted">{floor.name}</span>
+            <kbd className="rounded-md bg-black/[0.06] px-1.5 py-0.5 font-sans text-[10px] text-muted">
+              Esc
+            </kbd>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
