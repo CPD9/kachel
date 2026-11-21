@@ -128,11 +128,32 @@ battery does not pay at these prices. The servers use nearly three times what th
 mostly in winter, so solar trims the bill rather than removing it. These figures are also in
 [solar.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/solar.csv).
 
+## More buildings and prices
+
+[buildings.json](https://github.com/CPD9/kachel/blob/main/services/scheduler/buildings.json) adds three buildings next to the
+reference house, and five electricity prices. Each building is the Basel house scaled to its
+own heat demand: area × heat per m², plus hot water per m². The number of servers follows the
+same 40% rule. Sources are on the
+[economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md#11-more-buildings-and-tariffs).
+
+| Building                         | Heat a year | Servers | Heat covered | After hardware, 27.7 Rp | After hardware, own tariff  |
+| -------------------------------- | ----------- | ------- | ------------ | ----------------------- | --------------------------- |
+| Reference house, Basel           | 31 MWh      | 6       | 79.6%        | 1,415 CHF               | 207 CHF (IWB, 33.42 Rp)     |
+| Flat block, Bern (1970s)         | 140 MWh     | 26      | 78.2%        | 6,822 CHF               | 7,938 CHF (median, 26.5 Rp) |
+| Office building, Basel           | 144 MWh     | 27      | 76.6%        | 5,737 CHF               | 1,149 CHF (IWB, 32.6 Rp)    |
+| FHNW Campus Dreispitz, HGK tower | 221 MWh     | 39      | 82.6%        | 17,346 CHF              | 9,750 CHF (IWB, 32.6 Rp)    |
+
+In short: servers grow with heat demand, about one per 5.2 MWh a year, and three of the four
+earn about the same per server. The electricity price matters more than the building: at IWB's 2027 tariff the Basel
+house keeps 207 CHF a year after hardware instead of 1,415. The Bern area and heat per m², and
+the office's, are our guesses; the FHNW tower's are published. All results are in
+[buildings.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/buildings.csv).
+
 ## The charts
 
-These are the same ten charts as on the economics page. Chart 6 now shows the result after
+These are the same eleven charts as on the economics page. Chart 6 now shows the result after
 hardware (mid case), so its numbers are lower than the 9,683 CHF above. Charts 8 to 10 are
-the solar ones.
+the solar ones, and chart 11 compares the buildings.
 
 ![When the house needs heat](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/01_weather_and_demand.png)
 
@@ -154,6 +175,8 @@ the solar ones.
 
 ![Solar: the bill and the payback](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/10_solar_bill.png)
 
+![More buildings and tariffs](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/11_buildings.png)
+
 ## The tables behind the charts
 
 Each opens in Excel or Google Sheets (use Download, then open the file).
@@ -172,6 +195,8 @@ Each opens in Excel or Google Sheets (use Download, then open the file).
   payback years against the compute price, for each hardware case
 - [solar.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/solar.csv): own
   PV share, electricity cost and payback for each solar setup, at 27.7 and 33.42 Rp
+- [buildings.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/buildings.csv): servers, heat
+  covered and the yearly result for each building at each of the five tariffs
 - [weather_basel_2025.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/weather_basel_2025.csv):
   hourly Basel temperature and sunshine for 2025
 
@@ -197,3 +222,5 @@ These are the questions we are least sure of, and where your background counts m
 6. **Solar payback.** Is it fair to count the 14 Rp feed-in for the whole PV life when IWB
    fixes it for 12 years? And would a battery pay with a time-of-use tariff, or should we
    drop it?
+7. **More buildings.** Are 100 kWh/m² for a 1970s Bern block and 65 kWh/m² for an older
+   office fair? And which tariff would a campus like FHNW really pay?

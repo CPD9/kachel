@@ -187,6 +187,38 @@ mid payback (11.7 years) is as long as its life. Six 1 kW servers use about 31,0
 year, nearly three times what this roof makes, so solar trims the bill but does not remove
 it. All figures are in [`data/solar.csv`](data/solar.csv).
 
+### 11. More buildings and tariffs
+
+![Yearly result after hardware per server, for four buildings at two tariffs](11_buildings.png)
+
+Three more buildings, each the Basel house scaled to its own heat demand. Space heat is area
+× specific demand × a climate factor, hot water is area × a standard value, and the tank grows
+with demand. The number of servers follows the same 40% rule. Hardware is the mid case per
+server. Inputs and sources are in
+[`services/scheduler/buildings.json`](../../services/scheduler/buildings.json).
+
+| Building                         | Area                | Space heat               | Hot water        | Heat a year | Servers | Heat covered |
+| -------------------------------- | ------------------- | ------------------------ | ---------------- | ----------- | ------- | ------------ |
+| Reference house, Basel           | –                   | brief's formula [1]      | 12 kWh a day [1] | 31 MWh      | 6       | 79.6%        |
+| Flat block, Bern (1970s)         | 1,000 m², our guess | 100 kWh/m² × 1.19 [34]   | 21 kWh/m² [35]   | 140 MWh     | 26      | 78.2%        |
+| Office building, Basel           | 2,000 m², our guess | 65 kWh/m², guess on [36] | 7 kWh/m² [35]    | 144 MWh     | 27      | 76.6%        |
+| FHNW Campus Dreispitz, HGK tower | 10,176 m² [33]      | 14.7 kWh/m² [33]         | 7 kWh/m² [35]    | 221 MWh     | 39      | 82.6%        |
+
+| Result per year, after hardware  | Swiss median 2026 (27.7 Rp) | Its own tariff                   | Break-even incl. hardware, own tariff |
+| -------------------------------- | --------------------------- | -------------------------------- | ------------------------------------- |
+| Reference house, Basel           | 1,415 CHF                   | 207 CHF (IWB H4 2027, 33.42 Rp)  | 0.49 CHF                              |
+| Flat block, Bern                 | 6,822 CHF                   | 7,938 CHF (median 2027, 26.5 Rp) | 0.44 CHF                              |
+| Office building, Basel           | 5,737 CHF                   | 1,149 CHF (IWB C3 2027, 32.6 Rp) | 0.49 CHF                              |
+| FHNW Campus Dreispitz, HGK tower | 17,346 CHF                  | 9,750 CHF (IWB C3 2027, 32.6 Rp) | 0.46 CHF                              |
+
+Servers grow with heat demand, about one per 5.2 MWh a year. Per server the tariff matters
+more than the building: at IWB's 2027 prices [37] the Basel house
+keeps 207 CHF a year after hardware instead of 1,415. The campus does best per server because
+its hot water keeps servers busy in summer. The often quoted 20,000 m² for the FHNW campus is
+the tower and the Zollfreilager together (about 28,800 m² gross [33]); we use the tower alone,
+the one with a published heating figure. All results, at five tariffs, are in
+[`data/buildings.csv`](data/buildings.csv) and in the `@kachel/economics` package for the apps.
+
 ## Sources
 
 1. DigitalHeat case brief, reference house: 35 kWh tank, 12 kWh hot water a day, 1 kW server,
@@ -284,6 +316,30 @@ it. All figures are in [`data/solar.csv`](data/solar.csv).
     average; a 10–15 kWh home battery costs 6,000 to 10,000 CHF to fit:
     <https://www.swissolar.ch/02_markt-politik/faktenblatt/de_2025_faktenblatt_pv_schweiz_sws.pdf>.
 
+33. Hochbauamt Basel-Stadt, project sheet "Hochschule für Gestaltung und Kunst, Freilager-Platz
+    1", Jan 2016: energy reference area 10,176 m², gross floor area 11,923 m², Qh 53 MJ/m²
+    (14.7 kWh/m²), Minergie-P-ECO
+    <https://media.bs.ch/original_file/c31249b27a0c7b03d7be013b339a2015c26b2383/2015-hgktp1-fb-0.pdf>;
+    fact sheet of 23 Oct 2014, tower about 12,000 m² and Zollfreilager about 16,900 m² gross
+    <https://media.bs.ch/original_file/312f2f045aca12bf8aaffb454f6fceb62b6afa50/674f4552-5477-4f6b-b6d0-083fe697d95c.pdf>.
+34. Bern: HEV Schweiz, Heizgradtage, 2025: Basel-Binningen 2,712, Bern-Zollikofen 3,232
+    (ratio 1.19) <https://www.hev-schweiz.ch/vermieten/nebenkostenabrechnungen/heizgradtage>;
+    BFS, 15 Sep 2026: an occupied dwelling has 102 m² on average
+    <https://www.bfs.admin.ch/de/newnsb/xrhcMB8jXvge>; BFE, "Gebäude erneuern –
+    Energieverbrauch halbieren", Jan 2022: 120–150 kWh/m² for heat and hot water in buildings
+    from before 1970 <https://pubdb.bfe.admin.ch/de/publication/download/6712>.
+35. SIA 380/1:2016 standard hot water: 21 kWh/m² for flats, 7 for offices and schools (Kanton
+    Thurgau, Energieordner, Register 3, Tabelle 6)
+    <https://energie.tg.ch/public/upload/assets/177245/Energieordner_TG_Register_3.pdf>.
+36. Office heating limit 13 + 15 × envelope ratio kWh/m² (Kanton Zürich, Anforderungsprofil
+    SIA 380/1:2016)
+    <https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/planen-bauen/bauvorschriften/bauvorschriften-im-energiebereich/energienachweis/sia-380_1/anforderungsprofil_380_1_2016_v16.01a.pdf>;
+    GEAK class D is up to twice that limit (GEAK-Kodifizierung 3.0, Tab. 41)
+    <https://www.geak.ch/media/kodifizierung-geak-3-0.pdf>.
+37. ElCom tariffs for Basel (2701), without VAT, checked 21 Nov 2026: H4 33.25 Rp (2026) and
+    33.42 Rp (2027), C3 32.597 Rp (2027)
+    <https://www.strompreis.elcom.admin.ch/municipality/2701?period=2027&priceComponent=total&category=C3&product=standard>.
+
 Our own assumptions, with no outside source yet:
 
 - Compute sells at 0.50 CHF per server-hour.
@@ -301,6 +357,9 @@ Our own assumptions, with no outside source yet:
 - Roof PV and the battery power only the servers; the rest of the house is left out.
 - The feed-in price stays 14 Rp for the whole PV life, though IWB fixes it for 12 years.
 - PV upkeep, the mid and high PV lives, and all battery lives.
+- The Bern block's 1,000 m² and 100 kWh/m², the office's 2,000 m² and 65 kWh/m².
+- Other buildings follow the Basel house's hourly shape, tank-to-demand ratio, jobs and
+  hardware per server; the FHNW tower pays IWB's business tariff.
 
 ## Research topics for the report
 
@@ -314,8 +373,9 @@ Each one replaces an assumption above with evidence.
 3. **Hardware and lifetime.** Chart 7 now uses cited prices and lifetimes. What is still
    missing: a real quote for fitting servers to a tank, a measured draw for each unit, and
    how long a server lasts when it runs about 60% of the year in a basement.
-4. **The real Basel tariff.** Use the IWB H4 tariff and a time-of-use tariff, not the Swiss
-   median. Check whether cheap night power changes when servers should run.
+4. **The real Basel tariff.** Chart 11 now runs every building at IWB's H4 and C3 tariffs.
+   Still open: a time-of-use tariff, whether cheap night power changes when servers should
+   run, and ewb's tariff for the Bern block.
 5. **Who gets the money.** Split income between homeowner, operator and compute buyer, and
    work out what heat price per kWh a homeowner would accept.
 6. **Summer.** Look at district heating, pools or neighbours as summer heat sinks, and what

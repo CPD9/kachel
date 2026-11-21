@@ -1,0 +1,21 @@
+id,name,kind,place,area_m2,heat_demand_kwh,tank_kwh,servers,share_of_heat_covered_pct,utilisation_pct,server_hours_sold,default_tariff,tariff,electricity_cost_chf,value_of_heat_used_chf,computing_income_chf,net_chf_before_hardware,hardware_chf_per_year,net_chf_after_hardware,break_even_chf_per_server_hour,break_even_chf_per_server_hour_incl_hardware
+basel_house,"Reference house, Basel",house,Basel,,31231,35.0,6,79.6,59.1,31075,iwb_h4_2027,swiss_median_2026,8608,2753,15538,9683,8268,1415,0.1884,0.454
+basel_house,"Reference house, Basel",house,Basel,,31231,35.0,6,79.6,59.1,31075,iwb_h4_2027,swiss_median_2027,8235,2634,15538,9937,8268,1669,0.1802,0.446
+basel_house,"Reference house, Basel",house,Basel,,31231,35.0,6,79.6,59.1,31075,iwb_h4_2027,iwb_h4_2026,10332,3305,15538,8511,8268,243,0.2261,0.492
+basel_house,"Reference house, Basel",house,Basel,,31231,35.0,6,79.6,59.1,31075,iwb_h4_2027,iwb_h4_2027,10385,3322,15538,8475,8268,207,0.2273,0.493
+basel_house,"Reference house, Basel",house,Basel,,31231,35.0,6,79.6,59.1,31075,iwb_h4_2027,iwb_c3_2027,10130,3240,15538,8648,8268,380,0.2217,0.488
+bern_block,"Flat block, Bern (1970s)",flats,Bern,1000.0,140000,156.9,26,78.2,60.1,136857,swiss_median_2027,swiss_median_2026,37909,12131,68428,42650,35828,6822,0.1884,0.45
+bern_block,"Flat block, Bern (1970s)",flats,Bern,1000.0,140000,156.9,26,78.2,60.1,136857,swiss_median_2027,swiss_median_2027,36267,11605,68428,43766,35828,7938,0.1802,0.442
+bern_block,"Flat block, Bern (1970s)",flats,Bern,1000.0,140000,156.9,26,78.2,60.1,136857,swiss_median_2027,iwb_h4_2026,45505,14562,68428,37485,35828,1657,0.2261,0.488
+bern_block,"Flat block, Bern (1970s)",flats,Bern,1000.0,140000,156.9,26,78.2,60.1,136857,swiss_median_2027,iwb_h4_2027,45738,14636,68428,37326,35828,1498,0.2273,0.489
+bern_block,"Flat block, Bern (1970s)",flats,Bern,1000.0,140000,156.9,26,78.2,60.1,136857,swiss_median_2027,iwb_c3_2027,44611,14276,68428,38093,35828,2265,0.2217,0.483
+basel_office,"Office building, Basel",office,Basel,2000.0,144000,161.4,27,76.6,58.3,137798,iwb_c3_2027,swiss_median_2026,38170,12214,68899,42943,37206,5737,0.1884,0.458
+basel_office,"Office building, Basel",office,Basel,2000.0,144000,161.4,27,76.6,58.3,137798,iwb_c3_2027,swiss_median_2027,36516,11685,68899,44068,37206,6862,0.1802,0.45
+basel_office,"Office building, Basel",office,Basel,2000.0,144000,161.4,27,76.6,58.3,137798,iwb_c3_2027,iwb_h4_2026,45818,14662,68899,37743,37206,537,0.2261,0.496
+basel_office,"Office building, Basel",office,Basel,2000.0,144000,161.4,27,76.6,58.3,137798,iwb_c3_2027,iwb_h4_2027,46052,14737,68899,37584,37206,378,0.2273,0.497
+basel_office,"Office building, Basel",office,Basel,2000.0,144000,161.4,27,76.6,58.3,137798,iwb_c3_2027,iwb_c3_2027,44918,14374,68899,38355,37206,1149,0.2217,0.492
+fhnw_dreispitz,"FHNW Campus Dreispitz, HGK tower",campus,Münchenstein,10176.0,220819,247.5,39,82.6,66.8,228106,iwb_c3_2027,swiss_median_2026,63185,20219,114053,71087,53741,17346,0.1884,0.424
+fhnw_dreispitz,"FHNW Campus Dreispitz, HGK tower",campus,Münchenstein,10176.0,220819,247.5,39,82.6,66.8,228106,iwb_c3_2027,swiss_median_2027,60448,19343,114053,72948,53741,19207,0.1802,0.416
+fhnw_dreispitz,"FHNW Campus Dreispitz, HGK tower",campus,Münchenstein,10176.0,220819,247.5,39,82.6,66.8,228106,iwb_c3_2027,iwb_h4_2026,75845,24270,114053,62478,53741,8737,0.2261,0.462
+fhnw_dreispitz,"FHNW Campus Dreispitz, HGK tower",campus,Münchenstein,10176.0,220819,247.5,39,82.6,66.8,228106,iwb_c3_2027,iwb_h4_2027,76233,24395,114053,62215,53741,8474,0.2273,0.463
+fhnw_dreispitz,"FHNW Campus Dreispitz, HGK tower",campus,Münchenstein,10176.0,220819,247.5,39,82.6,66.8,228106,iwb_c3_2027,iwb_c3_2027,74356,23794,114053,63491,53741,9750,0.2217,0.457
