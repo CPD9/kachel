@@ -9,13 +9,19 @@ scheduler and the agent in Python. No cloud account is needed.
 - [uv](https://docs.astral.sh/uv/) for Python 3.12
 - Docker, for the local Supabase stack
 - Linux or macOS for the agent, which pauses a process with `SIGSTOP`
+- For the chat in the host app (optional): [Ollama](https://ollama.com) running, with `qwen3:4b`
+  pulled
+- Internet for the 3D map: its buildings, imagery and building cards come from swisstopo,
+  geo.admin and OpenStreetMap
 
-## Three commands
+## The commands
 
 ```sh
-make bootstrap   # install the JavaScript and Python dependencies
-make dev         # start local Supabase, then all three apps
-make check       # every check CI runs
+make bootstrap                    # install the JavaScript and Python dependencies
+pnpm exec supabase start          # start local Supabase in Docker
+pnpm exec supabase status -o env  # the keys for the .env files (below)
+make dev                          # Supabase (already up), then all three apps
+make check                        # every check CI runs
 ```
 
 `make dev` serves:
@@ -26,12 +32,9 @@ make check       # every check CI runs
 | Console     | http://localhost:5174 |
 | 3D heat map | http://localhost:5175 |
 
-Copy each `.env.example` to `.env` (in `apps/host`, `apps/console` and `services/agent`) and fill
-in the keys from:
-
-```sh
-pnpm exec supabase status -o env
-```
+Before `make dev`, copy each `.env.example` to `.env` (in `apps/host`, `apps/console` and
+`services/agent`) and fill in the keys from `pnpm exec supabase status -o env`. The apps read
+`.env` when they start, so restart `make dev` after changing it.
 
 The apps take the URL and the anon (publishable) key. Only the agent takes the service role key:
 anything in a `VITE_` variable ends up in the browser, so that key never goes there.
@@ -79,6 +82,9 @@ uv run python fleet_write.py --day january --hour 18   # --dry-run prints instea
 
 ## The live demo: pause a real job
 
+The stage version, with the order and the fallbacks, is the
+[demo checklist](https://github.com/CPD9/kachel/blob/main/docs/demo-checklist.md).
+
 This is the moment from the pitch: a real job on Server 4 pauses and resumes, and the host app
 follows within a second.
 
@@ -86,12 +92,15 @@ follows within a second.
 2. From the repo root, start the real embedding job and note its process id:
 
    ```sh
-   services/scheduler/.venv/bin/python services/scheduler/jobs/embed_job.py /tmp/job_progress.json &
+   rm -f /tmp/job_progress.json
+   JOB_ITEMS=100000000 services/scheduler/.venv/bin/python services/scheduler/jobs/embed_job.py /tmp/job_progress.json &
    echo $!
    ```
 
    The scheduler's own Python (from `make bootstrap`) runs it directly, so `$!` is the job
-   itself and not a wrapper.
+   itself and not a wrapper. The default 200,000 items finish in about 30 s, so `JOB_ITEMS`
+   keeps it going for hours. The job resumes from its progress file, so remove an old one first
+   or it ends at once.
 
 3. Tell the agent to follow it as Server 4's job from the seed:
 
@@ -122,6 +131,12 @@ If the stack is not up, the same moment is recorded in
 
 ## When something goes wrong
 
+- **`make dev` stops all three apps with "Port 5175 is already in use":** each app needs its
+  port free. Stop the old server on 5173, 5174 or 5175 (`ss -ltnp | grep 517`) and run it again.
+- **`permission denied ... docker.sock`:** your user is not in the `docker` group in this shell;
+  run `newgrp docker` first.
+- **Server 4 shows Done:** the job ended and the agent with it. Start both again (step 2 above);
+  `make db-reset` puts the seed back.
 - **"Is the local database running?"** in an app: run `make dev`, and check the `.env` keys
   against `pnpm exec supabase status -o env`.
 - **`make check-db` says skipped:** the local stack is not running. CI always runs these tests.

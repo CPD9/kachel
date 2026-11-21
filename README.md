@@ -31,12 +31,13 @@ Every value the model assumes, with its unit and source, is in [docs/assumptions
 
 ```sh
 make bootstrap
+pnpm exec supabase start
 make dev
 make check
 ```
 
-`make dev` starts the local Supabase stack (Docker) and serves the host app on http://localhost:5173, the console on http://localhost:5174 and the 3D heat map on http://localhost:5175.
-Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
+`pnpm exec supabase start` starts the local Supabase stack (Docker). Before `make dev`, copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
+`make dev` serves the host app on http://localhost:5173, the console on http://localhost:5174 and the 3D heat map on http://localhost:5175; the map needs internet.
 Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test`, and to the console as the demo buyer, `buyer@kachel.test`, both with the password `kachel-demo` (local stack only).
 
 <p align="center"><img src="docs/media/app-host.png" width="640" alt="The host app signed in as the demo host: six servers, three running a job, one holding a paused job because the house needs no heat, two off"></p>
