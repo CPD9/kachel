@@ -27,10 +27,13 @@ import compose as c
 HOUR = 36  # frames per hour: 24 h in 36 s
 FADE = 12
 HALF = c.W // 2
-CREDIT = (
-    "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river outline "
-    "approximated. Heat demand: SFOE, hectare cells, data status 2013."
-)
+CREDITS = {
+    "basel": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river outline "
+    "approximated. Heat demand: SFOE, hectare cells, data status 2013.",
+    "bern": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain approximated; "
+    "the Aare is not shown.",
+}
+CITY = {"name": "basel"}
 
 
 def overlay(r, ctx, minute=0):
@@ -60,15 +63,26 @@ def overlay(r, ctx, minute=0):
     # Left: outside.
     temp = float(r["temp_c"])
     demand = float(r["demand_kwh"])
-    c.rounded(d, (28, 28, 400, 160), c.PANEL)
-    d.text((50, 40), "Basel, outside", font=c.F["bodyb"], fill=c.INK)
-    d.text((50, 78), f"{c.num(temp)} °C", font=c.F["date"], fill=c.INK)
-    d.text(
-        (50, 126),
-        f"House needs {c.num(demand)} kWh this hour",
-        font=c.F["small"],
-        fill=c.HOT,
-    )
+    if CITY["name"] == "basel":
+        c.rounded(d, (28, 28, 400, 160), c.PANEL)
+        d.text((50, 40), "Basel, outside", font=c.F["bodyb"], fill=c.INK)
+        d.text((50, 78), f"{c.num(temp)} \u00b0C", font=c.F["date"], fill=c.INK)
+        d.text(
+            (50, 126),
+            f"House needs {c.num(demand)} kWh this hour",
+            font=c.F["small"],
+            fill=c.HOT,
+        )
+    else:
+        # The scheduler models the Basel reference house: its weather and figures stay on
+        # the plant-room side, and the outside panel only names the place and the sky.
+        c.rounded(d, (28, 28, 420, 120), c.PANEL)
+        d.text(
+            (50, 40), f"{CITY['name'].title()}, outside", font=c.F["bodyb"], fill=c.INK
+        )
+        d.text(
+            (50, 78), "Figures: Basel reference house", font=c.F["small"], fill=c.DIM
+        )
     # Right: the plant room.
     on = round(float(r["server_hours"]))
     soc = float(r["soc_kwh"])
@@ -107,7 +121,7 @@ def overlay(r, ctx, minute=0):
         y += 50
     # Attribution, as on the dusk still.
     f = c.F["small"].font_variant(size=15)
-    lines = CREDIT.split(". ", 1)
+    lines = CREDITS[CITY["name"]].split(". ", 1)
     lines = [lines[0] + ".", lines[1]]
     tw = max(d.textlength(t, font=f) for t in lines)
     c.rounded(
@@ -216,6 +230,7 @@ def main():
     ap.add_argument("--day", help="that day's CSV")
     ap.add_argument("--mp4")
     ap.add_argument("--sheet", required=True)
+    ap.add_argument("--city", default="basel")
     ap.add_argument(
         "--preview",
         nargs="+",
@@ -223,6 +238,7 @@ def main():
         help="DIR,CSV,HH:MM;HH:MM ... : a contact sheet of those times only, no MP4",
     )
     a = ap.parse_args()
+    CITY["name"] = a.city
     if a.preview:
         shots = []
         for spec in a.preview:

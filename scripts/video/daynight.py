@@ -21,7 +21,7 @@ hour's demand_kwh, and the concept supply and return lines glow in
 proportion to heat_produced. Inside, the servers and the tank follow the same
 row, as in segment 3. Nothing is keyframed.
 
-Options after "--": --part outside|inside, --day CSV, --out DIR,
+Options after "--": --part outside|inside, --city basel|bern, --day CSV, --out DIR,
 --width/--height of one half (960x1080), --samples, --steps (stills per hour),
 --times 07:30,13:00 to render only those times (previews).
 """
@@ -42,7 +42,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kachel_scene as ks
 
 HEAT_ATLAS = Path.home() / "Projects/heat-atlas"
-LAT, LON, TZ = 47.56, 7.59, ZoneInfo("Europe/Zurich")
+TZ = ZoneInfo("Europe/Zurich")
+CITIES = {"basel": (47.56, 7.59), "bern": (46.95, 7.45)}  # latitude N, longitude E
+LAT, LON = CITIES["basel"]
 INSIDE_EYE = (3.4, -2.4, 2.0)
 INSIDE_AIM = (0.95, 0.7, 1.05)
 # Pipe runs in the plant room, in the direction the water flows: hot from the servers to the
@@ -65,6 +67,7 @@ def args():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", choices=("outside", "inside"), required=True)
+    ap.add_argument("--city", choices=tuple(CITIES), default="basel")
     ap.add_argument("--day", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--width", type=int, default=960)
@@ -208,19 +211,23 @@ def outside(a, rows):
     # Half-width frame: keep the vertical view of the dusk shot, centred on the towers.
     cam.data.sensor_fit = "VERTICAL"
     cam.data.sensor_height = cam.data.sensor_width * 9 / 16
-    cam.data.shift_x = 0.33
+    cam.data.shift_x = 0.33 if a.city == "basel" else 0.0
     hud = SK.H.get_collection("HUD")
     sky = SK.setup_world("dusk")
     bg = sc.world.node_tree.nodes["Background"]
-    SK.show("HeatColumns", False)
-    SK.show("Concept", False)
-    bpy.context.view_layer.update()
-    SK.xray(cam, hud)
-    lines = [bpy.data.materials[n] for n in ("HUD_XSupply", "HUD_XReturn")]
-    for o in hud.objects:
-        if not o.name.startswith(("XRay_Loop_Supply", "XRay_Loop_Return")):
-            o.hide_render = True  # keep only the pipe lines, not the concept markers
-    heat_mats = heat_overlay(SK, cam, hud)
+    lines, heat_mats = [], []
+    if a.city == "basel":  # the concept loop and the hectare data exist for Basel only
+        SK.show("HeatColumns", False)
+        SK.show("Concept", False)
+        bpy.context.view_layer.update()
+        SK.xray(cam, hud)
+        lines = [bpy.data.materials[n] for n in ("HUD_XSupply", "HUD_XReturn")]
+        for o in hud.objects:
+            if not o.name.startswith(("XRay_Loop_Supply", "XRay_Loop_Return")):
+                o.hide_render = (
+                    True  # keep only the pipe lines, not the concept markers
+                )
+        heat_mats = heat_overlay(SK, cam, hud)
     gains = {}
     for m in bpy.data.materials:
         if m.node_tree and "WindowGain" in m.node_tree.nodes:
@@ -337,7 +344,9 @@ def inside(a, rows, cfg, kpis):
 
 
 def main():
+    global LAT, LON
     a = args()
+    LAT, LON = CITIES[a.city]
     rows, cfg, kpis = load(a.day)
     (Path(a.out) / a.part).mkdir(parents=True, exist_ok=True)
     if a.part == "outside":
