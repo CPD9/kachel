@@ -16,6 +16,9 @@ from heatsched import profile
 HERE = Path(__file__).parent
 CFG = json.loads((HERE.parent / "config.json").read_text())
 CASE = HERE / "data" / "case_profile.csv"
+# One tolerance for both profiles: energy within 5%, and heating days within 5% of the 206
+# the Open-Meteo profile gives (about 10 days).
+AGREE = 0.05
 
 pytestmark = pytest.mark.skipif(not CASE.exists(), reason="the case CSV has not arrived yet")
 
@@ -38,11 +41,11 @@ def test_case_csv_covers_a_whole_year(both: tuple[pd.DataFrame, pd.DataFrame]) -
 
 def test_case_csv_matches_the_brief(both: tuple[pd.DataFrame, pd.DataFrame]) -> None:
     case, _ = both
-    assert case["heat_kwh"].sum() == pytest.approx(27_000, rel=0.05)
-    assert case["dhw_kwh"].sum() == pytest.approx(CFG["house"]["hot_water_kwh_per_day"] * 365, rel=0.05)
+    assert case["heat_kwh"].sum() == pytest.approx(27_000, rel=AGREE)
+    assert case["dhw_kwh"].sum() == pytest.approx(CFG["house"]["hot_water_kwh_per_day"] * 365, rel=AGREE)
 
 
 def test_open_meteo_profile_agrees_with_the_case(both: tuple[pd.DataFrame, pd.DataFrame]) -> None:
     case, ours = both
-    assert ours["heat_kwh"].sum() == pytest.approx(case["heat_kwh"].sum(), rel=0.05)
-    assert abs(heating_days(ours) - heating_days(case)) <= 10
+    assert ours["heat_kwh"].sum() == pytest.approx(case["heat_kwh"].sum(), rel=AGREE)
+    assert heating_days(ours) == pytest.approx(heating_days(case), rel=AGREE)
