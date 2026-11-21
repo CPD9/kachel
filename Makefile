@@ -35,8 +35,11 @@ check-py:
 
 # The yearly balance on the saved Basel 2025 weather: out/kpis.json, hourly.csv and the
 # January and July day CSVs (the animation reads those two), plus the plots.
+# A snowy January day for the films, with snow on the ground in both cities (data/snow_*.csv).
+SNOW_DAY ?= 2025-01-04
+
 year:
-	cd $(SCHED) && uv run python run_year.py --weather tests/data/weather_basel_2025.csv
+	cd $(SCHED) && uv run python run_year.py --weather tests/data/weather_basel_2025.csv --day snow=$(SNOW_DAY)
 
 # The same reference house on Bern 2025 weather: day files and kpis in $(SCHED)/out/bern/.
 # run_year.py writes to ./out, so it runs in a scratch folder and the results are copied.
@@ -45,8 +48,8 @@ BERN_RUN := $(HOME)/.cache/kachel/tmp/bern-year
 bern-days:
 	rm -rf $(BERN_RUN) && mkdir -p $(BERN_RUN) $(SCHED)/out/bern
 	cd $(BERN_RUN) && uv run --project $(CURDIR)/$(SCHED) python $(CURDIR)/$(SCHED)/run_year.py \
-		--config $(CURDIR)/$(SCHED)/config.json --weather $(CURDIR)/$(SCHED)/tests/data/weather_bern_2025.csv
-	cp $(BERN_RUN)/out/day_january.csv $(BERN_RUN)/out/day_july.csv $(BERN_RUN)/out/kpis.json $(SCHED)/out/bern/
+		--config $(CURDIR)/$(SCHED)/config.json --weather $(CURDIR)/$(SCHED)/tests/data/weather_bern_2025.csv --day snow=$(SNOW_DAY)
+	cp $(BERN_RUN)/out/day_january.csv $(BERN_RUN)/out/day_july.csv $(BERN_RUN)/out/day_snow.csv $(BERN_RUN)/out/kpis.json $(SCHED)/out/bern/
 
 # The row level security tests (supabase/tests) need the local stack from `make dev`. Without
 # it they are skipped here with a note; the Database CI job always runs them.
@@ -129,6 +132,8 @@ video-scheduler:
 DAYNIGHT_DAY ?= january
 DAYNIGHT_SAMPLES ?= 48
 DAYNIGHT_STEPS ?= 4
+# Snow on roofs and ground (and falling flakes when it snows) for the snowy day only.
+SNOW_FLAG = $(if $(filter snow,$(DAYNIGHT_DAY)),--snow)
 DAYNIGHT_WORK = $(VIDEO_OUT)/work/daynight-$(DAYNIGHT_DAY)
 
 video-daynight:
@@ -137,11 +142,11 @@ video-daynight:
 	scripts/video/gpu_wait.sh
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(HOME)/Projects/heat-atlas/renders/skyline.blend \
 		--python scripts/video/daynight.py -- --part outside --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
-		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS)
+		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS) $(SNOW_FLAG)
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
 		--day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv --out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES)
-	uv run --no-project --with pillow python scripts/video/compose_daynight.py \
+	uv run --no-project --with pillow python scripts/video/compose_daynight.py $(SNOW_FLAG) \
 		--frames $(DAYNIGHT_WORK) --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
 		--mp4 $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY).mp4 --sheet $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY)-sheet.png
 
@@ -163,11 +168,11 @@ video-daynight-bern: $(BERN_BLEND)
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(BERN_BLEND) \
 		--python scripts/video/daynight.py -- --part outside --city bern \
 		--day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) \
-		--samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS)
+		--samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS) $(SNOW_FLAG)
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
 		--day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) --samples $(DAYNIGHT_SAMPLES)
-	uv run --no-project --with pillow python scripts/video/compose_daynight.py --city bern \
+	uv run --no-project --with pillow python scripts/video/compose_daynight.py $(SNOW_FLAG) --city bern \
 		--frames $(BERN_WORK) --day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv \
 		--mp4 $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY).mp4 \
 		--sheet $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY)-sheet.png
