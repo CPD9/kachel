@@ -31,5 +31,43 @@
     "break_even_chf_per_server_hour": 0.1884,
     "pays_off_at_assumed_compute_price": true
   },
-  "net_chf_per_house_before_hardware": 9683
+  "net_chf_per_house_before_hardware": 9683,
+  "hardware": {
+    "low": {
+      "capex_chf": 19004,
+      "upkeep_chf_per_year": 190,
+      "hardware_chf_per_year": 3731,
+      "net_chf_before_hardware": 9683,
+      "net_chf_after_hardware": 5952,
+      "payback_years": 2.1,
+      "lifetime_years": 6,
+      "discount_rate": 0.0328,
+      "npv_chf": 31948,
+      "break_even_chf_per_server_hour_incl_hardware": 0.308
+    },
+    "mid": {
+      "capex_chf": 35655,
+      "upkeep_chf_per_year": 315,
+      "hardware_chf_per_year": 8268,
+      "net_chf_before_hardware": 9683,
+      "net_chf_after_hardware": 1415,
+      "payback_years": 4.2,
+      "lifetime_years": 5,
+      "discount_rate": 0.0375,
+      "npv_chf": 6344,
+      "break_even_chf_per_server_hour_incl_hardware": 0.454
+    },
+    "high": {
+      "capex_chf": 47882,
+      "upkeep_chf_per_year": 630,
+      "hardware_chf_per_year": 14448,
+      "net_chf_before_hardware": 9683,
+      "net_chf_after_hardware": -4765,
+      "payback_years": 6.6,
+      "lifetime_years": 4,
+      "discount_rate": 0.06,
+      "npv_chf": -16512,
+      "break_even_chf_per_server_hour_incl_hardware": 0.653
+    }
+  }
 }
