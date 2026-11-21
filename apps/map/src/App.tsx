@@ -3,6 +3,7 @@ import { BuildingCard } from "./building/BuildingCard";
 import { lookUp, type BuildingFacts } from "./building/geoadmin";
 import { swissTime } from "./clock";
 import { Layers } from "./networks/Layers";
+import { Places } from "./Places";
 import { NetworkCard } from "./networks/NetworkCard";
 import type { Network } from "./networks/thermal";
 import type { Scene } from "./scene/viewer";
@@ -112,6 +113,7 @@ export function App({ start }: { start: StartScene }) {
       {network !== null && <NetworkCard network={network} onClose={() => setNetwork(null)} />}
 
       {scene !== null && <Layers scene={scene} />}
+      {scene !== null && <Places scene={scene} />}
 
       {failed && (
         <p
