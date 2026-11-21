@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year video-charts mascot-stills
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -145,3 +145,16 @@ video-charts:
 			--out $(CHARTS_OUT)/frames/$$chart --mp4 $(CHARTS_OUT)/$$chart.mp4 \
 			--still $(CHARTS_OUT)/$$chart.png || exit 1; \
 	done
+
+# Kachi, the mascot (see scripts/mascot/kachi.py): built from nothing with Blender 5.2, saved
+# to scripts/mascot/kachi.blend, and rendered on the GPU as six stills and a contact sheet.
+MASCOT_OUT ?= $(HOME)/.cache/kachel/mascot
+MASCOT_SIZE ?= 1600
+MASCOT_SAMPLES ?= 128
+
+mascot-stills:
+	mkdir -p $(MASCOT_OUT) $(HOME)/.cache/kachel/tmp
+	scripts/video/gpu_wait.sh
+	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background --factory-startup \
+		--python scripts/mascot/kachi.py -- --out $(MASCOT_OUT) --size $(MASCOT_SIZE) \
+		--samples $(MASCOT_SAMPLES) --blend scripts/mascot/kachi.blend
