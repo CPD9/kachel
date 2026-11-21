@@ -45,6 +45,10 @@ turns back.
 The console, where a buyer submits jobs and sees where each one runs and the heat it has
 given. Both app screenshots come from `pnpm screenshots` (scripts/screenshots.mjs).
 
+![The host screen: the house at 14:00 on the replayed January day, today's heat hour by hour, the money for the day and the year, and the six servers](host-house.webp)
+
+The host screen with the house, its day and its money, live from `heat_state`, `kpis` and `assumptions`. Until the scheduler writes today's hours it replays a stored day at the clock's hour and says so; hover any number for its source.
+
 ## The numbers
 
 ![Heat from servers and backup, month by month, with utilisation](chart-month.webp)

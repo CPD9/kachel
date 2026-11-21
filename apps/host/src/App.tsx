@@ -1,12 +1,23 @@
-import { DEMO_HOST, type AppAuth, type JobFeed } from "@kachel/db";
+import { DEMO_HOST, type AppAuth, type HouseFeed, type JobFeed } from "@kachel/db";
 import { HeatLoop, SignIn, useSession } from "@kachel/ui";
+import { House } from "./house/House";
 import { LiveJobs } from "./live/LiveJobs";
 
 /**
  * Host app: the homeowner's view of their house, its heat and its servers.
  * Row level security shows a host only their own house, so the screen asks them to sign in.
  */
-export function App({ feed, auth, local }: { feed: JobFeed; auth: AppAuth; local: boolean }) {
+export function App({
+  feed,
+  house,
+  auth,
+  local,
+}: {
+  feed: JobFeed;
+  house: HouseFeed;
+  auth: AppAuth;
+  local: boolean;
+}) {
   const email = useSession(auth);
 
   return (
@@ -33,7 +44,14 @@ export function App({ feed, auth, local }: { feed: JobFeed; auth: AppAuth; local
           {...(local ? { demo: DEMO_HOST } : {})}
         />
       )}
-      {email && <LiveJobs key={email} feed={feed} />}
+      {email && (
+        <div key={email} className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6">
+          <House feed={house} />
+          <div className="rounded-lg border border-grid bg-paper py-1">
+            <LiveJobs feed={feed} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
