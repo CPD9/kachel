@@ -83,6 +83,9 @@ def main():
     ap.add_argument(
         "--whip", type=int, default=0, help="frames of whip-pan into each part"
     )
+    ap.add_argument(
+        "--subtitle", default="", help="a smaller second line under the title"
+    )
     a = ap.parse_args()
     parts = [sorted(Path(d).glob("*.png")) for d in a.frames]
     text = SWISSTOPO if a.credit == "swisstopo" else a.credit
