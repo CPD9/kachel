@@ -44,6 +44,11 @@ it sends a third fewer jobs off-site by putting each where there is room. Output
 `fleet_jobs_<day>.csv` (where each job was sent, where it ran, when it moved), `fleet_hourly_<day>.csv` (each house's
 heat by the hour), `fleet_placements_<day>.csv` (each job's house, hour by hour) and `fleet_kpis.json`. Every house is made up. Bern needs its own weather file first.
 
+`fleet_write.py --day january --hour 18` puts one hour of a fleet day into the local Supabase (`make dev`): the 50
+houses, their servers, their heat for the day and the newest jobs, each on the house it landed on or marked as moved
+to a data centre. It reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the environment
+(`services/agent/.env`); `--dry-run` prints what it would write.
+
 ## Before you present: three things to replace
 
 1. `config.json → prices.electricity_chf_per_kwh` is a placeholder (Swiss H4 median 2026, 27.7 Rp). Put in IWB Basel H4.

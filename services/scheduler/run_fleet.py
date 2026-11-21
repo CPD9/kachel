@@ -37,7 +37,7 @@ times = prof["time"].dt.strftime("%Y-%m-%d %H:%M").tolist()
 sites = make_sites(prof, cfg)
 
 pd.DataFrame([dict(id=s.id, name=s.name, city=s.city, latitude=s.lat, longitude=s.lon, servers=s.n_servers,
-                   tank_kwh=s.tank_kwh, heat_demand_kwh_2025=round(sum(s.demand)), synthetic=True)
+                   tank_kwh=s.tank_kwh, hot_water_kwh_per_day=s.hot_water_kwh_per_day, heat_demand_kwh_2025=round(sum(s.demand)), synthetic=True)
               for s in sites]).to_csv(f"{a.out}/fleet_sites.csv", index=False)
 
 result = {"profile_source": "Open-Meteo archive, Basel 2025", "houses": len(sites),
