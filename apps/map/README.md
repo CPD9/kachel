@@ -28,7 +28,7 @@ placed on a real residential building in a hectare with high heat demand by
 `scripts/place-fleet.mjs` (EGID and position only, no addresses). The buildings are real; the
 houses and their servers are not, and the layer and card say so.
 
-<p align="center"><img src="../../docs/images/map-fleet.webp" width="720" alt="Basel at dusk with the synthetic Kachel fleet as amber dots on real homes; a card for one of them says it is a synthetic house with 7 servers placed on a real building"></p>
+<p align="center"><img src="../../docs/images/map-fleet.webp" width="720" alt="Basel at dusk with the synthetic Kachel fleet as amber dots on real homes; a card for one of them says that in the fleet simulation the building gets 7 servers, apart from the estimate for heating the whole building"></p>
 
 <p align="center"><img src="../../docs/images/map-networks.webp" width="720" alt="Basel at dusk with SFOE's district heating networks as red points and Kachel's home servers as amber dots; the card for Wärmeverbund Theodor shows IWB as operator, groundwater heat pumps and gas, 1.38 MW and 2.4 GWh a year"></p>
 

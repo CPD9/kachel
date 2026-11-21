@@ -73,8 +73,22 @@ describe("building card", () => {
       hectareHeatMwh: 4562,
     };
     render(<BuildingCard facts={FACTS} month={10} fleet={house} onClose={() => undefined} />);
-    expect(screen.getByText(/synthetic Kachel house house-07 \(6 servers\)/)).toBeTruthy();
-    expect(screen.getByText(/the house's servers are not/)).toBeTruthy();
+    expect(
+      screen.getByText(/here this building gets 6 servers, as synthetic house house-07/),
+    ).toBeTruthy();
+    expect(screen.getByText(/the fleet is not/)).toBeTruthy();
+    // The whole-building estimate is named apart from the fleet's servers.
+    expect(screen.getByText("If Kachel heated the whole building, estimated")).toBeTruthy();
+  });
+
+  it("flags a heat figure that is high for any building", () => {
+    // 386,067 kWh over 668 m² is 578 kWh/m².
+    const facts = {
+      ...FACTS,
+      register: FACTS.register && { ...FACTS.register, heatedAreaM2: 668 },
+    };
+    render(<BuildingCard facts={facts} month={10} onClose={() => undefined} />);
+    expect(screen.getByText("578 kWh, high, check")).toBeTruthy();
   });
 
   it("says so when nothing is published", () => {
