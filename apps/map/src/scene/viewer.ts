@@ -194,7 +194,8 @@ export async function createScene(
     if (cantons.show && !cantonsAsked) {
       cantonsAsked = true;
       void loadCantons().then((rings) => {
-        if (rings.length === 0) cantonsAsked = false;
+        // A failed request is tried again after half a minute, not on the next frame.
+        if (rings.length === 0) window.setTimeout(() => (cantonsAsked = false), 30_000);
         for (const ring of rings) {
           cantons.add({
             positions: Cartesian3.fromDegreesArrayHeights(ring.flatMap(([x, y]) => [x, y, 5000])),
