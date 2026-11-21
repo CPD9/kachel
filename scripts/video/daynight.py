@@ -44,7 +44,7 @@ import kachel_scene as ks
 HEAT_ATLAS = Path.home() / "Projects/heat-atlas"
 LAT, LON, TZ = 47.56, 7.59, ZoneInfo("Europe/Zurich")
 INSIDE_EYE = (3.4, -2.4, 2.0)
-INSIDE_AIM = (0.7, 0.7, 1.05)
+INSIDE_AIM = (0.95, 0.7, 1.05)
 # Pipe runs in the plant room, in the direction the water flows: hot from the servers to the
 # heat exchanger and on to the tank, cooled water back the other way.
 FLOW = {
@@ -74,7 +74,7 @@ def args():
     ap.add_argument(
         "--times", default="", help="HH:MM list to render only those (previews)"
     )
-    ap.add_argument("--lens", type=float, default=21.0)
+    ap.add_argument("--lens", type=float, default=20.0)
     return ap.parse_args(argv)
 
 
