@@ -14,6 +14,16 @@ def download_weather(path="out/weather_basel_2025.csv"):
     df.to_csv(path, index=False)
     return df
 
+def load_weather(path):
+    """Read an Open-Meteo CSV saved by download_weather (time, temp_c, solar_wm2)."""
+    return pd.read_csv(path)
+
+def showcase_days(prof):
+    """The two days the plots and the animation show: the coldest January day and 15 July."""
+    daily = prof.groupby("date")["temp_c"].mean()
+    jan = str(min((d for d in daily.index if d.month == 1), key=lambda d: daily[d]))
+    return {"january": jan, "july": "2025-07-15"}
+
 def synthetic_weather(seed=7):
     """Stand-in ONLY for offline testing. Tuned to the brief's totals, not real weather."""
     rng = np.random.default_rng(seed)
