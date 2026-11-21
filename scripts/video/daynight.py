@@ -44,6 +44,7 @@ from snowdata import snow_hours
 
 HEAT_ATLAS = Path.home() / "Projects/heat-atlas"
 TZ = ZoneInfo("Europe/Zurich")
+ORBIT_DEG, ORBIT_PUSH = 16.0, 0.1  # with --orbit-frames: turn over the day, and push in
 CITIES = {"basel": (47.56, 7.59), "bern": (46.95, 7.45)}  # latitude N, longitude E
 LAT, LON = CITIES["basel"]
 INSIDE_EYE = (3.4, -2.4, 2.0)
@@ -74,6 +75,12 @@ def args():
     )
     ap.add_argument("--day", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument(
+        "--orbit-frames",
+        type=int,
+        default=0,
+        help="render this many frames over the day, the camera orbiting slowly (fast cut)",
+    )
     ap.add_argument("--width", type=int, default=960)
     ap.add_argument("--height", type=int, default=1080)
     ap.add_argument("--samples", type=int, default=48)
@@ -248,6 +255,45 @@ def heat_overlay(SK, cam, col):
     return mats
 
 
+def light_sky(SK, sc, sky, bg, sun, gains, elev, az, city):
+    """Sky, sun, haze and window lights for a sun at `elev` and `az` (degrees)."""
+    rot = 90 - az
+    # Twilight: from about -12 deg the sky brightens into the dusk colours of the
+    # heat-atlas still; below the horizon the sky model is held just under it.
+    SK.set_sun(sky, max(elev, -2.0) if elev > -12 else max(elev, -18.0), rot)
+    if elev >= 0:
+        bg.inputs["Strength"].default_value = lerp(0.9, 0.15, elev / 12)
+    else:
+        t = max(0.0, min(1.0, (elev + 12) / 9))
+        bg.inputs["Strength"].default_value = 0.03 + 0.9 * t * t * (3 - 2 * t)
+    day = max(0.0, min(1.0, elev / 12))
+    night = max(0.0, min(1.0, (-elev - 4) / 8))
+    sun.hide_render = elev <= 0
+    sun.data.energy = 1.2 * day + 0.4 * min(1.0, max(0.0, elev) / 3) * (1 - day)
+    sun.data.color = lerp((1.0, 0.6, 0.35), (1.0, 0.97, 0.93), elev / 15)
+    sun.rotation_euler = (
+        math.radians(90 - max(elev, 0.5)),
+        0,
+        math.radians(rot + 90),
+    )
+    fog = lerp(
+        lerp((0.06, 0.14, 0.29), (0.55, 0.6, 0.68), day),
+        (0.012, 0.025, 0.06),
+        night,
+    )
+    if city == "basel":
+        SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
+    else:  # Bern's view is shorter: haze from nearer in, so the land fades into the sky
+        haze = lerp(fog, (0.95, 0.97, 1.0), day)  # pale enough to meet the day sky
+        SK.set_fog(lerp(700.0, 900.0, day), lerp(900.0, 1600.0, day), 1.0, haze)
+    sc.view_settings.exposure = -0.3
+    dark = max(0.0, min(1.0, (3 - elev) / 9))
+    for n, g in gains.items():
+        bpy.data.materials[n].node_tree.nodes["WindowGain"].outputs[0].default_value = (
+            g * (0.05 + 0.95 * dark)
+        )
+
+
 def outside(a, rows):
     sys.dont_write_bytecode = True  # read heat-atlas, never write into it
     sys.path.insert(0, str(HEAT_ATLAS / "blender"))
@@ -295,49 +341,47 @@ def outside(a, rows):
     heat_max = max(float(r["heat_produced"]) for r in rows) or 1.0
     date = datetime.strptime(rows[0]["time"][:10], "%Y-%m-%d")
     log = []
-    if a.times:
-        by_hour = {int(r["hour"]): r for r in rows}
+    by_hour = {int(r["hour"]): r for r in rows}
+    if a.orbit_frames:
+        n = a.orbit_frames
+        plan = [(by_hour[int(24 * f / n)], 60 * 24 * f / n % 60) for f in range(n)]
+    elif a.times:
         plan = [(by_hour[int(t[:2])], int(t[3:5])) for t in a.times.split(",")]
     else:
         plan = [(r, 60 * s // a.steps) for r in rows for s in range(a.steps)]
-    for r, minute in plan:
-        local = date + timedelta(hours=int(r["hour"]), minutes=minute)
+    # The overlays sit scaled towards the camera; an orbiting camera re-places them each frame.
+    bpy.context.view_layer.update()
+    c0 = cam.matrix_world.translation.copy()
+    s0 = Matrix.Translation(c0) @ Matrix.Scale(0.006, 4) @ Matrix.Translation(-c0)
+    pinned = [
+        (o, s0.inverted() @ o.matrix_world)
+        for o in hud.objects
+        if o.name.startswith(("XRay_", "DN_"))
+    ]
+    start = cam.matrix_world.copy()
+    if a.city == "basel":
+        t = json.loads(sc["meta"])["tallest"]
+        pivot = Vector((t["cx"], t["cy"], 60.0))
+    else:  # Bern: turn round the point the camera looks at, at about its ground distance
+        pivot = start.translation + start.to_3x3() @ Vector((0, 0, -1300))
+    for f, (r, minute) in enumerate(plan):
+        if a.orbit_frames:
+            k = f / max(1, len(plan) - 1)
+            rot = Matrix.Rotation(math.radians(ORBIT_DEG * (k - 0.5)), 4, "Z")
+            eye = pivot + (rot @ (start.translation - pivot)) * (1 - ORBIT_PUSH * k)
+            cam.matrix_world = Matrix.Translation(eye) @ (rot @ start.to_3x3().to_4x4())
+            bpy.context.view_layer.update()
+            cc = cam.matrix_world.translation
+            sf = (
+                Matrix.Translation(cc)
+                @ Matrix.Scale(0.006, 4)
+                @ Matrix.Translation(-cc)
+            )
+            for o, base in pinned:
+                o.matrix_world = sf @ base
+        local = date + timedelta(hours=int(r["hour"]), minutes=float(minute))
         elev, az = sun_position(local)
-        rot = 90 - az
-        # Twilight: from about -12 deg the sky brightens into the dusk colours of the
-        # heat-atlas still; below the horizon the sky model is held just under it.
-        SK.set_sun(sky, max(elev, -2.0) if elev > -12 else max(elev, -18.0), rot)
-        if elev >= 0:
-            bg.inputs["Strength"].default_value = lerp(0.9, 0.15, elev / 12)
-        else:
-            t = max(0.0, min(1.0, (elev + 12) / 9))
-            bg.inputs["Strength"].default_value = 0.03 + 0.9 * t * t * (3 - 2 * t)
-        day = max(0.0, min(1.0, elev / 12))
-        night = max(0.0, min(1.0, (-elev - 4) / 8))
-        sun.hide_render = elev <= 0
-        sun.data.energy = 1.2 * day + 0.4 * min(1.0, max(0.0, elev) / 3) * (1 - day)
-        sun.data.color = lerp((1.0, 0.6, 0.35), (1.0, 0.97, 0.93), elev / 15)
-        sun.rotation_euler = (
-            math.radians(90 - max(elev, 0.5)),
-            0,
-            math.radians(rot + 90),
-        )
-        fog = lerp(
-            lerp((0.06, 0.14, 0.29), (0.55, 0.6, 0.68), day),
-            (0.012, 0.025, 0.06),
-            night,
-        )
-        if a.city == "basel":
-            SK.set_fog(lerp(1900.0, 2600.0, day), lerp(700.0, 1500.0, day), 1.0, fog)
-        else:  # Bern's view is shorter: haze from nearer in, so the land fades into the sky
-            haze = lerp(fog, (0.95, 0.97, 1.0), day)  # pale enough to meet the day sky
-            SK.set_fog(lerp(700.0, 900.0, day), lerp(900.0, 1600.0, day), 1.0, haze)
-        sc.view_settings.exposure = -0.3
-        dark = max(0.0, min(1.0, (3 - elev) / 9))
-        for n, g in gains.items():
-            bpy.data.materials[n].node_tree.nodes["WindowGain"].outputs[
-                0
-            ].default_value = g * (0.05 + 0.95 * dark)
+        light_sky(SK, sc, sky, bg, sun, gains, elev, az, a.city)
         dk = float(r["demand_kwh"]) / demand_max
         for m in heat_mats:
             m.node_tree.nodes["Emission"].inputs["Strength"].default_value = (
@@ -351,8 +395,9 @@ def outside(a, rows):
         depth = snow.get(int(r["hour"]), (0.0, 0.0))[0]
         for v in snow_cover:
             v.outputs[0].default_value = min(1.0, depth / SNOW_FULL_M)
-        key = f"{int(r['hour']):02d}{minute:02d}"
-        sc.render.filepath = str(Path(a.out) / "outside" / f"{key}.png")
+        key = f"{int(r['hour']):02d}{int(minute):02d}"
+        name = f"f{f + 1:04d}" if a.orbit_frames else key
+        sc.render.filepath = str(Path(a.out) / "outside" / f"{name}.png")
         bpy.ops.render.render(write_still=True)
         log.append({"key": key, "elev": round(elev, 2), "az": round(az, 1)})
         print("outside", key, round(elev, 1), round(az, 1), flush=True)
@@ -420,4 +465,5 @@ def main():
         inside(a, rows, cfg, kpis)
 
 
-main()
+if __name__ == "__main__":
+    main()
