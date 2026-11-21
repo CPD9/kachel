@@ -1,7 +1,7 @@
 import {
   ArrowLeft,
-  CalendarRange,
   ArrowRight,
+  Baby,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -10,15 +10,15 @@ import {
   Droplet,
   Fan,
   Flame,
+  Hammer,
   Hand,
   Heater,
-  Landmark,
+  Hourglass,
   Layers,
   Leaf,
   PiggyBank,
   RotateCcw,
   Server,
-  ShowerHead,
   SlidersHorizontal,
   Sparkles,
   Square,
@@ -26,7 +26,6 @@ import {
   TrendingUp,
   Users,
   Waves,
-  Wrench,
   Zap,
 } from "lucide-react";
 import { type ComponentType, type ReactNode, useState } from "react";
@@ -36,6 +35,8 @@ import {
   type Fuel,
   FUELS,
   defaultParams,
+  INSULATION,
+  type Insulation,
   type Params,
   RACKS,
   type Rack,
@@ -281,8 +282,8 @@ function AssumptionsCard({
     WINDOWS.find((o) => o.value === answers.windows)?.name,
     EMITTERS.find((o) => o.value === answers.emitters)?.name,
     FUELS[answers.fuel].name,
-    `${answers.residents} residents`,
-    answers.hotWater ? "Hot water" : "No hot water",
+    `${answers.adults} ${answers.adults === 1 ? "adult" : "adults"}`,
+    `${answers.children} ${answers.children === 1 ? "child" : "children"}`,
   ];
   return (
     <article className={`${card} absolute top-6 left-6 w-[300px]`}>
@@ -335,35 +336,49 @@ function AssumptionsCard({
           onChange={(v) => onParam("priceRise", v)}
         />
         <Slider
-          icon={Wrench}
-          name="Installation"
-          value={params.installCost}
-          min={2000}
-          max={15000}
-          step={500}
-          format={chf}
-          onChange={(v) => onParam("installCost", v)}
-        />
-        <Slider
-          icon={Landmark}
-          name="Subsidy (Basel-Stadt)"
-          value={params.subsidy}
+          icon={Hourglass}
+          name="Building age"
+          value={params.age}
           min={0}
-          max={6000}
-          step={500}
-          format={chf}
-          onChange={(v) => onParam("subsidy", v)}
+          max={150}
+          step={5}
+          format={(v) => (v === 0 ? "New" : `${v} years`)}
+          onChange={(v) => onParam("age", v)}
         />
-        <Slider
-          icon={CalendarRange}
-          name="Look ahead"
-          value={params.years}
-          min={5}
-          max={25}
-          step={1}
-          format={(v) => `${v} years`}
-          onChange={(v) => onParam("years", v)}
-        />
+        <button
+          onClick={() => onParam("renovated", !params.renovated)}
+          className="flex w-full items-center gap-1.5 rounded-2xl px-2 py-1.5 text-left text-[11.5px] font-medium hover:bg-black/[0.025]"
+        >
+          <Hammer size={13} className="text-ink/50" /> Renovated
+          <span
+            className={`ml-auto grid size-4 place-items-center rounded-[5px] ${
+              params.renovated ? "bg-clay text-white" : "bg-black/[0.08]"
+            }`}
+          >
+            {params.renovated && <Check size={11} />}
+          </span>
+        </button>
+        <div className="rounded-2xl px-2 py-1.5">
+          <span className="flex items-center gap-1.5 text-[11.5px] font-medium">
+            <Layers size={13} className="text-ink/50" /> Insulation
+          </span>
+          <div className="mt-1.5 grid grid-cols-4 gap-0.5 rounded-full bg-black/[0.05] p-0.5">
+            {(Object.keys(INSULATION) as Insulation[]).map((k) => (
+              <button
+                key={k}
+                onClick={() => onParam("insulation", k)}
+                className={`rounded-full py-1 text-[10.5px] font-semibold transition-colors ${
+                  params.insulation === k
+                    ? "bg-white text-ink shadow-sm"
+                    : "text-ink/55 hover:text-ink"
+                }`}
+              >
+                {INSULATION[k].name}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-[9.5px] text-muted">{INSULATION[params.insulation].hint}</p>
+        </div>
       </div>
 
       <div className="mt-2 border-t border-black/[0.06] px-2 pt-2.5">
@@ -467,27 +482,27 @@ function ProductCard({
     if (next) onPick(next);
   };
   const arrow =
-    "pointer-events-auto absolute top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white/80 backdrop-blur hover:bg-white/20";
+    "pointer-events-auto absolute top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-ink/70 shadow-sm ring-1 ring-black/[0.06] backdrop-blur hover:bg-white hover:text-ink";
   return (
     <article
       className={`${card} absolute right-6 bottom-6 w-[300px]`}
       style={{ animationDelay: "220ms" }}
     >
-      {/* The rack itself, on a dark stage */}
-      <div className="relative h-40 overflow-hidden rounded-[20px] bg-[radial-gradient(120%_90%_at_50%_100%,#2a2d33,#111316)]">
+      {/* The rack itself, on a light stage */}
+      <div className="relative h-40 overflow-hidden rounded-[20px] bg-[radial-gradient(120%_90%_at_50%_100%,#ffffff,#eceae6)] ring-1 ring-black/[0.05]">
         {/* Keyed so a new model fades in */}
         <div key={r.rack.id} className="absolute inset-x-6 inset-y-1 animate-card-in">
           <RackArt rack={r.rack} />
         </div>
         <span
           className={`absolute top-2 left-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-            best ? "bg-clay text-white" : "bg-white/15 text-white/85"
+            best ? "bg-clay text-white" : "bg-white/80 text-ink/75 ring-1 ring-black/[0.06]"
           }`}
         >
           {best ? <Sparkles size={11} /> : <Hand size={11} />}
           {best ? "Best fit" : "Your pick"}
         </span>
-        <span className="absolute top-2 right-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/85 tabular-nums">
+        <span className="absolute top-2 right-2 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-ink/75 tabular-nums ring-1 ring-black/[0.06]">
           {r.rack.kw} kW
         </span>
         <button aria-label="Previous model" onClick={() => go(-1)} className={`${arrow} left-2`}>
@@ -649,38 +664,27 @@ export function Assessment({
                 hint="More people, more hot water: free heat in summer too."
               >
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between rounded-2xl px-2.5 py-2 ring-1 ring-black/[0.06]">
-                    <span className="flex items-center gap-2 text-[12.5px] font-semibold">
-                      <Users size={15} className="text-ink/60" /> Residents
-                    </span>
-                    <Stepper
-                      value={answers.residents}
-                      min={1}
-                      max={12}
-                      onChange={(v) => set("residents", v)}
-                    />
-                  </div>
-                  <button
-                    onClick={() => set("hotWater", !answers.hotWater)}
-                    className={`flex w-full items-center gap-2 rounded-2xl px-2.5 py-2.5 text-left text-[12.5px] font-semibold ring-1 transition-all ${
-                      answers.hotWater
-                        ? "bg-clay/[0.08] ring-clay"
-                        : "ring-black/[0.06] hover:bg-black/[0.03]"
-                    }`}
-                  >
-                    <ShowerHead
-                      size={15}
-                      className={answers.hotWater ? "text-clay" : "text-ink/60"}
-                    />
-                    Heat our hot water too
-                    <span
-                      className={`ml-auto grid size-5 place-items-center rounded-md ${
-                        answers.hotWater ? "bg-clay text-white" : "bg-black/[0.08]"
-                      }`}
+                  {(
+                    [
+                      ["adults", "Adults", Users, 1],
+                      ["children", "Children", Baby, 0],
+                    ] as const
+                  ).map(([key, name, Icon, min]) => (
+                    <div
+                      key={key}
+                      className="flex items-center justify-between rounded-2xl px-2.5 py-2 ring-1 ring-black/[0.06]"
                     >
-                      {answers.hotWater && <Check size={13} />}
-                    </span>
-                  </button>
+                      <span className="flex items-center gap-2 text-[12.5px] font-semibold">
+                        <Icon size={15} className="text-ink/60" /> {name}
+                      </span>
+                      <Stepper
+                        value={answers[key]}
+                        min={min}
+                        max={6}
+                        onChange={(v) => set(key, v)}
+                      />
+                    </div>
+                  ))}
                 </div>
               </Question>
             )}

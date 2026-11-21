@@ -6,13 +6,14 @@
 export type Windows = "single" | "double" | "triple";
 export type Emitters = "radiators" | "underfloor" | "mixed";
 export type Fuel = "oil" | "gas" | "heatpump" | "electric";
+export type Insulation = "bare" | "attic" | "facade" | "thermos";
 
 export type Answers = {
   windows: Windows;
   emitters: Emitters;
   fuel: Fuel;
-  residents: number;
-  hotWater: boolean;
+  adults: number;
+  children: number;
 };
 
 /** Where the questions start: a typical home. */
@@ -20,8 +21,8 @@ export const DEFAULT_ANSWERS: Answers = {
   windows: "double",
   emitters: "radiators",
   fuel: "oil",
-  residents: 4,
-  hotWater: true,
+  adults: 2,
+  children: 2,
 };
 
 export type Rack = { id: string; name: string; kw: number; servers: number; size: string };
@@ -33,8 +34,25 @@ export const AREA = 300;
 const DEMAND_PER_M2: Record<Windows, number> = { single: 150, double: 115, triple: 90 };
 /** Underfloor heating runs at a lower water temperature, so server heat covers more of it. */
 const EMITTER_FACTOR: Record<Emitters, number> = { radiators: 1, mixed: 0.97, underfloor: 0.93 };
-/** Hot water per person and year (kWh). */
-const HOT_WATER_PER_PERSON = 800;
+/** Hot water per person and year (kWh): children use a bit less than adults. */
+const HOT_WATER_PER_ADULT = 800;
+const HOT_WATER_PER_CHILD = 500;
+/** How much of the heat insulation keeps in: roof, outer walls, or both. */
+export const INSULATION: Record<Insulation, { name: string; hint: string; factor: number }> = {
+  bare: { name: "Bare", hint: "Heat slips out through roof and walls", factor: 1 },
+  attic: { name: "Hat", hint: "A warm hat: the attic is insulated", factor: 0.9 },
+  facade: { name: "Coat", hint: "A warm coat: the outer walls are wrapped", factor: 0.82 },
+  thermos: { name: "Thermos", hint: "Roof and walls, sealed like a thermos", factor: 0.7 },
+};
+/** A renovation (sealed gaps, newer heating pipes) takes this much off the space heat. */
+const RENOVATED_FACTOR = 0.88;
+/** Space heat by age: houses a century old or more need the full amount, new ones 40 % less. */
+const ageFactor = (age: number) => 0.6 + 0.4 * Math.min(1, Math.max(0, age) / 100);
+/** Connecting the rack to the heating and hot water, in CHF, and the cantonal subsidy for leaving fossil heating. */
+const INSTALL_COST = 6500;
+const FOSSIL_SUBSIDY = 2000;
+/** How many years the projection runs. */
+export const YEARS = 10;
 /** Full-load hours a year: turns yearly heat into the size of the heater. */
 const FULL_LOAD_HOURS = 2000;
 
@@ -53,21 +71,21 @@ export type Params = {
   kachelPrice: number;
   /** Yearly rise of today's heating price, e.g. 0.03 for 3 %. */
   priceRise: number;
-  /** One-off cost of connecting the rack to the heating and hot water, in CHF. */
-  installCost: number;
-  /** Cantonal subsidy for leaving fossil heating, taken off the install cost, in CHF. */
-  subsidy: number;
-  /** How many years the projection runs. */
-  years: number;
+  /** Age of the building, in years. */
+  age: number;
+  /** Whether the building has been renovated. */
+  renovated: boolean;
+  /** How well roof and walls are insulated. */
+  insulation: Insulation;
 };
 
 export const defaultParams = (fuel: Fuel): Params => ({
   heatPrice: FUELS[fuel].price,
   kachelPrice: 0.05,
   priceRise: 0.03,
-  installCost: 6500,
-  subsidy: fuel === "oil" || fuel === "gas" ? 2000 : 0,
-  years: 10,
+  age: 40,
+  renovated: false,
+  insulation: "bare",
 });
 
 /** The biggest set-up, for homes that need more than any single rack. */
@@ -109,8 +127,14 @@ export function size(
   p: Params = defaultParams(a.fuel),
   pick: Rack | null = null,
 ): Result {
-  const spaceHeat = AREA * DEMAND_PER_M2[a.windows] * EMITTER_FACTOR[a.emitters];
-  const hotWater = a.hotWater ? a.residents * HOT_WATER_PER_PERSON : 0;
+  const spaceHeat =
+    AREA *
+    DEMAND_PER_M2[a.windows] *
+    EMITTER_FACTOR[a.emitters] *
+    ageFactor(p.age) *
+    (p.renovated ? RENOVATED_FACTOR : 1) *
+    INSULATION[p.insulation].factor;
+  const hotWater = a.adults * HOT_WATER_PER_ADULT + a.children * HOT_WATER_PER_CHILD;
   const demand = spaceHeat + hotWater;
   const peakKw = demand / FULL_LOAD_HOURS;
   const bestFit = RACKS.find((r) => r.kw >= peakKw) ?? TWIN_XL;
@@ -118,10 +142,11 @@ export function size(
   // Servers run all year, but some heat lands when nobody needs it: cap what counts
   const coverage = Math.min(0.92, (rack.kw * FULL_LOAD_HOURS * 0.95) / demand);
   const covered = demand * coverage;
-  const net = Math.max(0, p.installCost - p.subsidy);
+  const subsidy = a.fuel === "oil" || a.fuel === "gas" ? FOSSIL_SUBSIDY : 0;
+  const net = Math.max(0, INSTALL_COST - subsidy);
   const savingsPerYear = covered * Math.max(0, p.heatPrice - p.kachelPrice);
   const cumulative = [-net];
-  for (let y = 1; y <= p.years; y++) {
+  for (let y = 1; y <= YEARS; y++) {
     const yearly =
       covered * Math.max(0, p.heatPrice * (1 + p.priceRise) ** (y - 1) - p.kachelPrice);
     cumulative.push((cumulative[y - 1] ?? 0) + yearly);

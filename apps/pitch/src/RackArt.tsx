@@ -105,7 +105,7 @@ function Heat({ x, y, delay }: { x: number; y: number; delay: number }) {
     <path
       d={`M${x} ${y} q4 -5 0 -10 q-4 -5 0 -10`}
       fill="none"
-      stroke="#fb923c"
+      stroke="#f97316"
       strokeWidth="2.2"
       strokeLinecap="round"
       style={{ animation: "heat-rise 2.4s ease-in-out infinite", animationDelay: `${delay}s` }}
@@ -123,13 +123,13 @@ export function RackArt({ rack }: { rack: Rack }) {
     <svg viewBox="0 0 200 165" className="size-full" role="img" aria-label={rack.name}>
       <defs>
         <radialGradient id="rack-glow" cx="50%" cy="0%" r="70%">
-          <stop offset="0%" stopColor="#ea580c" stopOpacity="0.55" />
+          <stop offset="0%" stopColor="#ea580c" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#ea580c" stopOpacity="0" />
         </radialGradient>
       </defs>
       {/* Warm glow above, and the shadow on the floor */}
       <ellipse cx="100" cy={top - 4} rx={span / 1.4} ry="30" fill="url(#rack-glow)" />
-      <ellipse cx={100 + DX / 2} cy={FLOOR + 2} rx={span / 1.7} ry="6" fill="#000" opacity="0.45" />
+      <ellipse cx={100 + DX / 2} cy={FLOOR + 2} rx={span / 1.7} ry="6" fill="#000" opacity="0.16" />
       {Array.from({ length: cabinets }, (_, c) => (
         <Cabinet key={c} x={x0 + c * (W + 6)} units={units} seed={c * 4} />
       ))}

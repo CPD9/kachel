@@ -7,24 +7,41 @@ import {
 } from "@react-three/fiber";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import {
+  CanvasTexture,
   ExtrudeGeometry,
   type Group,
   MathUtils,
+  Mesh,
   type MeshBasicMaterial,
+  type MeshStandardMaterial,
+  RepeatWrapping,
   Shape,
   Spherical,
+  SRGBColorSpace,
+  type Texture,
   Vector3,
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { Figure, type Rig, seeded, stride } from "./Figure";
 import type { Answers, Emitters, Fuel, Windows } from "./sizing";
+import { Surroundings } from "./Surroundings";
 
 /** Floor-to-floor height, and the clear height of a room below the next slab. */
 const H = 2.8;
 const INNER = 2.6;
-/** Footprint: x from -W/2 to W/2, z from -D/2 to D/2. */
-const W = 8;
-const D = 6;
+/** Footprint: x from -W/2 to W/2, z from -D/2 to D/2; the front (street side) faces +z. */
+const W = 11;
+const D = 8;
 const WALL = 0.2;
+/** The ground floor sits on an ochre plinth, as on Byfangweg 18. */
+const SOCLE = 1;
+/** Roof height above the eaves, and how far it overhangs front and back. */
+const ROOF = 3.2;
+const EAVES = 0.4;
+/** Window axes across the front and back. */
+const BAYS = [-4.3, -2.15, 0, 2.05, 4.15];
+/** Window axes along the sides. */
+const SIDE_BAYS = [-2.6, 0, 2.6];
 
 type Vec3 = [number, number, number];
 /** A room's rectangle on its floor: [x0, z0, x1, z1]. */
@@ -50,13 +67,13 @@ export const FLOORS: Floor[] = [
     name: "Ground floor",
     area: 150,
     rooms: [
-      { name: "Living room", kind: "living", rect: [-4, -3, 1, 3], area: 80 },
-      { name: "Kitchen", kind: "kitchen", rect: [1, -3, 4, 0.5], area: 40 },
-      { name: "Bathroom", kind: "bath", rect: [1, 0.5, 4, 3], area: 30 },
+      { name: "Living room", kind: "living", rect: [-5.5, -4, 1.4, 4], area: 80 },
+      { name: "Kitchen", kind: "kitchen", rect: [1.4, -4, 5.5, 0.7], area: 40 },
+      { name: "Bathroom", kind: "bath", rect: [1.4, 0.7, 5.5, 4], area: 30 },
     ],
     walls: [
-      [1, -3, 1, 3],
-      [1, 0.5, 4, 0.5],
+      [1.4, -4, 1.4, 4],
+      [1.4, 0.7, 5.5, 0.7],
     ],
   },
   {
@@ -65,24 +82,30 @@ export const FLOORS: Floor[] = [
     name: "First floor",
     area: 150,
     rooms: [
-      { name: "Bedroom", kind: "bedroom", rect: [-4, -3, 0, 3], area: 65 },
-      { name: "Kids' room", kind: "bedroom", rect: [0, -3, 4, 0.5], area: 50 },
-      { name: "Bathroom", kind: "bath", rect: [0, 0.5, 4, 3], area: 35 },
+      { name: "Bedroom", kind: "bedroom", rect: [-5.5, -4, 0, 4], area: 65 },
+      { name: "Kids' room", kind: "bedroom", rect: [0, -4, 5.5, 0.7], area: 50 },
+      { name: "Bathroom", kind: "bath", rect: [0, 0.7, 5.5, 4], area: 35 },
     ],
     walls: [
-      [0, -3, 0, 3],
-      [0, 0.5, 4, 0.5],
+      [0, -4, 0, 4],
+      [0, 0.7, 5.5, 0.7],
     ],
   },
 ];
 
 const COLORS = {
-  ground: "#dcdad5",
-  slab: "#d6d0c6",
   wall: "#ece7df",
   glass: "#ece7df",
   window: "#2c3440",
-  roof: "#b4440f",
+  roof: "#3a3532",
+  plaster: "#f1efe9",
+  ochre: "#e3b46a",
+  ochreDark: "#c99550",
+  door: "#7c2622",
+  pipe: "#222222",
+  stone: "#9b958c",
+  shrub: "#4e6b35",
+  pot: "#a06a45",
   hover: "#ea580c",
   furniture: "#8a8178",
   radiator: "#f5f2ee",
@@ -91,19 +114,19 @@ const COLORS = {
 
 /** Where the camera looks: a target, how far away, how steep, and from which side. */
 type Framing = { target: Vec3; distance: number; polar: number; azimuth?: number };
-const HOUSE_FRAMING: Framing = { target: [0, 3.2, 0], distance: 26, polar: 1.1, azimuth: 0.7 };
+const HOUSE_FRAMING: Framing = { target: [0, 4.4, 0], distance: 32, polar: 1.15, azimuth: 0.55 };
 const floorFraming = (level: number): Framing => ({
-  target: [0, level * H + 0.6, 0],
-  distance: 13,
+  target: [0, SOCLE + level * H + 0.6, 0],
+  distance: 17,
   polar: 0.78,
   azimuth: 0.6,
 });
 /** Roof off, first floor lifted: looking into both floors from above. */
-const CUTAWAY_FRAMING: Framing = { target: [0, 2.4, 0], distance: 20, polar: 0.9, azimuth: 0.6 };
+const CUTAWAY_FRAMING: Framing = { target: [0, 3.6, 0], distance: 26, polar: 0.9, azimuth: 0.6 };
 /** Outside on the right: the heating plant beside the house and the chimney. */
 const PLANT_FRAMING: Framing = {
-  target: [4.5, 2.6, -0.5],
-  distance: 17,
+  target: [6.2, 3.4, -1],
+  distance: 21,
   polar: 1.12,
   azimuth: 1.05,
 };
@@ -111,8 +134,8 @@ const PLANT_FRAMING: Framing = {
 export type Focus = "windows" | "heating" | "energy" | "people";
 /** From outside, behind the house: the back wall with its windows on both floors. */
 const WINDOWS_FRAMING: Framing = {
-  target: [0, H, -D / 2],
-  distance: 13,
+  target: [0, SOCLE + H, -D / 2],
+  distance: 17,
   polar: 1.3,
   azimuth: Math.PI - 0.45,
 };
@@ -137,10 +160,10 @@ function Camera({ target, distance, polar, azimuth }: Framing) {
       enableDamping: true,
       enablePan: false,
       minDistance: 6,
-      maxDistance: 40,
+      maxDistance: 50,
       maxPolarAngle: 1.45,
     });
-    c.target.set(0, 2.8, 0);
+    c.target.set(0, 4.4, 0);
     controls.current = c;
     return () => c.dispose();
   }, [camera, gl]);
@@ -171,13 +194,74 @@ function Camera({ target, distance, polar, azimuth }: Framing) {
 
 // ─── Building blocks ─────────────────────────────────────────────────────────
 
-function Box({ size, color, ...props }: { size: Vec3; color: string } & ThreeElements["mesh"]) {
+function Box({
+  size,
+  color,
+  map,
+  ...props
+}: { size: Vec3; color: string; map?: Texture } & ThreeElements["mesh"]) {
   return (
     <mesh {...props}>
       <boxGeometry args={size} />
-      <meshStandardMaterial color={color} roughness={0.85} />
+      <meshStandardMaterial color={map ? "#ffffff" : color} map={map ?? null} roughness={0.85} />
     </mesh>
   );
+}
+
+/** White render with horizontal grooves every ~45 cm, cached per wall size. */
+const plasterCache = new Map<string, Texture>();
+function plaster(w: number, h: number): Texture {
+  const key = `${w}x${h}`;
+  const cached = plasterCache.get(key);
+  if (cached) return cached;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 128;
+  const g = canvas.getContext("2d");
+  if (g) {
+    g.fillStyle = COLORS.plaster;
+    g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 300; i++) {
+      g.fillStyle = `rgba(120,110,100,${((i * 37) % 10) / 250})`;
+      g.fillRect((i * 53) % 128, (i * 29) % 128, 2, 2);
+    }
+    g.fillStyle = "rgba(110,105,100,0.4)";
+    g.fillRect(0, 0, 128, 4);
+  }
+  const t = new CanvasTexture(canvas);
+  t.wrapS = t.wrapT = RepeatWrapping;
+  t.repeat.set(w / 2, h / 0.45);
+  t.colorSpace = SRGBColorSpace;
+  plasterCache.set(key, t);
+  return t;
+}
+
+/**
+ * Everything inside fades to a faint ghost when `solid` is off, so the street-side walls can be
+ * looked through once a floor is hovered or opened. Meshes marked `userData.noFade` keep their own
+ * opacity (the heat glow animates itself).
+ */
+function Fade({ solid, children }: { solid: boolean; children: ReactNode }) {
+  const ref = useRef<Group>(null);
+  useFrame((_, dt) => {
+    const k = solid ? 1 : 0.12;
+    ref.current?.traverse((o) => {
+      if (!(o instanceof Mesh) || o.userData.noFade) return;
+      const m = o.material as MeshStandardMaterial;
+      const base = (m.userData.base as number | undefined) ?? (m.userData.base = m.opacity);
+      const goal = base * k;
+      if (m.opacity === goal) return;
+      m.opacity =
+        Math.abs(m.opacity - goal) < 0.005 ? goal : MathUtils.damp(m.opacity, goal, 6, dt);
+      // Opaque materials only switch to blending while they're see-through
+      const transparent = m.opacity < 1;
+      if (base === 1 && m.transparent !== transparent) {
+        m.transparent = transparent;
+        m.depthWrite = !transparent;
+        m.needsUpdate = true;
+      }
+    });
+  });
+  return <group ref={ref}>{children}</group>;
 }
 
 /** A storey that eases up by `lift`: a peek when the floor below is hovered, gone when it's open. */
@@ -260,7 +344,10 @@ const WINDOW_LOOK: Record<
   double: { frame: "#f4f2ee", panes: 2, cross: false, mullion: true, leak: 0.18 },
   triple: { frame: "#3a3f46", panes: 3, cross: false, mullion: false, leak: 0 },
 };
-const WIN_H = 1.2;
+const WIN_H = 1.6;
+const WIN_W = 1.1;
+/** Window centre above its floor. */
+const WIN_Y = 1.4;
 
 /** Orange glow in front of a window: the heat it lets out, gently pulsing. */
 function HeatLeak({ w, z, strength }: { w: number; z: number; strength: number }) {
@@ -273,7 +360,7 @@ function HeatLeak({ w, z, strength }: { w: number; z: number; strength: number }
     m.visible = m.opacity > 0.01;
   });
   return (
-    <mesh position-z={z}>
+    <mesh position-z={z} userData={{ noFade: true }}>
       <planeGeometry args={[w + 0.35, WIN_H + 0.35]} />
       <meshBasicMaterial
         ref={ref}
@@ -286,16 +373,65 @@ function HeatLeak({ w, z, strength }: { w: number; z: number; strength: number }
   );
 }
 
+/** A shutter leaf, facing +z: slatted ("louvre") or panelled with a diamond cut-out. */
+function Shutter({
+  w,
+  h,
+  louvre,
+  ...props
+}: { w: number; h: number; louvre: boolean } & ThreeElements["group"]) {
+  const slats = Math.floor(h / 0.14);
+  return (
+    <group {...props}>
+      <Box size={[w, h, 0.04]} color={COLORS.ochre} />
+      {louvre ? (
+        Array.from({ length: slats - 1 }, (_, i) => (
+          <Box
+            key={i}
+            size={[w - 0.1, 0.025, 0.02]}
+            color={COLORS.ochreDark}
+            position={[0, -h / 2 + ((i + 1) * h) / slats, 0.025]}
+          />
+        ))
+      ) : (
+        <>
+          <Box
+            size={[w - 0.12, h * 0.42, 0.015]}
+            color={COLORS.ochreDark}
+            position={[0, h * 0.2, 0.022]}
+          />
+          <Box
+            size={[w - 0.12, h * 0.34, 0.015]}
+            color={COLORS.ochreDark}
+            position={[0, -h * 0.25, 0.022]}
+          />
+          <Box
+            size={[0.09, 0.09, 0.02]}
+            color="#3a2a1a"
+            position={[0, h * 0.3, 0.035]}
+            rotation-z={Math.PI / 4}
+          />
+        </>
+      )}
+    </group>
+  );
+}
+
+/** How a window's shutters hang: folded back beside it, or closed over the glass. */
+type Shutters = { closed: boolean; louvre: boolean };
+
 /**
  * One window, built facing +z and turned into its wall: a dark opening, one to three layers of
- * glass, a frame (old wood with glazing bars, white, or slim anthracite) and a sill.
+ * glass, a frame (old wood with glazing bars, white, or slim anthracite), an ochre surround with
+ * sill and cap, and a pair of ochre shutters.
  */
 function Window({
   type,
-  w,
+  w = WIN_W,
   glow,
+  shutters = { closed: false, louvre: false },
   ...props
-}: { type: Windows; w: number; glow: boolean } & ThreeElements["group"]) {
+}: { type: Windows; w?: number; glow: boolean; shutters?: Shutters } & ThreeElements["group"]) {
   const look = WINDOW_LOOK[type];
   const t = 0.07;
   // The wall is solid, so frame and glass stand just proud of it: a 12 cm deep frame, its
@@ -321,78 +457,361 @@ function Window({
       {bar([t, WIN_H, depth], [w / 2 - t / 2, 0, mid])}
       {look.mullion && bar([t * 0.7, WIN_H, 0.03], [0, 0, back + depth - 0.015])}
       {look.cross && bar([w, t * 0.6, 0.03], [0, 0, back + depth - 0.015])}
+      {/* Ochre surround, sill and cap */}
       <Box
-        size={[w + 0.16, 0.05, depth + 0.08]}
-        color="#cfc8bd"
-        position={[0, -WIN_H / 2 - 0.03, mid + 0.04]}
+        size={[w + 0.36, 0.18, 0.06]}
+        color={COLORS.ochre}
+        position={[0, WIN_H / 2 + 0.09, back + 0.03]}
       />
-      <HeatLeak w={w} z={back + depth + 0.08} strength={glow ? look.leak : 0} />
+      <Box
+        size={[w + 0.36, 0.18, 0.06]}
+        color={COLORS.ochre}
+        position={[0, -WIN_H / 2 - 0.09, back + 0.03]}
+      />
+      {[-1, 1].map((s) => (
+        <Box
+          key={s}
+          size={[0.18, WIN_H, 0.06]}
+          color={COLORS.ochre}
+          position={[s * (w / 2 + 0.09), 0, back + 0.03]}
+        />
+      ))}
+      <Box
+        size={[w + 0.5, 0.08, depth + 0.1]}
+        color={COLORS.ochre}
+        position={[0, -WIN_H / 2 - 0.2, mid + 0.04]}
+      />
+      <Box
+        size={[w + 0.5, 0.1, 0.14]}
+        color={COLORS.ochre}
+        position={[0, WIN_H / 2 + 0.23, back + 0.07]}
+      />
+      {[-1, 1].map((s) =>
+        shutters.closed ? (
+          <Shutter
+            key={s}
+            w={w / 2 - 0.01}
+            h={WIN_H}
+            louvre={shutters.louvre}
+            position={[(s * w) / 4, 0, back + depth + 0.03]}
+          />
+        ) : (
+          <Shutter
+            key={s}
+            w={w / 2}
+            h={WIN_H + 0.05}
+            louvre={shutters.louvre}
+            position={[s * (w / 2 + 0.2 + w / 4), 0, back + 0.03]}
+          />
+        ),
+      )}
+      <HeatLeak w={w} z={back + depth + 0.08} strength={glow && !shutters.closed ? look.leak : 0} />
     </group>
   );
 }
 
-/** Outer walls: solid at the back and left with windows, see-through at the front and right. */
-function Walls({ windows, glow }: { windows: Windows; glow: boolean }) {
+/** The red front door in its ochre portal, built facing +z on the ground floor. */
+function Door(props: ThreeElements["group"]) {
+  const w = 1.1;
+  const h = 2.3;
+  const z = WALL / 2;
+  return (
+    <group {...props}>
+      <Box
+        size={[w + 0.6, h + 0.3, 0.08]}
+        color={COLORS.ochre}
+        position={[0, h / 2 + 0.1, z + 0.04]}
+      />
+      <Box size={[w + 0.8, 0.14, 0.2]} color={COLORS.ochre} position={[0, h + 0.3, z + 0.1]} />
+      <Box size={[w, h, 0.06]} color={COLORS.door} position={[0, h / 2, z + 0.09]} />
+      <Box size={[w - 0.14, 0.45, 0.03]} color={COLORS.window} position={[0, h - 0.3, z + 0.13]} />
+      <Box size={[w, 0.07, 0.04]} color="#5d1b18" position={[0, h - 0.58, z + 0.13]} />
+      <Box size={[0.35, 1, 0.02]} color="#1d1d1d" position={[0, 1.1, z + 0.13]} />
+      {/* House number */}
+      <Box size={[0.22, 0.14, 0.02]} color="#2d5b8a" position={[0, h + 0.1, z + 0.12]} />
+    </group>
+  );
+}
+
+/** Street front, as on Byfangweg 18: shutters closed on most windows, the door in the middle. */
+const FRONT: Record<FloorId, (Shutters | "door")[]> = {
+  ground: [
+    { closed: true, louvre: false },
+    { closed: true, louvre: false },
+    "door",
+    { closed: false, louvre: false },
+    { closed: true, louvre: false },
+  ],
+  upper: [
+    { closed: true, louvre: true },
+    { closed: false, louvre: true },
+    { closed: true, louvre: true },
+    { closed: true, louvre: true },
+    { closed: true, louvre: true },
+  ],
+};
+
+/**
+ * Outer walls in grooved white render. Back and left stay solid; the street front and the right
+ * side fade to a ghost (`see`) so you can look in while a floor is hovered or open.
+ */
+function Walls({
+  floor,
+  windows,
+  glow,
+  see,
+}: {
+  floor: FloorId;
+  windows: Windows;
+  glow: boolean;
+  see: boolean;
+}) {
   const half = INNER / 2;
+  const long = plaster(W, INNER);
+  const short = plaster(D, INNER);
   return (
     <>
-      <Box size={[W, INNER, WALL]} color={COLORS.wall} position={[0, half, -D / 2 + WALL / 2]} />
-      <Box size={[WALL, INNER, D]} color={COLORS.wall} position={[-W / 2 + WALL / 2, half, 0]} />
-      {[-2.4, 0, 2.4].map((x) => (
+      <Box
+        size={[W, INNER, WALL]}
+        color={COLORS.plaster}
+        map={long}
+        position={[0, half, -D / 2 + WALL / 2]}
+      />
+      <Box
+        size={[WALL, INNER, D]}
+        color={COLORS.plaster}
+        map={short}
+        position={[-W / 2 + WALL / 2, half, 0]}
+      />
+      {BAYS.map((x) => (
         <Window
           key={x}
           type={windows}
-          w={1.1}
           glow={glow}
-          position={[x, 1.5, -D / 2 + WALL / 2]}
+          position={[x, WIN_Y, -D / 2 + WALL / 2]}
           rotation-y={Math.PI}
         />
       ))}
-      <Window
-        type={windows}
-        w={1.4}
-        glow={glow}
-        position={[-W / 2 + WALL / 2, 1.5, 0]}
-        rotation-y={-Math.PI / 2}
-      />
-      {/* Front and right: a low sill and a faint pane, so you can look in */}
-      {[
-        { size: [W, INNER, 0.05] as Vec3, position: [0, half, D / 2] as Vec3 },
-        { size: [0.05, INNER, D] as Vec3, position: [W / 2, half, 0] as Vec3 },
-      ].map(({ size, position }) => (
-        <mesh key={position.join()} position={position}>
-          <boxGeometry args={size} />
-          <meshStandardMaterial
-            color={COLORS.glass}
-            transparent
-            opacity={0.12}
-            depthWrite={false}
-          />
-        </mesh>
+      {SIDE_BAYS.map((z) => (
+        <Window
+          key={z}
+          type={windows}
+          glow={glow}
+          position={[-W / 2 + WALL / 2, WIN_Y, z]}
+          rotation-y={-Math.PI / 2}
+        />
       ))}
+      <Fade solid={!see}>
+        <Box
+          size={[W, INNER, WALL]}
+          color={COLORS.plaster}
+          map={long}
+          position={[0, half, D / 2 - WALL / 2]}
+        />
+        <Box
+          size={[WALL, INNER, D - 2 * WALL]}
+          color={COLORS.plaster}
+          map={short}
+          position={[W / 2 - WALL / 2, half, 0]}
+        />
+        {FRONT[floor].map((s, i) =>
+          s === "door" ? (
+            <Door key={i} position={[BAYS[i] ?? 0, 0, D / 2 - WALL / 2]} />
+          ) : (
+            <Window
+              key={i}
+              type={windows}
+              glow={glow}
+              shutters={s}
+              position={[BAYS[i] ?? 0, WIN_Y, D / 2 - WALL / 2]}
+            />
+          ),
+        )}
+        {SIDE_BAYS.map((z) => (
+          <Window
+            key={z}
+            type={windows}
+            glow={glow}
+            position={[W / 2 - WALL / 2, WIN_Y, z]}
+            rotation-y={Math.PI / 2}
+          />
+        ))}
+        {/* Ochre corner pilasters and black downpipes on the street front */}
+        {[-1, 1].map((s) => (
+          <group key={s}>
+            <Box
+              size={[0.4, INNER, 0.08]}
+              color={COLORS.ochre}
+              position={[s * (W / 2 - 0.2), half, D / 2 + 0.04]}
+            />
+            <Box
+              size={[0.1, H, 0.1]}
+              color={COLORS.pipe}
+              position={[s * (W / 2 + 0.1), H / 2 - 0.2, D / 2 + 0.12]}
+            />
+          </group>
+        ))}
+      </Fade>
     </>
   );
 }
 
-/** Pitched roof: a triangle extruded along the house, ridge running left to right. */
-function Roof() {
+/** Height of the roof surface above the eaves, at depth z (front and back slopes). */
+const roofAt = (z: number) => (ROOF * (D / 2 + EAVES - Math.abs(z))) / (D / 2 + EAVES);
+
+/** A dormer on the front slope: small with an arched cap, or big with a triangular gable. */
+function Dormer({ x, big = false, windows }: { x: number; big?: boolean; windows: Windows }) {
+  const w = big ? 1.3 : 0.8;
+  const h = big ? 1.1 : 0.8;
+  const dep = 2.2;
+  const z = D / 2 - 0.5;
+  const y = roofAt(z);
+  const cap = useMemo(() => {
+    const s = new Shape();
+    if (big) {
+      s.moveTo(-w / 2 - 0.12, 0);
+      s.lineTo(w / 2 + 0.12, 0);
+      s.lineTo(0, 0.55);
+      s.closePath();
+    } else {
+      const r = w / 2 + 0.08;
+      s.moveTo(r, 0);
+      s.absarc(0, 0, r, 0, Math.PI, false);
+      s.closePath();
+    }
+    return new ExtrudeGeometry(s, { depth: dep + 0.1, bevelEnabled: false });
+  }, [big, w]);
+  return (
+    <group position={[x, y - 0.1, z]}>
+      <Box size={[w, h, dep]} color={COLORS.ochre} position={[0, h / 2, -dep / 2]} />
+      <Box size={[w - 0.28, h - 0.24, 0.04]} color="#a9cbe0" position={[0, h / 2 + 0.02, 0.01]} />
+      <Box
+        size={[0.05, h - 0.24, 0.05]}
+        color={WINDOW_LOOK[windows].frame}
+        position={[0, h / 2 + 0.02, 0.04]}
+      />
+      <mesh geometry={cap} position={[0, h, -dep]}>
+        <meshStandardMaterial color={big ? COLORS.roof : COLORS.ochre} roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Dark pitched roof with an overhang, ridge running left to right, three dormers on the street
+ * side, a TV antenna on the ridge, an ochre cornice and a gutter. Sits on top of the upper floor.
+ */
+function Roof({ windows }: { windows: Windows }) {
   const geometry = useMemo(() => {
-    const span = D + 0.8;
+    const half = D / 2 + EAVES;
     const shape = new Shape();
-    shape.moveTo(-span / 2, 0);
-    shape.lineTo(span / 2, 0);
-    shape.lineTo(0, 2.3);
+    shape.moveTo(-half, 0);
+    shape.lineTo(half, 0);
+    shape.lineTo(0, ROOF);
     shape.closePath();
-    const depth = W + 0.6;
+    const depth = W + 0.5;
     const g = new ExtrudeGeometry(shape, { depth, bevelEnabled: false });
     g.translate(0, 0, -depth / 2);
     g.rotateY(Math.PI / 2);
     return g;
   }, []);
   return (
-    <mesh geometry={geometry}>
-      <meshStandardMaterial color={COLORS.roof} roughness={0.9} />
-    </mesh>
+    <>
+      {/* Ceiling of the upper floor, ochre at its edge like a cornice */}
+      <Box size={[W + 0.2, 0.2, D + 0.2]} color={COLORS.ochre} position-y={-0.1} />
+      {[-1, 1].map((s) => (
+        <Box
+          key={s}
+          size={[W + 0.3, 0.25, 0.3]}
+          color={COLORS.ochreDark}
+          position={[0, 0.02, s * (D / 2 + 0.15)]}
+        />
+      ))}
+      <mesh geometry={geometry} position-y={0.12}>
+        <meshStandardMaterial color={COLORS.roof} roughness={0.9} />
+      </mesh>
+      <Box
+        size={[W + 0.5, 0.14, 0.16]}
+        color={COLORS.pipe}
+        position={[0, 0.1, D / 2 + EAVES + 0.05]}
+      />
+      {[-3.2, 0, 3.2].map((x) => (
+        <Dormer key={x} x={x} big={x === 0} windows={windows} />
+      ))}
+      <group position={[1.4, ROOF + 0.1, 0]}>
+        <Box size={[0.05, 2, 0.05]} color="#777777" position-y={1} />
+        {[1.3, 1.6, 1.9].map((y, i) => (
+          <Box key={y} size={[1.3 - i * 0.3, 0.03, 0.03]} color="#777777" position-y={y} />
+        ))}
+      </group>
+    </>
+  );
+}
+
+/** Right at the house: ochre plinth with arched cellar windows, steps, potted shrubs, railing. */
+function Street() {
+  const cellar = [-4.8, -3, 2.05, 4.6];
+  return (
+    <>
+      <Box
+        size={[W + 0.12, SOCLE - 0.2, D + 0.12]}
+        color={COLORS.ochre}
+        position-y={(SOCLE - 0.2) / 2}
+      />
+      {cellar.map((x) => (
+        <group key={x} position={[x, 0, D / 2 + 0.07]}>
+          <Box size={[0.7, 0.3, 0.02]} color="#1b1b1b" position-y={0.3} />
+          <mesh position-y={0.45}>
+            <circleGeometry args={[0.35, 20, 0, Math.PI]} />
+            <meshStandardMaterial color="#1b1b1b" />
+          </mesh>
+          {[-2, -1, 0, 1, 2].map((i) => (
+            <Box
+              key={i}
+              size={[0.02, 0.6, 0.02]}
+              color="#e8e8e8"
+              position={[i * 0.13, 0.45, 0.02]}
+            />
+          ))}
+        </group>
+      ))}
+      {[-1, 1].map((s) => (
+        <Box
+          key={s}
+          size={[0.1, SOCLE - 0.2, 0.1]}
+          color={COLORS.pipe}
+          position={[s * (W / 2 + 0.1), (SOCLE - 0.2) / 2, D / 2 + 0.12]}
+        />
+      ))}
+      {/* Stone steps up to the door */}
+      {[0, 1, 2].map((i) => (
+        <Box
+          key={i}
+          size={[1.6 + i * 0.1, (SOCLE * (3 - i)) / 3, 0.35]}
+          color={COLORS.stone}
+          position={[0, (SOCLE * (3 - i)) / 6, D / 2 + 0.06 + 0.175 + i * 0.35]}
+        />
+      ))}
+      {[
+        [-4.9, 0.9],
+        [-1.6, 0.7],
+        [1.6, 0.7],
+        [5, 0.8],
+      ].map(([x = 0, s = 1]) => (
+        <group key={x} position={[x, 0, D / 2 + 0.7]}>
+          <Box size={[0.5, 0.4, 0.5]} color={COLORS.pot} position-y={0.2} />
+          <mesh position-y={0.4 + s * 0.6}>
+            <sphereGeometry args={[s * 0.6, 14, 12]} />
+            <meshStandardMaterial color={COLORS.shrub} roughness={1} />
+          </mesh>
+        </group>
+      ))}
+      {/* Railing along the pavement */}
+      {[-6, -4, -2, 0, 2, 4, 6].map((x) => (
+        <Box key={x} size={[0.06, 1, 0.06]} color="#888888" position={[x, 0.5, D / 2 + 3.3]} />
+      ))}
+      <Box size={[12, 0.06, 0.06]} color="#888888" position={[0, 1, D / 2 + 3.3]} />
+    </>
   );
 }
 
@@ -473,7 +892,7 @@ function Fan({ spinning, ...props }: { spinning: boolean } & ThreeElements["grou
 /** What heats the house today, standing outside on the right; oil and gas get a chimney. */
 function Plant({ fuel, active }: { fuel: Fuel; active: boolean }) {
   return (
-    <group position={[W / 2 + 1.3, 0, -1]}>
+    <group position={[W / 2 + 1.5, 0, -1.5]}>
       {fuel === "oil" && (
         <>
           {/* Oil tank lying down, and the boiler */}
@@ -521,56 +940,145 @@ function Plant({ fuel, active }: { fuel: Fuel; active: boolean }) {
 function Chimney({ fuel, smoke }: { fuel: Fuel; smoke: boolean }) {
   if (fuel !== "oil" && fuel !== "gas") return null;
   return (
-    <group position={[2.5, 0, -1.2]}>
-      <Box size={[0.55, 2.2, 0.55]} color="#8a6f5c" position-y={1.4} />
-      <Puffs color="#9a9590" active={smoke} position-y={2.6} />
+    <group position={[2.8, 0, -1.6]}>
+      <Box size={[0.6, 2.6, 0.6]} color="#8a6f5c" position-y={2.4} />
+      <Box size={[0.75, 0.12, 0.75]} color="#6f5848" position-y={3.7} />
+      <Puffs color="#9a9590" active={smoke} position-y={3.8} />
     </group>
   );
 }
 
 /** Where people stand, in floor coordinates: alternating floors as residents are added. */
 const SPOTS: [FloorId, number, number][] = [
-  ["ground", -2.5, 0.8],
-  ["upper", -2, 1.6],
-  ["ground", 1.8, -1.6],
-  ["upper", 3.4, -1.2],
-  ["ground", -1.2, -0.6],
-  ["upper", -0.8, -1.2],
-  ["ground", -3, -1.8],
-  ["upper", 1, -0.4],
-  ["ground", 0, 2],
-  ["upper", -3, -0.4],
-  ["ground", 1.5, 0.1],
-  ["upper", 3, 1.8],
+  ["ground", -3.4, 1.1],
+  ["upper", -2.75, 2.1],
+  ["ground", 2.5, -2.1],
+  ["upper", 4.7, -1.6],
+  ["ground", -1.6, -0.8],
+  ["upper", -1.1, -1.6],
+  ["ground", -4.1, -2.4],
+  ["upper", 1.4, -0.5],
+  ["ground", 0, 2.7],
+  ["upper", -4.1, -0.5],
+  ["ground", 2.1, 0.1],
+  ["upper", 4.1, 2.4],
 ];
-const SHIRTS = ["#ea580c", "#3b6ea5", "#5f8f5a", "#b4440f", "#7a5aa5", "#c79a2e"];
+/** Distance residents keep from their room's walls, and how far they stray from their spot. */
+const ROOM_MARGIN = 0.55;
+const ROAM = 1.3;
 
-/** A simple person: a body and a head; every third one is a smaller kid. */
-function Person({ index, ...props }: { index: number } & ThreeElements["group"]) {
+/** Where a resident is, where they're heading, and how far into their stride they are. */
+type Walker = {
+  rand: () => number;
+  next: () => [number, number];
+  x: number;
+  z: number;
+  heading: number;
+  target: [number, number];
+  wait: number;
+  phase: number;
+  stride: number;
+};
+
+/** Starts a resident at their spot; new targets stay near it and inside the room. */
+function makeWalker(index: number, [hx, hz]: [number, number], [x0, z0, x1, z1]: Rect): Walker {
+  const rand = seeded(index + 1);
+  const clamp = (v: number, a: number, b: number) => Math.min(Math.max(v, a), b);
+  const next = (): [number, number] => [
+    clamp(hx + (rand() * 2 - 1) * ROAM, x0 + ROOM_MARGIN, x1 - ROOM_MARGIN),
+    clamp(hz + (rand() * 2 - 1) * ROAM, z0 + ROOM_MARGIN, z1 - ROOM_MARGIN),
+  ];
+  return {
+    rand,
+    next,
+    x: hx,
+    z: hz,
+    heading: rand() * Math.PI * 2,
+    target: next(),
+    wait: rand() * 3,
+    phase: 0,
+    stride: 0,
+  };
+}
+
+/**
+ * A resident strolling around their room, swinging arms and legs while they walk and stopping
+ * for a while now and then; kids are smaller and quicker.
+ */
+function Person({
+  index,
+  kid,
+  home,
+  room,
+}: {
+  index: number;
+  kid: boolean;
+  home: [number, number];
+  room: Rect;
+}) {
+  const body = useRef<Group>(null);
+  const rig = useRef<Rig>({ legs: [], arms: [] });
+  const walker = useRef<Walker | null>(null);
+
+  useFrame((_, delta) => {
+    const g = body.current;
+    if (!g) return;
+    const dt = Math.min(delta, 0.05);
+    const s = (walker.current ??= makeWalker(index, home, room));
+    let walking = false;
+    if (s.wait > 0) s.wait -= dt;
+    else {
+      const dx = s.target[0] - s.x;
+      const dz = s.target[1] - s.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.05) {
+        // Arrived: stand for a moment, then head somewhere else
+        s.wait = 1.5 + s.rand() * 4;
+        s.target = s.next();
+      } else {
+        walking = true;
+        const step = Math.min(dist, (kid ? 0.75 : 0.55) * dt);
+        s.x += (dx / dist) * step;
+        s.z += (dz / dist) * step;
+        // Turn smoothly towards where they're going (the figure faces +z)
+        const goal = Math.atan2(dx, dz);
+        const turn = Math.atan2(Math.sin(goal - s.heading), Math.cos(goal - s.heading));
+        s.heading += turn * (1 - Math.exp(-8 * dt));
+      }
+    }
+    s.stride = MathUtils.damp(s.stride, walking ? 1 : 0, 6, dt);
+    s.phase += dt * (kid ? 9 : 7) * s.stride;
+    g.position.set(s.x, Math.abs(Math.sin(s.phase)) * 0.03 * s.stride, s.z);
+    g.rotation.y = s.heading;
+    stride(rig.current, s.phase, s.stride);
+  });
+
   return (
-    <group scale={index % 3 === 2 ? 0.7 : 1} {...props}>
-      <mesh position-y={0.55}>
-        <capsuleGeometry args={[0.2, 0.6, 4, 12]} />
-        <meshStandardMaterial
-          color={SHIRTS[index % SHIRTS.length] ?? COLORS.hover}
-          roughness={0.7}
-        />
-      </mesh>
-      <mesh position-y={1.22}>
-        <sphereGeometry args={[0.17, 16, 12]} />
-        <meshStandardMaterial color="#e8c4a2" roughness={0.7} />
-      </mesh>
+    <group ref={body} position={[home[0], 0, home[1]]}>
+      <Figure index={index} kid={kid} rig={rig} />
     </group>
   );
 }
 
-/** The residents standing on one floor. */
-function People({ floor, residents }: { floor: FloorId; residents: number }) {
+/** The residents on one floor, adults first, then kids, each wandering inside their room. */
+function People({ floor, adults, children }: { floor: FloorId; adults: number; children: number }) {
+  const homes = useMemo(() => {
+    const rooms = FLOORS.find((f) => f.id === floor)?.rooms ?? [];
+    return SPOTS.map(([f, x, z]) => {
+      if (f !== floor) return null;
+      const room = rooms.find(
+        ({ rect: [x0, z0, x1, z1] }) => x >= x0 && x <= x1 && z >= z0 && z <= z1,
+      );
+      return room ? { home: [x, z] as [number, number], rect: room.rect } : null;
+    });
+  }, [floor]);
   return (
     <>
-      {SPOTS.slice(0, residents).map(([f, x, z], i) =>
-        f === floor ? <Person key={i} index={i} position={[x, 0, z]} /> : null,
-      )}
+      {homes
+        .slice(0, adults + children)
+        .map((h, i) =>
+          h ? <Person key={i} index={i} kid={i >= adults} home={h.home} room={h.rect} /> : null,
+        )}
     </>
   );
 }
@@ -579,15 +1087,15 @@ function People({ floor, residents }: { floor: FloorId; residents: number }) {
 function HotWater({ steam }: { steam: boolean }) {
   return (
     <>
-      <mesh position={[3.5, 0.85, 0.95]}>
+      <mesh position={[5, 0.85, 1.3]}>
         <cylinderGeometry args={[0.32, 0.32, 1.7, 24]} />
         <meshStandardMaterial color="#f7f5f2" roughness={0.5} />
       </mesh>
-      <mesh position={[3.5, 1.2, 0.95]}>
+      <mesh position={[5, 1.2, 1.3]}>
         <cylinderGeometry args={[0.33, 0.33, 0.18, 24]} />
         <meshStandardMaterial color={COLORS.hover} />
       </mesh>
-      <Puffs color="#ffffff" active={steam} size={0.22} position={[2.5, 0.6, 2.4]} />
+      <Puffs color="#ffffff" active={steam} size={0.22} position={[3.45, 0.6, 3.4]} />
     </>
   );
 }
@@ -635,12 +1143,13 @@ function House({ open, hover, onHover, onOpen, answers, focus }: HouseProps) {
           ? 2.4
           : 0;
 
+  // Looking inside: the street front and right side fade out of the way
+  const see = cutaway || openLevel !== null || hoverLevel !== null;
+
   return (
     <>
-      <mesh position-y={-0.2} rotation-x={-Math.PI / 2}>
-        <circleGeometry args={[11, 64]} />
-        <meshStandardMaterial color={COLORS.ground} roughness={1} />
-      </mesh>
+      <Street />
+      <Surroundings />
       {FLOORS.map((floor) => {
         const hot = hover === floor.id && !open;
         const events = !open && {
@@ -662,10 +1171,10 @@ function House({ open, hover, onHover, onOpen, answers, focus }: HouseProps) {
           },
         };
         return (
-          <Lift key={floor.id} y={floor.level * H} lift={liftFor(floor.level)} {...events}>
+          <Lift key={floor.id} y={SOCLE + floor.level * H} lift={liftFor(floor.level)} {...events}>
             <Box
               size={[W + 0.2, 0.2, D + 0.2]}
-              color={hot ? COLORS.hover : COLORS.slab}
+              color={hot ? COLORS.hover : COLORS.ochre}
               position-y={-0.1}
             />
             {floor.rooms.map((room) => {
@@ -699,15 +1208,20 @@ function House({ open, hover, onHover, onOpen, answers, focus }: HouseProps) {
                 />
               );
             })}
-            <Walls windows={answers.windows} glow={focus === "windows"} />
-            <People floor={floor.id} residents={answers.residents} />
-            {floor.id === "ground" && answers.hotWater && <HotWater steam={focus === "people"} />}
+            <Walls
+              floor={floor.id}
+              windows={answers.windows}
+              glow={focus === "windows"}
+              see={see}
+            />
+            <People floor={floor.id} adults={answers.adults} children={answers.children} />
+            {floor.id === "ground" && <HotWater steam={focus === "people"} />}
           </Lift>
         );
       })}
       {/* The roof sits on the top floor, so it moves with it */}
-      <Lift y={FLOORS.length * H} lift={liftFor(FLOORS.length)}>
-        <Roof />
+      <Lift y={SOCLE + FLOORS.length * H} lift={liftFor(FLOORS.length)}>
+        <Roof windows={answers.windows} />
         <Chimney fuel={answers.fuel} smoke={focus === "energy"} />
       </Lift>
       <Plant fuel={answers.fuel} active={focus === "energy"} />
@@ -719,7 +1233,14 @@ function House({ open, hover, onHover, onOpen, answers, focus }: HouseProps) {
 export function HouseScene(props: HouseProps) {
   const level = FLOORS.find((f) => f.id === props.open)?.level;
   return (
-    <Canvas dpr={[1, 2]} camera={{ position: [34, 30, 30], fov: 35 }}>
+    <Canvas
+      dpr={[1, 2]}
+      camera={{ position: [34, 30, 30], fov: 35 }}
+      onCreated={({ gl }) => {
+        // Passing vehicles are cut off at the edges of the neighbourhood tile
+        gl.localClippingEnabled = true;
+      }}
+    >
       <hemisphereLight args={["#ffffff", "#d8d4cc", 1.6]} />
       <directionalLight position={[8, 14, 10]} intensity={2.2} />
       <Camera

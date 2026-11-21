@@ -5,8 +5,8 @@ const base = {
   windows: "double",
   emitters: "radiators",
   fuel: "oil",
-  residents: 4,
-  hotWater: true,
+  adults: 2,
+  children: 2,
 } as const;
 
 it("picks the smallest rack that covers the peak load", () => {
@@ -33,9 +33,13 @@ it("starts the projection at minus the install cost and pays back over time", ()
 
 it("follows the adjustable assumptions", () => {
   const p = defaultParams(base.fuel);
-  expect(size(base, { ...p, subsidy: 4000 }).paybackYears).toBeLessThan(size(base, p).paybackYears);
+  expect(size(base, { ...p, insulation: "thermos" }).spaceHeat).toBeLessThan(
+    size(base, p).spaceHeat,
+  );
+  expect(size(base, { ...p, renovated: true }).spaceHeat).toBeLessThan(size(base, p).spaceHeat);
+  expect(size(base, { ...p, age: 10 }).spaceHeat).toBeLessThan(size(base, p).spaceHeat);
   expect(size(base, { ...p, heatPrice: 0.25 }).savingsPerYear).toBeGreaterThan(
     size(base, p).savingsPerYear,
   );
-  expect(size(base, { ...p, years: 20 }).cumulative).toHaveLength(21);
+  expect(size(base, p).cumulative).toHaveLength(11);
 });
