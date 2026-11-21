@@ -1,6 +1,6 @@
 # Run it yourself
 
-Everything runs on one laptop: the database in Docker, the three apps in the browser, the
+Everything runs on one laptop: the database in Docker, the four apps in the browser, the
 scheduler and the agent in Python. No cloud account is needed.
 
 ## What you need
@@ -20,7 +20,7 @@ scheduler and the agent in Python. No cloud account is needed.
 make bootstrap                    # install the JavaScript and Python dependencies
 pnpm exec supabase start          # start local Supabase in Docker
 pnpm exec supabase status -o env  # the keys for the .env files (below)
-make dev                          # Supabase (already up), then all three apps
+make dev                          # Supabase (already up), then all four apps
 make check                        # every check CI runs
 ```
 
@@ -31,10 +31,17 @@ make check                        # every check CI runs
 | Host app    | http://localhost:5173 |
 | Console     | http://localhost:5174 |
 | 3D heat map | http://localhost:5175 |
+| Pitch intro | http://localhost:5176 |
 
 Before `make dev`, copy each `.env.example` to `.env` (in `apps/host`, `apps/console` and
 `services/agent`) and fill in the keys from `pnpm exec supabase status -o env`. The apps read
 `.env` when they start, so restart `make dev` after changing it.
+
+The pitch intro needs no keys. It plays a scripted voice prompt (no microphone), then opens the
+map at Byfangweg 18 with its card, `http://localhost:5175/?egid=442141&card=1`. With a Mapbox
+token in `apps/pitch/.env` (`VITE_MAPBOX_TOKEN`, see its `.env.example`) a globe flies there
+first: press `a` to dive into the house and its questions, `m` (or the "Real data on the map"
+pill) to open the map. Without a token it goes straight to the map.
 
 The apps take the URL and the anon (publishable) key. Only the agent takes the service role key:
 anything in a `VITE_` variable ends up in the browser, so that key never goes there.
@@ -131,8 +138,9 @@ If the stack is not up, the same moment is recorded in
 
 ## When something goes wrong
 
-- **`make dev` stops all three apps with "Port 5175 is already in use":** each app needs its
-  port free. Stop the old server on 5173, 5174 or 5175 (`ss -ltnp | grep 517`) and run it again.
+- **`make dev` stops all four apps with "Port 5175 is already in use":** each app needs its
+  port free. Stop the old server on 5173, 5174, 5175 or 5176 (`ss -ltnp | grep 517`) and run it
+  again.
 - **`permission denied ... docker.sock`:** your user is not in the `docker` group in this shell;
   run `newgrp docker` first.
 - **Server 4 shows Done:** the job ended and the agent with it. Start both again (step 2 above);

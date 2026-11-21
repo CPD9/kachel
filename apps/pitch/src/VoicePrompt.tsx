@@ -2,7 +2,11 @@ import { ArrowUp, Mic, Presentation, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Waveform } from "./Waveform";
 
-/** What the presenter "says" in the mock. */
+/*
+ * Scripted demo transcript. Nothing is recorded and no speech is recognised: the microphone is
+ * never opened. Presentation mode plays these lines on a timer, as if spoken, for the stage.
+ */
+/** What the presenter "says" in the scripted demo. */
 export const MOCK_TRANSCRIPT = "I'm living in Basel, at Byfangweg 18.";
 /** Interim guesses in uneven chunks, including a misheard word: [ms after start, text]. */
 const MOCK_INTERIM: [number, string][] = [
@@ -18,8 +22,8 @@ const MOCK_AUTO_SEND_MS = 3000;
 const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 /**
- * Big chat box with a presentation button. Clicking it plays a scripted voice transcript,
- * then hands the final text to onSend.
+ * Big chat box with a presentation button. Clicking it plays a scripted voice transcript (no
+ * microphone, no speech recognition), then hands the final text to onSend.
  */
 export function VoicePrompt({ onSend }: { onSend: (text: string) => void }) {
   const [listening, setListening] = useState(false);

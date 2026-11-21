@@ -15,33 +15,50 @@ import {
 import { useState } from "react";
 import { card, label } from "./ui";
 
-/** Mock data for the demo building, as if looked up from public sources. */
+/**
+ * The demo building, from the federal building register (BFS GWR, EGID 442141, export of
+ * 19.11.2026), read on api3.geo.admin.ch on 21 Nov 2026: built 1894, 330 m² heated floor area,
+ * 3 storeys, 1 dwelling, heating and hot water by low-temperature district heating (updated
+ * 01.11.2026). The heat figures (SFOE Sonnendach) and the Kachel estimate are on the map's card,
+ * which the intro hands over to (handoff.ts). Anything marked "to check" has no source yet.
+ */
 const BUILDING = {
   name: "Byfangweg 18",
   address: "4051 Basel",
   image: "/byfangweg-18.png",
-  kind: "Townhouse · 2 floors + attic",
+  kind: "House · 3 storeys · 1 dwelling",
   facts: [
-    { icon: Calendar, k: "Built", v: "19th century" },
-    { icon: Ruler, k: "Heated area", v: "≈ 300 m²" },
-    { icon: Flame, k: "Current heating", v: "Oil boiler" },
+    { icon: Calendar, k: "Built", v: "1894" },
+    { icon: Ruler, k: "Heated area", v: "330 m²" },
+    { icon: Flame, k: "Current heating", v: "District heating" },
   ],
-  tags: ["Plant room in basement", "Radiators", "Hot water"],
+  source: "Source: BFS GWR, EGID 442141, as of 19.11.2026",
+  tags: ["Hot water: district heating", "Plant room · to check", "Radiators · to check"],
 };
 
-/** What we found out about the building: a trait and where it comes from. */
+/** What we found out about the building: a trait and where it comes from, or "to check". */
 const CHECKS = [
   {
     icon: Landmark,
-    title: "Historic townhouse",
-    result: "Building register · 19th c., oil heating",
+    title: "Historic building",
+    result: "BFS GWR · built 1894",
+    sourced: true,
   },
-  { icon: Wifi, title: "Fibre connected", result: "Up to 10 Gbit/s at the address" },
-  { icon: Zap, title: "Strong grid connection", result: "Enough for 2 server racks" },
-  { icon: Flame, title: "No district heating", result: "Not on Byfangweg · Kachel fills the gap" },
+  { icon: Wifi, title: "Fibre", result: "To check · no source yet", sourced: false },
+  { icon: Zap, title: "Grid connection", result: "To check · no source yet", sourced: false },
+  {
+    icon: Flame,
+    title: "On district heating today",
+    result: "BFS GWR · low-temperature network",
+    sourced: true,
+  },
 ];
+const SOURCED = CHECKS.filter((c) => c.sourced).length;
 
-/** Basel's average temperature by month in °C (rough long-term means), and whether we heat. */
+/**
+ * Basel's average temperature by month in °C (rough long-term means, no source yet: to check
+ * against MeteoSwiss climate normals), and whether we heat.
+ */
 const MONTHS = [
   { m: "J", temp: 2, heating: true },
   { m: "F", temp: 3, heating: true },
@@ -59,7 +76,7 @@ const MONTHS = [
 /** Top of the chart's scale, in °C. */
 const MAX_TEMP = 22;
 const CLIMATE = [
-  { icon: Snowflake, k: "Heating days", v: "≈ 210 / yr" },
+  { icon: Snowflake, k: "Heating days", v: "≈ 210 / yr · to check" },
   { icon: Calendar, k: "Heating season", v: "Oct – Apr" },
 ];
 
@@ -117,6 +134,7 @@ export function BuildingDetails() {
               </div>
             ))}
           </dl>
+          <p className="mt-1.5 text-[10px] text-white/45">{BUILDING.source}</p>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
             {BUILDING.tags.map((t) => (
@@ -140,14 +158,18 @@ export function BuildingDetails() {
                 <ScanSearch size={12} /> Building checks
               </p>
               <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[10px] font-semibold text-white/70 tabular-nums">
-                {CHECKS.length}/{CHECKS.length}
+                {SOURCED}/{CHECKS.length} sourced
               </span>
             </div>
 
             <ul className="mt-3 space-y-2.5">
-              {CHECKS.map(({ icon: Icon, title, result }) => (
+              {CHECKS.map(({ icon: Icon, title, result, sourced }) => (
                 <li key={title} className="flex items-center gap-2.5">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-clay/15 text-clay">
+                  <span
+                    className={`grid size-8 shrink-0 place-items-center rounded-xl ${
+                      sourced ? "bg-clay/15 text-clay" : "bg-white/[0.08] text-white/45"
+                    }`}
+                  >
                     <Icon size={15} />
                   </span>
                   <div className="min-w-0">
@@ -204,7 +226,7 @@ export function BuildingDetails() {
               <span className="flex items-center gap-1">
                 <span className="size-2 rounded-sm bg-white/20" /> No heating
               </span>
-              <span className="ml-auto">Ø °C</span>
+              <span className="ml-auto">Ø °C · to check</span>
             </div>
 
             <dl className="mt-3 space-y-1.5 text-[11.5px]">

@@ -1,7 +1,16 @@
-import { ArrowRight, Building2, Check, Heater, LoaderCircle, MapPin } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Check,
+  Heater,
+  LoaderCircle,
+  Map as MapIcon,
+  MapPin,
+} from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
 import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
+import { DEFAULT_MAP_URL, FADE_MS, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
 import { HouseView } from "./HouseView";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
 
@@ -47,9 +56,25 @@ const STEPS = [
   },
 ];
 
-/** Pitch app: a landing page whose voice prompt collapses into a bar and reveals a rotating globe. */
-export function App() {
+/** A full page load: the browser leaves the intro for the map. */
+const navigate = (url: string) => window.location.assign(url);
+
+/** True when a key press is meant for a text field or a shortcut, not for the presenter's keys. */
+const typing = (e: KeyboardEvent) =>
+  (e.target as HTMLElement).closest("input, textarea, [contenteditable]") !== null ||
+  e.metaKey ||
+  e.ctrlKey ||
+  e.altKey;
+
+/**
+ * Pitch app: a landing page whose voice prompt collapses into a bar and reveals a rotating globe,
+ * then hands over to the real map (apps/map) at the building, with its card. With a Mapbox token
+ * the globe flies to the building first: "a" dives into the house, "m" (or the pill) opens the
+ * map. Without a token there is no globe: the intro goes straight to the map.
+ */
+export function App({ go = navigate }: { go?: (url: string) => void }) {
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
+  const mapBase = import.meta.env.VITE_MAP_URL || DEFAULT_MAP_URL;
   // What the presenter said; null while the landing page is still showing
   const [said, setSaid] = useState<string | null>(null);
   const send = useCallback((text: string) => setSaid(text), []);
@@ -59,6 +84,8 @@ export function App() {
   const [inside, setInside] = useState(false);
   // The house takes over once the map has finished diving at the building
   const [houseShown, setHouseShown] = useState(false);
+  // Fading out to the map's background, just before the page changes
+  const [leaving, setLeaving] = useState(false);
   useEffect(() => {
     if (!inside) return;
     const t = setTimeout(() => setHouseShown(true), INSIDE_DIVE_MS);
@@ -71,32 +98,48 @@ export function App() {
   useEffect(() => {
     if (stage !== "building" || inside) return;
     const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement;
-      if (el.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey)
-        return;
+      if (typing(e)) return;
       if (e.key.toLowerCase() === "a") setInside(true);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [stage, inside]);
 
-  if (!token) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-page p-4 text-center text-ink">
-        <p>
-          Set <code>VITE_MAPBOX_TOKEN</code> in <code>apps/pitch/.env</code> and restart the dev
-          server.
-        </p>
-      </main>
-    );
-  }
+  // The hand-over: fade to the map's background, then load the map at the building
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => go(mapUrl(mapBase)), FADE_MS);
+    return () => clearTimeout(t);
+  }, [leaving, go, mapBase]);
+
+  // Without a token: "Basel identified", a moment of "Finding your building…", then the map
+  useEffect(() => {
+    if (said === null || token) return;
+    const timers = [
+      setTimeout(() => setStage("city"), 300),
+      setTimeout(() => setLeaving(true), NO_GLOBE_HOLD_MS),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [said, token]);
+
+  // With the globe: once the building is lit, "m" opens the real map (also from inside the house)
+  useEffect(() => {
+    if (said === null || !token || stage !== "building") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!typing(e) && e.key.toLowerCase() === "m") setLeaving(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [said, token, stage]);
 
   if (said !== null) {
     return (
       <main className="relative h-screen w-screen overflow-hidden bg-black font-sans">
-        <div className="absolute inset-0 animate-globe-in">
-          <Globe token={token} onStage={setStage} inside={inside} />
-        </div>
+        {token && (
+          <div className="absolute inset-0 animate-globe-in">
+            <Globe token={token} onStage={setStage} inside={inside} />
+          </div>
+        )}
         {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
         {stage && <div key={stage} aria-hidden className="edge-glow animate-edge-glow" />}
         {stage === "building" && !inside && <BuildingDetails />}
@@ -105,7 +148,23 @@ export function App() {
           <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
             <Pill icon={<MapPin size={13} />} label="Basel identified" />
             {stage === "building" ? (
-              <Pill key="found" icon={<Building2 size={13} />} label="Building identified" />
+              <>
+                <Pill key="found" icon={<Building2 size={13} />} label="Building identified" />
+                {/* The hand-over to the real map and card (apps/map); "m" does the same */}
+                <button
+                  type="button"
+                  onClick={() => setLeaving(true)}
+                  className="pointer-events-auto flex animate-pill-in items-center gap-2 rounded-full border border-clay/50 bg-[#1b1d21]/85 py-1.5 pr-3 pl-2 text-sm font-medium text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md hover:border-clay"
+                >
+                  <span className="grid size-6 place-items-center rounded-full bg-clay text-white">
+                    <MapIcon size={13} />
+                  </span>
+                  Real data on the map
+                  <kbd className="rounded border border-white/20 px-1.5 text-[11px] text-white/60">
+                    M
+                  </kbd>
+                </button>
+              </>
             ) : (
               <Pill key="finding" label="Finding your building…" loading />
             )}
@@ -120,9 +179,12 @@ export function App() {
               setSaid(null);
               setStage(null);
               setInside(false);
+              setLeaving(false);
             }}
           />
         </div>
+        {/* Hand-over: fade to the map's own background (apps/map, bg-ink), then load the map */}
+        {leaving && <div aria-hidden className="absolute inset-0 animate-handoff bg-map-ink" />}
       </main>
     );
   }
