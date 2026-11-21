@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet video-charts pitch-graphics
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -201,3 +201,16 @@ video-charts:
 			--out $(CHARTS_OUT)/frames/$$chart --mp4 $(CHARTS_OUT)/$$chart.mp4 \
 			--still $(CHARTS_OUT)/$$chart.png || exit 1; \
 	done
+
+# The 2D shots of the pitch film (scripts/pitch/): maps, titles, numbers, product and end card,
+# one MP4 each in ~/.cache/kachel/pitch/shots and a contact sheet in ~/.cache/kachel/pitch/sheets.
+# Figures are read at render time from the scheduler's output (make year, bern-days, fleet) and
+# docs/economics/data; maps from docs/media/geo and heat-atlas (read-only). CPU only.
+PITCH_SHOTS := shot05_basel_to_switzerland shot06_title_bern shot07_bern_map shot09_numbers \
+	shot10_farm_solar_numbers shot13_product shot14_business_logic shot15_cta
+
+pitch-graphics:
+	test -f $(SCHED_OUT)/kpis.json || $(MAKE) year
+	test -f $(SCHED_OUT)/bern/kpis.json || $(MAKE) bern-days
+	test -f $(SCHED_OUT)/fleet_basel_bern_kpis.json || $(MAKE) fleet
+	for shot in $(PITCH_SHOTS); do scripts/pitch/run.sh $$shot.py || exit 1; done
