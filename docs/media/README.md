@@ -29,7 +29,8 @@ house can use their heat, and the backlog pauses when the tank is full.
 
 The host app on the local stack. The agent follows a real embedding job on Server 4. When its
 signal file says pause, it stops the process and writes the change to Supabase, and the pill
-turns Paused under a second later; on run it turns back.
+turns Paused under a second later (agent run with `--tick 0.2`; the default is 1 s). On run it
+turns back.
 [Video, 27 s](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
 
 ## The numbers
