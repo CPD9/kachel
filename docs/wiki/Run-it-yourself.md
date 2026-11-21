@@ -20,7 +20,7 @@ scheduler and the agent in Python. No cloud account is needed.
 make bootstrap                    # install the JavaScript and Python dependencies
 pnpm exec supabase start          # start local Supabase in Docker
 pnpm exec supabase status -o env  # the keys for the .env files (below)
-make dev                          # Supabase (already up), then all three apps
+make dev                          # Supabase (already up), then all four apps
 make check                        # every check CI runs
 ```
 
@@ -31,6 +31,7 @@ make check                        # every check CI runs
 | Host app    | http://localhost:5173 |
 | Console     | http://localhost:5174 |
 | 3D heat map | http://localhost:5175 |
+| Operator    | http://localhost:5177 |
 
 Before `make dev`, copy each `.env.example` to `.env` (in `apps/host`, `apps/console` and
 `services/agent`) and fill in the keys from `pnpm exec supabase status -o env`. The apps read
@@ -131,8 +132,8 @@ If the stack is not up, the same moment is recorded in
 
 ## When something goes wrong
 
-- **`make dev` stops all three apps with "Port 5175 is already in use":** each app needs its
-  port free. Stop the old server on 5173, 5174 or 5175 (`ss -ltnp | grep 517`) and run it again.
+- **`make dev` stops all four apps with "Port 5175 is already in use":** each app needs its
+  port free. Stop the old server on 5173, 5174, 5175 or 5177 (`ss -ltnp | grep 517`) and run it again.
 - **`permission denied ... docker.sock`:** your user is not in the `docker` group in this shell;
   run `newgrp docker` first.
 - **Server 4 shows Done:** the job ended and the agent with it. Start both again (step 2 above);

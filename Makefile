@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet video-charts
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months video-charts paper pitch-graphics
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -32,6 +32,8 @@ check-py:
 	uv run --project $(AGENT) ruff check $(AGENT)
 	uv run --project $(AGENT) pytest -q $(AGENT)
 	cd $(SCHED) && uv run ruff format --check && uv run ruff check && uv run pytest -q
+	uv run --project $(AGENT) ruff format --check scripts/paper
+	uv run --project $(AGENT) ruff check scripts/paper
 
 # The yearly balance on the saved Basel 2025 weather: out/kpis.json, hourly.csv and the
 # January and July day CSVs (the animation reads those two), plus the plots.
@@ -67,9 +69,26 @@ check-db:
 fleet:
 	cd $(SCHED) && uv run python run_fleet.py
 
+# The Basel and Bern fleet month by month on the saved 2025 weather, and what-ifs from 6 degrees
+# colder to 6 degrees warmer: every house through the scheduler for the year (out/fleet_months.json,
+# read by the operator view). About three minutes on seven of eight cores; MONTHS_JOBS=2 for fewer.
+MONTHS_JOBS ?=
+months:
+	cd $(SCHED) && uv run python run_months.py $(if $(MONTHS_JOBS),--jobs $(MONTHS_JOBS))
+
 check-readme:
+	python3 scripts/pitch/voiceover.py --check
 	node --test scripts/*.test.mjs
 	pnpm readme:check
+	uv run --project $(AGENT) pytest -q -p no:cacheprovider scripts/paper
+
+# The model paper (docs/paper): fill the template from the model's output files, then print the
+# PDF and one PNG per page with headless Chromium (pages to $$PAPER_PAGES, default
+# ~/.cache/kachel/pitch/paper-pages). Run make year, make bern-days, make fleet and economics.py first
+# when the model has changed; check-readme fails while the paper is stale.
+paper:
+	python3 scripts/paper/build.py
+	uv run --no-project --offline --with playwright python scripts/paper/render.py
 
 # Rebuild the heat-loop animations with Blender 5.2 and ffmpeg (see scripts/heat-loop/heat_loop.py):
 # the whole house for the README, and a wide crop on the basement for the app header.
@@ -215,3 +234,16 @@ video-charts:
 			--out $(CHARTS_OUT)/frames/$$chart --mp4 $(CHARTS_OUT)/$$chart.mp4 \
 			--still $(CHARTS_OUT)/$$chart.png || exit 1; \
 	done
+
+# The 2D shots of the pitch film (scripts/pitch/): maps, titles, numbers, product and end card,
+# one MP4 each in ~/.cache/kachel/pitch/shots and a contact sheet in ~/.cache/kachel/pitch/sheets.
+# Figures are read at render time from the scheduler's output (make year, bern-days, fleet) and
+# docs/economics/data; maps from docs/media/geo and heat-atlas (read-only). CPU only.
+PITCH_SHOTS := shot05_basel_to_switzerland shot06_title_bern shot07_bern_map shot09_numbers \
+	shot10_farm_solar_numbers shot13_product shot14_business_logic shot15_cta
+
+pitch-graphics:
+	test -f $(SCHED_OUT)/kpis.json || $(MAKE) year
+	test -f $(SCHED_OUT)/bern/kpis.json || $(MAKE) bern-days
+	test -f $(SCHED_OUT)/fleet_basel_bern_kpis.json || $(MAKE) fleet
+	for shot in $(PITCH_SHOTS); do scripts/pitch/run.sh $$shot.py || exit 1; done

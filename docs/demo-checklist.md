@@ -18,7 +18,7 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
 
 ## 30 minutes before
 
-1. [ ] Nothing else on ports 5173, 5174 or 5175: `ss -ltnp | grep 517`. One old Vite on any of
+1. [ ] Nothing else on ports 5173, 5174, 5175 or 5177: `ss -ltnp | grep 517`. One old Vite on any of
        them stops `make dev` and all three apps with it.
 2. [ ] Start the database, then the keys, then the apps:
 
@@ -61,7 +61,9 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
 3. Console, http://localhost:5174, signed in as `buyer@kachel.test` / `kachel-demo`. A Batch
    job needs a deadline; Backlog does not.
 4. Map, http://localhost:5175. Click Basel, then a building, for its energy card.
-5. The two films, open in the video player.
+5. Operator, http://localhost:5177: the whole fleet and its revenue. Slide the month to July,
+   then the temperature up: heat demand, servers running and revenue fall.
+6. The two films, open in the video player.
 
 If a tab is blank, reload it once.
 
