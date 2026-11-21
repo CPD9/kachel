@@ -4,6 +4,9 @@ name: Wiki
 # changes them. GitHub only creates the wiki's git repository once the first page is saved on
 # github.com (Wiki tab, "Create the first page"). Until then this job finds no wiki, says so and
 # stops without failing; run it again from the Actions tab after that first page exists.
+# The copy only adds and updates pages: a file deleted from docs/wiki stays on the wiki until it
+# is deleted there too, and an edit made on github.com is overwritten when its file next changes.
+# Edit the pages in docs/wiki, by pull request.
 
 on:
   push:
