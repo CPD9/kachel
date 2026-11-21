@@ -9,6 +9,8 @@ export interface TourStep {
 }
 
 export interface TourContext {
+  /** Shows this step's caption; until then the previous caption stays up. */
+  show(): void;
   /** Waits this long, not counting time spent paused; throws once the tour is stopped. */
   dwell(ms: number): Promise<void>;
   /** Waits for a promise, but no longer than `capMs` (slow tiles never stall the tour). */
@@ -41,11 +43,16 @@ export function createTour(
     onState({ kind: paused ? "paused" : "running", ...current });
   };
 
-  const contextFor = (me: number): TourContext => {
+  const contextFor = (me: number, step: number, caption: string): TourContext => {
     const check = () => {
       if (me !== run) throw new Stopped();
     };
     return {
+      show() {
+        check();
+        current = { step, caption };
+        report();
+      },
       async dwell(ms) {
         let left = ms;
         while (left > 0) {
@@ -83,12 +90,13 @@ export function createTour(
     async start(): Promise<void> {
       paused = false;
       const me = ++run;
-      const ctx = contextFor(me);
       try {
         for (const [i, step] of steps.entries()) {
-          current = { step: i, caption: step.caption };
-          report();
-          await step.run(ctx);
+          if (current === null) {
+            current = { step: i, caption: "Getting the map ready…" };
+            report();
+          }
+          await step.run(contextFor(me, i, step.caption));
         }
         current = null;
         onState({ kind: "done" });

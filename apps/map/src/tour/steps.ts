@@ -12,6 +12,8 @@ export interface TourDeps {
   setNetworksOn(on: boolean): void;
   setServersOn(on: boolean): void;
   readonly now?: Date;
+  /** How long a stop waits for tiles before going on regardless (?tourcap= in ms). */
+  readonly tilesCapMs?: number;
 }
 
 /** Caps, so slow tiles on the stage laptop never stall the tour. */
@@ -29,11 +31,14 @@ export function tourHouse(): FleetHouse | null {
   return FLEET.find((h) => h.id === TOUR_HOUSE_ID) ?? null;
 }
 
-/** Looking north at a building from about 500 m south and 300 m up. */
+/**
+ * Looking north at a building from about 500 m south and 300 m up, and a little west, so it sits
+ * right of centre, beside the card rather than behind it.
+ */
 export function viewOf(house: FleetHouse): View {
   return {
     name: house.id,
-    lon: house.lon,
+    lon: house.lon - 0.0035,
     lat: house.lat - 0.0045,
     height: 600,
     heading: 0,
@@ -47,6 +52,7 @@ export function viewOf(house: FleetHouse): View {
  */
 export function tourSteps(d: TourDeps): TourStep[] {
   const house = tourHouse();
+  const tilesCap = d.tilesCapMs ?? TILES_CAP_MS;
   /** Minutes before (positive) or after (negative) today's sunset in Basel. */
   const at = (minutesBefore: number) =>
     beforeSunset(d.now ?? new Date(), ORIGIN.lat, ORIGIN.lon, minutesBefore);
@@ -61,7 +67,8 @@ export function tourSteps(d: TourDeps): TourStep[] {
         d.scene.setPlaying(false);
         d.scene.setTime(at(5));
         await ctx.atMost(d.scene.flyTo(BASEL, 3), FLIGHT_CAP_MS);
-        await ctx.atMost(d.scene.tilesLoaded(), TILES_CAP_MS);
+        await ctx.atMost(d.scene.tilesLoaded(), tilesCap);
+        ctx.show();
         await ctx.dwell(4000);
       },
     },
@@ -72,10 +79,11 @@ export function tourSteps(d: TourDeps): TourStep[] {
       run: async (ctx) => {
         d.scene.setTime(at(-15));
         await ctx.atMost(d.scene.flyTo(viewOf(house), 3), FLIGHT_CAP_MS);
-        // The card comes from the federal APIs, not from tiles: open it on arrival.
+        // The card's figures come from the federal APIs: ask while the tiles load.
         d.openBuilding(house);
-        await ctx.atMost(d.scene.tilesLoaded(), TILES_CAP_MS);
-        await ctx.dwell(6000);
+        await ctx.atMost(d.scene.tilesLoaded(), tilesCap);
+        ctx.show();
+        await ctx.dwell(7000);
       },
     });
   }
@@ -87,6 +95,7 @@ export function tourSteps(d: TourDeps): TourStep[] {
         d.closeCards();
         d.setNetworksOn(true);
         d.setServersOn(true);
+        ctx.show();
         await ctx.dwell(7000);
       },
     },
@@ -94,7 +103,8 @@ export function tourSteps(d: TourDeps): TourStep[] {
       caption: "All of Switzerland: the same public data exists for every building.",
       run: async (ctx) => {
         await ctx.atMost(d.scene.flyTo(SWITZERLAND_VIEW, 4), FLIGHT_CAP_MS);
-        await ctx.atMost(d.scene.tilesLoaded(), TILES_CAP_MS);
+        await ctx.atMost(d.scene.tilesLoaded(), tilesCap);
+        ctx.show();
         await ctx.dwell(5000);
       },
     },

@@ -59,6 +59,9 @@ export function TourBar({
             onClick={() => {
               tour.resume();
               tour.stop();
+              // Hand the live map back: the day moves again.
+              deps.scene.setPlaying(true);
+              onPlaying(true);
             }}
             className="rounded px-2 py-1 text-paper/80 hover:text-paper"
           >

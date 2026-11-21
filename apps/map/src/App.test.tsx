@@ -64,6 +64,9 @@ describe("map app", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Stop" }));
     });
+    // Stopping hands the live map back.
+    expect(scene.playing()).toBe(true);
+    expect(await screen.findByRole("button", { name: "Pause" })).toBeTruthy();
   });
 
   it("says so when the map cannot start", async () => {

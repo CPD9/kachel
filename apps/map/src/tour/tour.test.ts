@@ -93,4 +93,28 @@ describe("tour", () => {
     expect(states.some((s) => s.kind === "idle")).toBe(false);
     expect(states.at(-1)).toEqual({ kind: "done" });
   });
+
+  it("keeps the caption back until the stop is ready", async () => {
+    const t = fakeTime();
+    const seen: Array<[number, string]> = [];
+    const steps: TourStep[] = [
+      {
+        caption: "Basel",
+        run: async (ctx) => {
+          await ctx.atMost(new Promise(() => undefined), 3000);
+          ctx.show();
+          await ctx.dwell(100);
+        },
+      },
+    ];
+    await createTour(
+      steps,
+      (s) => {
+        if (s.kind === "running") seen.push([t.now(), s.caption]);
+      },
+      t.wait,
+    ).start();
+    expect(seen[0]).toEqual([0, "Getting the map ready…"]);
+    expect(seen[1]).toEqual([3000, "Basel"]);
+  });
 });

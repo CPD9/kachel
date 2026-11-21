@@ -43,7 +43,8 @@ Press **Tour** (top centre), or open http://localhost:5175/?tour=1 to start it o
 40 seconds it shows Basel at dusk, one real building's card, district heating with Kachel's fleet
 beside it, and all of Switzerland, with a caption for each stop. **Pause tour** holds the picture
 (the clock stops too); **Stop** ends it. Each stop waits for tiles at most 8 seconds, so a slow
-connection shortens the wait instead of stalling the tour.
+connection shortens the wait instead of stalling the tour. A stop shows its caption only once its
+tiles are in (or the cap has passed); `?tourcap=20000` lets each stop wait longer on a slow machine.
 
 <p align="center"><img src="../../docs/images/map-tour.webp" width="720" alt="The tour's second stop: the caption reads One real building: its heat a year, from public data, beside the card for Erlenmattstrasse 3, Basel"></p>
 

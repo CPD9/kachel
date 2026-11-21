@@ -15,7 +15,15 @@ import { TourBar } from "./tour/TourBar";
 export type StartScene = (container: HTMLElement) => Promise<Scene>;
 
 /** The heat map: Basel in 3D at dusk, the day passing, with the sources always on screen. */
-export function App({ start, autoTour = false }: { start: StartScene; autoTour?: boolean }) {
+export function App({
+  start,
+  autoTour = false,
+  tourCapMs,
+}: {
+  start: StartScene;
+  autoTour?: boolean;
+  tourCapMs?: number | undefined;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const [scene, setScene] = useState<Scene | null>(null);
   const [failed, setFailed] = useState(false);
@@ -56,8 +64,9 @@ export function App({ start, autoTour = false }: { start: StartScene; autoTour?:
             closeCards,
             setNetworksOn,
             setServersOn,
+            ...(tourCapMs === undefined ? {} : { tilesCapMs: tourCapMs }),
           },
-    [scene, openBuilding, closeCards, setNetworksOn, setServersOn],
+    [scene, openBuilding, closeCards, setNetworksOn, setServersOn, tourCapMs],
   );
 
   useEffect(() => {
