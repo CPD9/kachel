@@ -96,10 +96,45 @@ In short: at 0.50 CHF a server-hour the mid case only just pays, and the high ca
 pay back within its four-year life. These figures are also in
 [hardware.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/hardware.csv).
 
+## Solar and a battery
+
+The `solar` block in `config.json` puts a 10 kWp roof on the house (south, 30°) and, as an
+option, a 10 kWh battery. The roof and the battery power only the servers. The scheduler gets
+one new rule: in summer it lets the tank carry the house until the sun is up, then runs the
+backlog on sunshine. It never waits if that would leave the house short of heat. Each source
+is on the
+[economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md#10-solar-the-bill-and-the-payback).
+The roof makes 1,167 kWh per kWp in 2025 in our model; the EU's PVGIS tool gives 1,160 for
+Basel. Lifetimes, upkeep and battery losses are our guesses, except the 33-year PV life
+(Swissolar).
+
+| Input                            | Low       | Mid       | High       | Where it comes from                                         |
+| -------------------------------- | --------- | --------- | ---------- | ----------------------------------------------------------- |
+| Roof PV, CHF per kWp (no VAT)    | 1,659     | 1,911     | 2,237      | Quartiles of 2025 Swiss offers, 10–30 kW (EnergieSchweiz)   |
+| Federal one-off payment, per kWp | 360 CHF   | 360 CHF   | 360 CHF    | KLEIV rate for attached systems under 30 kWp (CKW, 2025)    |
+| 10 kWh battery                   | 6,000 CHF | 6,442 CHF | 10,000 CHF | Swissolar range (2025); mid from the EnergieSchweiz formula |
+| PV sold to IWB                   | 14 Rp/kWh | 14 Rp/kWh | 14 Rp/kWh  | IWB feed-in tariff, fixed for 12 years                      |
+
+| Result, mid prices, one year         | No solar   | Roof PV    | Roof PV + battery |
+| ------------------------------------ | ---------- | ---------- | ----------------- |
+| Server power from own PV             | 0%         | 18.6%      | 21.4%             |
+| Servers' electricity, 27.7 Rp        | 8,608 CHF  | 6,174 CHF  | 6,069 CHF         |
+| Servers' electricity, IWB 33.42 Rp   | 10,385 CHF | 7,619 CHF  | 7,464 CHF         |
+| Paid up front, after federal payment | –          | 15,510 CHF | 21,952 CHF        |
+| Payback, 27.7 Rp                     | –          | 8.2 years  | 11.7 years        |
+| Payback, IWB 33.42 Rp                | –          | 7.0 years  | 9.7 years         |
+| Left per year after servers and PV   | 1,415 CHF  | 2,772 CHF  | 2,200 CHF         |
+
+In short: the roof pays for itself in about 8 years and adds about 1,350 CHF a year. The
+battery does not pay at these prices. The servers use nearly three times what the roof makes,
+mostly in winter, so solar trims the bill rather than removing it. These figures are also in
+[solar.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/solar.csv).
+
 ## The charts
 
-These are the same seven charts as on the economics page. Chart 6 now shows the result after
-hardware (mid case), so its numbers are lower than the 9,700 CHF above.
+These are the same ten charts as on the economics page. Chart 6 now shows the result after
+hardware (mid case), so its numbers are lower than the 9,700 CHF above. Charts 8 to 10 are
+the solar ones.
 
 ![When the house needs heat](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/01_weather_and_demand.png)
 
@@ -114,6 +149,12 @@ hardware (mid case), so its numbers are lower than the 9,700 CHF above.
 ![What moves the result](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/06_what_moves_the_result.png)
 
 ![Paying back the hardware](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/07_payback.png)
+
+![Solar: the scheduler waits for the sun](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/08_solar_day.png)
+
+![Solar: month by month](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/09_solar_month.png)
+
+![Solar: the bill and the payback](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/10_solar_bill.png)
 
 ## The tables behind the charts
 
@@ -131,6 +172,8 @@ Each opens in Excel or Google Sheets (use Download, then open the file).
   up-front cost, payback, NPV and break-even for each hardware case
 - [payback.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/payback.csv):
   payback years against the compute price, for each hardware case
+- [solar.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/solar.csv): own
+  PV share, electricity cost and payback for each solar setup, at 27.7 and 33.42 Rp
 - [weather_basel_2025.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/weather_basel_2025.csv):
   hourly Basel temperature and sunshine for 2025
 
@@ -153,3 +196,6 @@ These are the questions we are least sure of, and where your background counts m
    buyer of compute, and what heat price would a homeowner accept?
 5. **Carbon factor.** Swiss consumer-mix factors range from about 59 to 128 g CO₂e per kWh
    depending on method. Which one should we use, and why?
+6. **Solar payback.** Is it fair to count the 14 Rp feed-in for the whole PV life when IWB
+   fixes it for 12 years? And would a battery pay with a time-of-use tariff, or should we
+   drop it?
