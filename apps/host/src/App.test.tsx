@@ -1,8 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App";
-import { DEMO_HOST, isLocalStack, type HostAuth } from "./auth/session";
-import type { JobFeed } from "@kachel/db";
+import { DEMO_HOST, isLocalStack, type AppAuth, type JobFeed } from "@kachel/db";
 
 const quiet: JobFeed = {
   load: () => new Promise(() => undefined),
@@ -13,7 +12,7 @@ const quiet: JobFeed = {
 function fakeAuth(signedIn: string | null = null) {
   const listeners: ((email: string | null) => void)[] = [];
   const tell = (email: string | null) => act(() => listeners.forEach((l) => l(email)));
-  const auth: HostAuth = {
+  const auth: AppAuth = {
     current: () => Promise.resolve(signedIn),
     onChange(listener) {
       listeners.push(listener);

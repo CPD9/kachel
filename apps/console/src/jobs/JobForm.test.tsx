@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../App";
 import { check, JobForm, MAX_SERVER_HOURS, type Fields } from "./JobForm";
 import type { NewJob } from "./submit";
+import { fakeAuth } from "../testing";
 
 const NOW = new Date("2026-11-21T12:00:00Z");
 const batch: Fields = { label: "Transcribe talks", kind: "batch", size: "8", deadline: "" };
@@ -105,7 +106,7 @@ describe("console", () => {
       created_at: "2026-11-21T12:00:00+00:00",
       updated_at: "2026-11-21T12:00:00+00:00",
     }));
-    render(<App feed={feed} submit={submit} />);
+    render(<App feed={feed} submit={submit} auth={fakeAuth("buyer@kachel.test")} local={false} />);
     await screen.findByText("· live");
     expect(screen.getByText("No jobs yet. Submit one above.")).toBeTruthy();
     fill("Type", "opportunistic");
