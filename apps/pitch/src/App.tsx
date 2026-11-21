@@ -12,6 +12,10 @@ import { BuildingDetails } from "./BuildingDetails";
 import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
 import { DEFAULT_MAP_URL, FADE_MS, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
 import { HouseView } from "./HouseView";
+import { MarketHouses, MarketSetup, useMarket } from "./MarketView";
+import { NeighbourDetails, NeighbourSwitch } from "./NeighbourDetails";
+import { NEIGHBOURS } from "./neighbours";
+import { SimulationView, useSimulation } from "./SimulationView";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
 
 /** Status pill over the globe: pops in, with a check once done or a spinner while loading. */
@@ -86,24 +90,83 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
   const [houseShown, setHouseShown] = useState(false);
   // Fading out to the map's background, just before the page changes
   const [leaving, setLeaving] = useState(false);
+  // The house keeps its answers once opened: it stays mounted, hidden while on the map
+  const [houseMounted, setHouseMounted] = useState(false);
   useEffect(() => {
     if (!inside) return;
-    const t = setTimeout(() => setHouseShown(true), INSIDE_DIVE_MS);
+    const t = setTimeout(() => {
+      setHouseShown(true);
+      setHouseMounted(true);
+    }, INSIDE_DIVE_MS);
     return () => {
       clearTimeout(t);
       setHouseShown(false);
     };
   }, [inside]);
 
+  // "a" on the result page: on to the neighbours who could use the rack (like adobe's mall)
+  const [gamer, setGamer] = useState(false);
+  const [sim, setSim] = useState(false);
+  // Which neighbour is picked, switched with the bar at the top
+  const [who, setWho] = useState(0);
+  const [atGamer, setAtGamer] = useState(false);
+  // The buyer's side, after the simulation (see below)
+  const market = useMarket();
+  const closeMarket = market.close;
+  const toGamer = useCallback(() => {
+    setGamer(true);
+    setInside(false);
+  }, []);
+  const backFromGamer = useCallback(() => {
+    setGamer(false);
+    setAtGamer(false);
+    setSim(false);
+    closeMarket();
+    setInside(true);
+  }, [closeMarket]);
+
+  // "a" over the neighbours: the weather and earnings simulation over the whole block
+  const simulation = useSimulation();
+  const endSim = useCallback(() => {
+    setSim(false);
+    closeMarket();
+  }, [closeMarket]);
   useEffect(() => {
-    if (stage !== "building" || inside) return;
+    if (!atGamer || sim) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey)
+        return;
+      if (e.key.toLowerCase() === "a") setSim(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [atGamer, sim]);
+
+  // "a" in the simulation: the other side, someone who wants to run their computing in a house
+  const openMarket = market.open;
+  const inMarket = market.page !== null;
+  useEffect(() => {
+    if (!sim || inMarket) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey)
+        return;
+      if (e.key.toLowerCase() === "a") openMarket();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sim, inMarket, openMarket]);
+
+  useEffect(() => {
+    if (stage !== "building" || inside || gamer) return;
     const onKey = (e: KeyboardEvent) => {
       if (typing(e)) return;
       if (e.key.toLowerCase() === "a") setInside(true);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [stage, inside]);
+  }, [stage, inside, gamer]);
 
   // The hand-over: fade to the map's background, then load the map at the building
   useEffect(() => {
@@ -137,14 +200,57 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
       <main className="relative h-screen w-screen overflow-hidden bg-black font-sans">
         {token && (
           <div className="absolute inset-0 animate-globe-in">
-            <Globe token={token} onStage={setStage} inside={inside} />
+            <Globe
+              token={token}
+              onStage={setStage}
+              inside={inside}
+              neighbour={gamer ? who : null}
+              onArrive={() => setAtGamer(true)}
+              onPick={sim ? simulation.toggle : setWho}
+              sim={sim && !inMarket ? simulation.view : null}
+              market={
+                sim && inMarket
+                  ? {
+                      pins: market.pins,
+                      picked: market.current?.offer.id ?? null,
+                      houses: market.page === "houses",
+                      onPick: market.pick,
+                    }
+                  : null
+              }
+            />
           </div>
         )}
         {/* Short glowing border around the screen, replayed for each step (keyed by stage) */}
-        {stage && <div key={stage} aria-hidden className="edge-glow animate-edge-glow" />}
-        {stage === "building" && !inside && <BuildingDetails />}
-        {stage === "building" && houseShown && <HouseView onExit={() => setInside(false)} />}
-        {stage && !inside && (
+        {stage && (
+          <div
+            key={sim ? `sim-${market.page ?? ""}` : atGamer ? `neighbour-${who}` : stage}
+            aria-hidden
+            className="edge-glow animate-edge-glow"
+          />
+        )}
+        {stage === "building" && !inside && !gamer && <BuildingDetails />}
+        {stage === "building" && (houseShown || houseMounted) && (
+          <HouseView visible={houseShown} onExit={() => setInside(false)} onNext={toGamer} />
+        )}
+        {atGamer && sim && !inMarket && <SimulationView s={simulation} onBack={endSim} />}
+        {atGamer && sim && market.page === "setup" && (
+          <MarketSetup m={market} onBack={market.close} />
+        )}
+        {atGamer && sim && market.page === "houses" && <MarketHouses m={market} />}
+        {atGamer && !sim && NEIGHBOURS[who] && (
+          <NeighbourDetails key={who} n={NEIGHBOURS[who]} onBack={backFromGamer} />
+        )}
+        {gamer && !sim && (
+          <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
+            {atGamer ? (
+              <NeighbourSwitch i={who} onSwitch={setWho} />
+            ) : (
+              <Pill key="looking" label="Finding who could use your rack…" loading />
+            )}
+          </div>
+        )}
+        {stage && !inside && !gamer && (
           <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
             <Pill icon={<MapPin size={13} />} label="Basel identified" />
             {stage === "building" ? (
@@ -180,6 +286,11 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
               setStage(null);
               setInside(false);
               setLeaving(false);
+              setGamer(false);
+              setAtGamer(false);
+              setSim(false);
+              market.close();
+              setHouseMounted(false);
             }}
           />
         </div>
