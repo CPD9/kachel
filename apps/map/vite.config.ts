@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, extname, join, normalize } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import type { Plugin } from "vite";
+import type { Plugin, ViteDevServer } from "vite";
 import { defineConfig } from "vitest/config";
 
 /** CesiumJS loads its workers, shaders and images at run time from CESIUM_BASE_URL. */
@@ -25,25 +25,41 @@ const TYPES: Record<string, string> = {
   ".ktx2": "image/ktx2",
 };
 
-/** Serves Cesium's static files in dev and copies them next to the bundle on build. */
+/** three.js's Draco decoder, for the plant room model in the Inside view (inside/PlantRoom.tsx). */
+const DRACO_BASE = "draco";
+const dracoDir = join(
+  dirname(createRequire(import.meta.url).resolve("three")),
+  "..",
+  "examples",
+  "jsm",
+  "libs",
+  "draco",
+  "gltf",
+);
+
+/** Serves files under `root` at /`base`/ in dev. */
+function serveDir(server: ViteDevServer, base: string, root: string) {
+  server.middlewares.use(`/${base}/`, (req, res, next) => {
+    const path = normalize(join(root, decodeURIComponent((req.url ?? "").split("?")[0] ?? "")));
+    if (!path.startsWith(root) || !existsSync(path) || !statSync(path).isFile()) return next();
+    res.setHeader("Content-Type", TYPES[extname(path)] ?? "application/octet-stream");
+    createReadStream(path).pipe(res);
+  });
+}
+
+/** Serves Cesium's and the Draco decoder's static files in dev; copies them next to the bundle. */
 function cesiumAssets(): Plugin {
   return {
     name: "kachel-cesium-assets",
     configureServer(server) {
-      server.middlewares.use(`/${CESIUM_BASE}/`, (req, res, next) => {
-        const path = normalize(
-          join(cesiumBuild, decodeURIComponent((req.url ?? "").split("?")[0] ?? "")),
-        );
-        if (!path.startsWith(cesiumBuild) || !existsSync(path) || !statSync(path).isFile())
-          return next();
-        res.setHeader("Content-Type", TYPES[extname(path)] ?? "application/octet-stream");
-        createReadStream(path).pipe(res);
-      });
+      serveDir(server, CESIUM_BASE, cesiumBuild);
+      serveDir(server, DRACO_BASE, dracoDir);
     },
     writeBundle(options) {
       const out = join(options.dir ?? "dist", CESIUM_BASE);
       for (const dir of CESIUM_DIRS)
         cpSync(join(cesiumBuild, dir), join(out, dir), { recursive: true });
+      cpSync(dracoDir, join(options.dir ?? "dist", DRACO_BASE), { recursive: true });
     },
   };
 }

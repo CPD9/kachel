@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BuildingCard } from "./BuildingCard";
 import type { BuildingFacts } from "./geoadmin";
 
@@ -192,7 +192,7 @@ describe("building card", () => {
       group: null,
       osmSolar: { photovoltaic: 0, thermal: 0, other: 0 },
     };
-    render(<BuildingCard facts={campus} month={10} notIn3D onClose={() => undefined} />);
+    render(<BuildingCard facts={campus} month={10} notIn3D="pin" onClose={() => undefined} />);
     expect(screen.getByText(/Building newer than swisstopo's 3D data/)).toBeTruthy();
     expect(screen.getByText("Heat a year, our estimate")).toBeTruthy();
     // 14,436 m² × (105 × 0.31 space heating + 3 hot water) = 513,200 kWh: heat, energy bought
@@ -206,6 +206,24 @@ describe("building card", () => {
     expect(screen.getByText(/so Renovated changes nothing here/)).toBeTruthy();
     // No degree days without a roof, so no month slider.
     expect(screen.queryByRole("slider")).toBeNull();
+  });
+
+  it("says the campus on the map is our block model, its shape assumed", () => {
+    render(<BuildingCard facts="loading" month={10} notIn3D="model" onClose={() => undefined} />);
+    expect(
+      screen.getByText(/our block model; shape and orientation assumed until survey data exists/),
+    ).toBeTruthy();
+    expect(screen.queryByText(/orange pin/)).toBeNull();
+  });
+
+  it("opens the building's inside only where there is one", () => {
+    const onInside = vi.fn();
+    render(<BuildingCard facts={FACTS} month={10} onInside={onInside} onClose={() => undefined} />);
+    fireEvent.click(screen.getByRole("button", { name: "Inside: the plant room" }));
+    expect(onInside).toHaveBeenCalledOnce();
+    cleanup();
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
+    expect(screen.queryByRole("button", { name: /Inside/ })).toBeNull();
   });
 
   it("says so when nothing is published", () => {

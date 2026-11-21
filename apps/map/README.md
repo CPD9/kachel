@@ -54,12 +54,27 @@ tiles are in (or the cap has passed); `?tourcap=20000` lets each stop wait longe
 
 The building stop is FHNW Campus Dreispitz, Dornacherstrasse 394 (EGID 243058419), where the
 hackathon is. It opened in August 2026, after swisstopo's 3D survey (the blocks around it date from
-2021, when the plot was a building site), and SFOE Sonnendach has no roof for it. So the tour
-colours it only if the 3D tiles have it; otherwise it puts an orange pin, six storeys tall, where
-the register puts the building (a point, not a footprint), and the card says the building is newer
-than the 3D data. The card leads with our period estimate from the register, and Kachel's from that.
+2021, when the plot was a building site), and SFOE Sonnendach has no roof for it. So the map
+shows our own block model there (`docs/models/fhnw-campus.glb`, see
+[its note](../../docs/models/README.md)): six storeys on the GWR's 3,735 m² footprint, laid along
+the building site, lit like the city at dusk and orange while its card is open. The card says
+it is our block model, its shape and orientation assumed until survey data exists. If the model
+fails to load, the tour puts an orange pin, six storeys tall, where the register puts the
+building instead. The card leads with our period estimate from the register, and Kachel's from
+that.
 
-<p align="center"><img src="../../docs/images/map-tour.webp" width="720" alt="The tour's second stop: the caption reads FHNW Campus Dreispitz, where we built this: its heat a year, from public data; an orange pin stands on the campus site beside the card for Dornacherstrasse 394, Basel"></p>
+<p align="center"><img src="../../docs/images/map-tour.webp" width="720" alt="The tour's second stop: the caption reads FHNW Campus Dreispitz, where we built this: its heat a year, from public data; our orange block model of the campus stands on the building site beside the card for Dornacherstrasse 394, Basel"></p>
+
+## Inside a building
+
+The cards of FHNW Campus Dreispitz and of the fleet's houses have an **Inside** button. It opens
+the plant room in 3D (`docs/models/plantroom.glb`, with three.js; drag to turn, the walls in front
+step aside) and a strip of our Blender stills from `docs/media`: the setup, the January day,
+the scheduler on a January and a July day, a server close up, and for the campus the cutaway of
+its block model. It is the same plant room for every building, an illustration, and the view says
+so. three.js loads only when the view opens.
+
+<p align="center"><img src="../../docs/images/map-inside.webp" width="720" alt="The Inside view: the plant room in 3D with the server rack, plate heat exchanger and tank, and a strip of renders below it"></p>
 
 ## How it works
 
@@ -70,6 +85,8 @@ than the 3D data. The card leads with our period estimate from the register, and
   walls and lights a share of it after sunset. That is an illustration, and the map says so.
 - Nothing from swisstopo is copied into this repo: tiles are streamed from swisstopo's own servers
   while the map is open.
+- The campus block (`src/scene/campus.ts`) is a Cesium model on the terrain, its middle and long
+  side on the building's outline in OpenStreetMap (way 1536280767, © OpenStreetMap contributors).
 
 ## Data sources and terms
 
