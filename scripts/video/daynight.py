@@ -81,9 +81,17 @@ def args():
     return ap.parse_args(argv)
 
 
+def find_config(day_dir):
+    """The scheduler's config.json, next to out/ (Basel) or one level up (out/bern/)."""
+    for d in (day_dir.parent, day_dir.parent.parent):
+        if (d / "config.json").exists():
+            return json.loads((d / "config.json").read_text())
+    raise SystemExit(f"no config.json above {day_dir}")
+
+
 def load(path):
     out = Path(path).parent
-    cfg = json.loads((out.parent / "config.json").read_text())
+    cfg = find_config(out)
     kpis = json.loads((out / "kpis.json").read_text())
     with open(path, newline="") as f:
         rows = sorted(csv.DictReader(f), key=lambda r: int(r["hour"]))
@@ -298,7 +306,7 @@ def outside(a, rows):
 
 
 def inside(a, rows, cfg, kpis):
-    h = ks.prepare()
+    h = ks.prepare(int(kpis["servers_per_house"]))
     sc = h["scene"]
     ks.setup_render(sc, a.width, a.height, a.samples)
     # Portrait half: a raised view down into the room, so rack and tank stack up the frame

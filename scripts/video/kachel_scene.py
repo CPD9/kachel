@@ -112,26 +112,37 @@ def instancer_gate(mat, prop="on"):
     nt.links.new(mul.outputs[0], p.inputs["Emission Strength"])
 
 
-def _servers(scene):
-    """Add two servers above the four in the rack and gate their lights per instance."""
+def _servers(scene, count=6):
+    """Fill the rack to `count` servers and gate their lights per instance.
+
+    Six fit above the plinth as built. For seven, the network switches and patch panel at
+    the top make way and the stack starts just above the plinth.
+    """
     objs = bpy.data.objects
     existing = sorted(
         (o for o in objs if o.name.startswith("Server_U")), key=lambda o: o.location.z
     )
-    if len(existing) < 6:
+    if len(existing) < count:
         for b in [
             o for o in objs if o.name.startswith("Blank_U") and o.name != "Blank_U40"
         ]:
             b.hide_render = b.hide_viewport = True
         step = existing[1].location.z - existing[0].location.z
         last = existing[-1]
-        for k in range(1, 7 - len(existing)):
+        for k in range(1, count + 1 - len(existing)):
             n = last.copy()
             u = int(last.name.split("_U")[1]) + 6 * k
             n.name = f"Server_U{u}"
             n.location.z = last.location.z + step * k
             for c in last.users_collection:
                 c.objects.link(n)
+        if count > 6:
+            for o in objs:
+                if o.name.startswith(("Switch", "Patch_", "Blank_U")):
+                    o.hide_render = o.hide_viewport = True
+            for i, sv in enumerate(sorted((o for o in objs if o.name.startswith("Server_U")),
+                                          key=lambda o: o.location.z)):  # fmt: skip
+                sv.location.z = 0.10 + step * i
         bpy.context.view_layer.update()
         existing = sorted(
             (o for o in objs if o.name.startswith("Server_U")),
@@ -412,13 +423,13 @@ def _flat_scene():
     return sc
 
 
-def prepare():
+def prepare(servers=6):
     """Add the video's parts to the open plant room. Safe to call once per session."""
     scene = bpy.data.scenes["Scene"]
     coll = bpy.data.collections.get("Video") or bpy.data.collections.new("Video")
     if coll.name not in scene.collection.children:
         scene.collection.children.link(coll)
-    servers = _servers(scene)
+    servers = _servers(scene, servers)
     strip = bpy.data.objects.get("Tank_Strip_Fill") or _tank_strip(coll)
     if "Heater_Cap" in bpy.data.objects:
         heater = [
