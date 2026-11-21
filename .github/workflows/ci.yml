@@ -66,6 +66,8 @@ jobs:
       - run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit,storage-api
       - run: pnpm exec supabase db reset
       - run: pnpm exec supabase db lint --fail-on warning
+      # Row level security (#3, #7): each policy's allow and deny, in supabase/tests.
+      - run: pnpm exec supabase test db
       # packages/db/src/database.types.ts must match the schema. If it does not, download the
       # database-types artifact from this run, or run `pnpm db:types` against a local stack.
       - run: pnpm db:types

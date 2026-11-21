@@ -21,6 +21,7 @@ make check
 
 `make dev` starts the local Supabase stack (Docker) and serves the host app on http://localhost:5173 and the console on http://localhost:5174.
 Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
+Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test` with the password `kachel-demo` (local stack only).
 
 ## Repo map
 
