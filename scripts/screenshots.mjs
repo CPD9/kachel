@@ -29,13 +29,16 @@ export function isLocal(url) {
 async function shoot(page, shot) {
   await page.goto(shot.url, { waitUntil: "networkidle" });
   // Each app prefills the demo account's email on the local stack; give it the seed password.
+  // The app first asks Supabase for a session and shows neither; wait for the form or the data.
   const signIn = page.getByRole("button", { name: "Sign in" });
+  const live = page.getByText("· live").first();
+  await signIn.or(live).first().waitFor({ timeout: 15_000 });
   if (await signIn.isVisible()) {
     await page.getByLabel("Password").fill(SEED_PASSWORD);
     await signIn.click();
   }
   // Ready once the live data has loaded.
-  await page.getByText("· live").first().waitFor({ timeout: 15_000 });
+  await live.waitFor({ timeout: 15_000 });
   await page.waitForLoadState("networkidle");
   const path = `${OUT}/${shot.name}.png`;
   await page.screenshot({ path, fullPage: true });
