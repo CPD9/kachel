@@ -258,6 +258,9 @@ def main():
     ap.add_argument("--sheet", required=True)
     ap.add_argument("--city", default="basel")
     ap.add_argument(
+        "--hour-frames", type=int, default=HOUR, help="film frames per hour"
+    )
+    ap.add_argument(
         "--snow", action="store_true", help="snow credit and falling flakes"
     )
     ap.add_argument(
@@ -303,9 +306,15 @@ def main():
         stdin=subprocess.PIPE,
     )  # fmt: skip
     prev, n, sheet = None, 0, []
+    hour_frames = a.hour_frames
+    orbit = sorted(
+        (fr / "outside").glob("f*.png")
+    )  # one still per film frame (--orbit-frames)
     for r in rows:
         *_, steps = halves(fr, r, step=0)
-        per = HOUR // steps
+        if orbit:
+            steps = 1
+        per = hour_frames // steps
         for s in range(steps):
             lim, rim, _ = halves(fr, r, step=s)
             for j in range(per):
@@ -314,8 +323,13 @@ def main():
                 if prev is not None and j < fade:
                     t = (j + 1) / (fade + 1)
                     cl, cr = Image.blend(prev[0], lim, t), Image.blend(prev[1], rim, t)
-                hour_t = int(r["hour"]) + (s * per + j) / HOUR
-                img = assemble(cl, cr, r, ctx, hour_t, n, 60 * s // steps)
+                if orbit:  # the moving camera: its own still for this frame
+                    cl = Image.open(orbit[min(n, len(orbit) - 1)]).convert("RGB")
+                    cl = cl.resize((HALF, c.H), Image.LANCZOS)
+                hour_t = int(r["hour"]) + (s * per + j) / hour_frames
+                minute = 60 * j // per if orbit else 60 * s // steps
+                minute = minute // 15 * 15
+                img = assemble(cl, cr, r, ctx, hour_t, n, minute)
                 ff.stdin.write(img.tobytes())
                 n += 1
                 if s == 0 and j == per - 1 and int(r["hour"]) in (0, 7, 9, 13, 17, 21):

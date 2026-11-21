@@ -138,7 +138,12 @@ DAYNIGHT_SAMPLES ?= 48
 DAYNIGHT_STEPS ?= 4
 # Snow on roofs and ground (and falling flakes when it snows) for the snowy day only.
 SNOW_FLAG = $(if $(filter snow,$(DAYNIGHT_DAY)),--snow)
-DAYNIGHT_WORK = $(VIDEO_OUT)/work/daynight-$(DAYNIGHT_DAY)
+# FAST=1: the 2x cut for the pitch film, 18 s a day, the outside camera orbiting slowly.
+FAST ?=
+FAST_OUT = $(if $(FAST),--orbit-frames 432)
+FAST_MIX = $(if $(FAST),--hour-frames 18)
+FAST_TAG = $(if $(FAST),-2x)
+DAYNIGHT_WORK = $(VIDEO_OUT)/work/daynight-$(DAYNIGHT_DAY)$(FAST_TAG)
 
 video-daynight:
 	test -f $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv || $(MAKE) year
@@ -146,20 +151,20 @@ video-daynight:
 	scripts/video/gpu_wait.sh
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(HOME)/Projects/heat-atlas/renders/skyline.blend \
 		--python scripts/video/daynight.py -- --part outside --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
-		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS) $(SNOW_FLAG)
+		--out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS) $(SNOW_FLAG) $(FAST_OUT)
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
 		--day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv --out $(DAYNIGHT_WORK) --samples $(DAYNIGHT_SAMPLES)
-	uv run --no-project --with pillow python scripts/video/compose_daynight.py $(SNOW_FLAG) \
+	uv run --no-project --with pillow python scripts/video/compose_daynight.py $(SNOW_FLAG) $(FAST_MIX) \
 		--frames $(DAYNIGHT_WORK) --day $(SCHED_OUT)/day_$(DAYNIGHT_DAY).csv \
-		--mp4 $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY).mp4 --sheet $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY)-sheet.png
+		--mp4 $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY)$(FAST_TAG).mp4 --sheet $(VIDEO_OUT)/daynight-$(DAYNIGHT_DAY)$(FAST_TAG)-sheet.png
 
 # The same film with Bern outside: the scene is built once from swissBUILDINGS3D tiles into
 # the cache (scripts/video/bern.py), never into heat-atlas or the repo.
 BERN_BLEND ?= $(HOME)/.cache/kachel/bern/bern.blend
 # Day files and kpis for the Bern film (`make bern-days`); servers come from its kpis.json.
 DAYS_DIR ?= $(SCHED)/out/bern
-BERN_WORK = $(VIDEO_OUT)/work/daynight-bern-$(DAYNIGHT_DAY)
+BERN_WORK = $(VIDEO_OUT)/work/daynight-bern-$(DAYNIGHT_DAY)$(FAST_TAG)
 
 $(BERN_BLEND):
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background --factory-startup \
@@ -172,14 +177,14 @@ video-daynight-bern: $(BERN_BLEND)
 	TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(BERN_BLEND) \
 		--python scripts/video/daynight.py -- --part outside --city bern \
 		--day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) \
-		--samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS) $(SNOW_FLAG)
+		--samples $(DAYNIGHT_SAMPLES) --steps $(DAYNIGHT_STEPS) $(SNOW_FLAG) $(FAST_OUT)
 	scripts/video/gpu_wait.sh
 	$(VIDEO_BLENDER) --python scripts/video/daynight.py -- --part inside \
 		--day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv --out $(BERN_WORK) --samples $(DAYNIGHT_SAMPLES)
-	uv run --no-project --with pillow python scripts/video/compose_daynight.py $(SNOW_FLAG) --city bern \
+	uv run --no-project --with pillow python scripts/video/compose_daynight.py $(SNOW_FLAG) $(FAST_MIX) --city bern \
 		--frames $(BERN_WORK) --day $(DAYS_DIR)/day_$(DAYNIGHT_DAY).csv \
-		--mp4 $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY).mp4 \
-		--sheet $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY)-sheet.png
+		--mp4 $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY)$(FAST_TAG).mp4 \
+		--sheet $(VIDEO_OUT)/daynight-bern-$(DAYNIGHT_DAY)$(FAST_TAG)-sheet.png
 
 # The whole film from the rendered parts: January day-night, setup, scheduler, the four
 # economics charts, the live demo (letterboxed) and July day-night to close.
