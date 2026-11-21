@@ -69,10 +69,12 @@ function stageRoom(room: Object3D, camera: Camera, gl: WebGLRenderer, scene: Sce
   const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environment = env;
   scene.background = new Color(BACKGROUND);
-  camera.position.copy(centre).add(new Vector3(0.9, 0.55, 1.1).multiplyScalar(radius * 1.3));
-  camera.lookAt(centre);
+  // Far enough back that the floor's near corner stays above the stills strip at 1080p.
+  const aim = centre.clone();
+  camera.position.copy(aim).add(new Vector3(0.9, 0.55, 1.1).multiplyScalar(radius * 1.9));
+  camera.lookAt(aim);
   const controls = new OrbitControls(camera, gl.domElement);
-  controls.target.copy(centre);
+  controls.target.copy(aim);
   controls.enableDamping = true;
   controls.minDistance = radius * 0.4;
   controls.maxDistance = radius * 3;
