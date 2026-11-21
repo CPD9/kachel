@@ -29,7 +29,7 @@ afterEach(cleanup);
 
 describe("building card", () => {
   it("shows the yearly heat as an estimate, with its sources", () => {
-    render(<BuildingCard facts={FACTS} onClose={() => undefined} />);
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
     expect(screen.getByRole("heading", { name: "Missionsstrasse 55" })).toBeTruthy();
     // District heating: the heat bought equals the heat used, so the figure shows twice.
     expect(screen.getAllByText("386 MWh")).toHaveLength(2);
@@ -40,8 +40,9 @@ describe("building card", () => {
   });
 
   it("shows the chosen month's heat on the slider", () => {
-    render(<BuildingCard facts={FACTS} onClose={() => undefined} />);
+    render(<BuildingCard facts={FACTS} month={10} onClose={() => undefined} />);
     const slider = screen.getByRole("slider");
+    expect(slider.getAttribute("aria-valuetext")).toMatch(/^November: /);
     fireEvent.change(slider, { target: { value: "6" } });
     // July: no heating degree days, so only a month of hot water: 71,408 × 31 ÷ 365.
     expect(screen.getByLabelText("July")).toBeTruthy();
@@ -55,6 +56,7 @@ describe("building card", () => {
     render(
       <BuildingCard
         facts={{ register: null, roof: null, hectare: null }}
+        month={10}
         onClose={() => undefined}
       />,
     );

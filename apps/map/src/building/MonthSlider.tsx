@@ -7,12 +7,13 @@ export function MonthSlider({
   heatingKwh,
   hotWaterKwh,
   degreeDays,
-  initialMonth = new Date().getMonth(),
+  initialMonth,
 }: {
   heatingKwh: number;
   hotWaterKwh: number;
   degreeDays: readonly number[];
-  initialMonth?: number;
+  /** 0 for January; the card passes the month on the map's clock. */
+  initialMonth: number;
 }) {
   const [month, setMonth] = useState(initialMonth);
   const months = monthlyHeat(heatingKwh, hotWaterKwh, degreeDays);

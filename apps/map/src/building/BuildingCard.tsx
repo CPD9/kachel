@@ -20,9 +20,12 @@ function Source({ children }: { children: string }) {
 /** A clicked building: its estimated heat and energy use, and the published facts behind them. */
 export function BuildingCard({
   facts,
+  month,
   onClose,
 }: {
   facts: BuildingFacts | "loading";
+  /** The month on the map's clock, 0 for January: where the month slider starts. */
+  month: number;
   onClose: () => void;
 }) {
   return (
@@ -38,12 +41,16 @@ export function BuildingCard({
       >
         ×
       </button>
-      {facts === "loading" ? <p>Looking the building up…</p> : <Facts facts={facts} />}
+      {facts === "loading" ? (
+        <p>Looking the building up…</p>
+      ) : (
+        <Facts facts={facts} month={month} />
+      )}
     </aside>
   );
 }
 
-function Facts({ facts }: { facts: BuildingFacts }) {
+function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
   const { register, roof, hectare } = facts;
   if (register === null && roof === null && hectare === null) {
     return <p>No published data found for this building.</p>;
@@ -86,6 +93,7 @@ function Facts({ facts }: { facts: BuildingFacts }) {
               heatingKwh={roof.heatingKwh}
               hotWaterKwh={roof.hotWaterKwh}
               degreeDays={roof.degreeDays}
+              initialMonth={month}
             />
           )}
           <Source>
