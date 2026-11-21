@@ -15,9 +15,11 @@ Without it, the clock starts 20 minutes before today's sunset in Basel and a day
 five minutes.
 
 Click a building for its estimated heat and energy use, from the federal building register
-(GWR) and SFOE's published estimates. Requests go out only on click and are cached.
+(GWR) and SFOE's published estimates, month by month, and what Kachel home servers could cover
+there, scaled from the scheduler's Basel reference house. Requests go out only on click and are
+cached.
 
-<p align="center"><img src="../../docs/images/map-card.webp" width="720" alt="The card for Rebgasse 3, Basel: 104 MWh of heat a year, estimated, built 1876, district heating, with the source under each figure"></p>
+<p align="center"><img src="../../docs/images/map-card.webp" width="720" alt="The card for Steinengraben 5, Basel: 528 MWh of heat a year, estimated, a month slider on November, and what about 101 Kachel servers would cover there, each figure with its source"></p>
 
 ## How it works
 

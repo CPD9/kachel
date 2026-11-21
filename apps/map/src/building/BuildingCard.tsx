@@ -171,10 +171,8 @@ function WithKachel({ heatKwh }: { heatKwh: number }) {
           <Row label="Electricity the servers draw" value={formatEnergy(k.electricityKwh)} />
           <Row label="A year, before hardware" value={formatChf(k.beforeHardwareChf)} />
           <Row label="A year, after hardware (mid)" value={formatChf(k.afterHardwareChf.mid)} />
-          <Row
-            label="Hardware cases low to high"
-            value={`${formatChf(k.afterHardwareChf.low)} to ${formatChf(k.afterHardwareChf.high)}`}
-          />
+          <Row label="… cheap hardware (low)" value={formatChf(k.afterHardwareChf.low)} />
+          <Row label="… dear hardware (high)" value={formatChf(k.afterHardwareChf.high)} />
           <Row label="Payback (mid)" value={`${k.paybackYearsMid} years`} />
         </dl>
       )}
