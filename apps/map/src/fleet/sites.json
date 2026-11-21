@@ -1,0 +1,992 @@
+[
+  {
+    "id": "house-01",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 46645,
+    "egid": 455371,
+    "lon": 7.612273,
+    "lat": 47.572175,
+    "hectareHeatMwh": 693
+  },
+  {
+    "id": "house-02",
+    "city": "Basel",
+    "servers": 8,
+    "heatDemandKwh": 27187,
+    "egid": 243052925,
+    "lon": 7.580235,
+    "lat": 47.567106,
+    "hectareHeatMwh": 1844
+  },
+  {
+    "id": "house-03",
+    "city": "Basel",
+    "servers": 6,
+    "heatDemandKwh": 21079,
+    "egid": 400293,
+    "lon": 7.628275,
+    "lat": 47.546158,
+    "hectareHeatMwh": 533
+  },
+  {
+    "id": "house-04",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 30033,
+    "egid": 448070,
+    "lon": 7.574998,
+    "lat": 47.548417,
+    "hectareHeatMwh": 797
+  },
+  {
+    "id": "house-05",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 35857,
+    "egid": 243057397,
+    "lon": 7.594738,
+    "lat": 47.544313,
+    "hectareHeatMwh": 4235
+  },
+  {
+    "id": "house-06",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 47550,
+    "egid": 455403,
+    "lon": 7.614641,
+    "lat": 47.569751,
+    "hectareHeatMwh": 1057
+  },
+  {
+    "id": "house-07",
+    "city": "Basel",
+    "servers": 6,
+    "heatDemandKwh": 33132,
+    "egid": 243056459,
+    "lon": 7.599593,
+    "lat": 47.570674,
+    "hectareHeatMwh": 272
+  },
+  {
+    "id": "house-08",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 26890,
+    "egid": 442870,
+    "lon": 7.617268,
+    "lat": 47.551762,
+    "hectareHeatMwh": 1461
+  },
+  {
+    "id": "house-09",
+    "city": "Basel",
+    "servers": 2,
+    "heatDemandKwh": 33180,
+    "egid": 399961,
+    "lon": 7.628733,
+    "lat": 47.550152,
+    "hectareHeatMwh": 250
+  },
+  {
+    "id": "house-10",
+    "city": "Basel",
+    "servers": 5,
+    "heatDemandKwh": 24137,
+    "egid": 243052362,
+    "lon": 7.583877,
+    "lat": 47.552433,
+    "hectareHeatMwh": 1426
+  },
+  {
+    "id": "house-11",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 41449,
+    "egid": 2083140,
+    "lon": 7.623828,
+    "lat": 47.578065,
+    "hectareHeatMwh": 65
+  },
+  {
+    "id": "house-12",
+    "city": "Basel",
+    "servers": 6,
+    "heatDemandKwh": 19144,
+    "egid": 443037,
+    "lon": 7.601902,
+    "lat": 47.552375,
+    "hectareHeatMwh": 1676
+  },
+  {
+    "id": "house-13",
+    "city": "Basel",
+    "servers": 3,
+    "heatDemandKwh": 18570,
+    "egid": 455351,
+    "lon": 7.60566,
+    "lat": 47.572823,
+    "hectareHeatMwh": 65
+  },
+  {
+    "id": "house-14",
+    "city": "Basel",
+    "servers": 2,
+    "heatDemandKwh": 21938,
+    "egid": 458398,
+    "lon": 7.588898,
+    "lat": 47.579479,
+    "hectareHeatMwh": 1475
+  },
+  {
+    "id": "house-15",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 41159,
+    "egid": 243053209,
+    "lon": 7.601654,
+    "lat": 47.569697,
+    "hectareHeatMwh": 1465
+  },
+  {
+    "id": "house-16",
+    "city": "Basel",
+    "servers": 5,
+    "heatDemandKwh": 45388,
+    "egid": 458379,
+    "lon": 7.589208,
+    "lat": 47.576283,
+    "hectareHeatMwh": 2013
+  },
+  {
+    "id": "house-17",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 23028,
+    "egid": 444070,
+    "lon": 7.607116,
+    "lat": 47.543875,
+    "hectareHeatMwh": 55
+  },
+  {
+    "id": "house-18",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 46215,
+    "egid": 243053576,
+    "lon": 7.597632,
+    "lat": 47.57154,
+    "hectareHeatMwh": 1496
+  },
+  {
+    "id": "house-19",
+    "city": "Basel",
+    "servers": 6,
+    "heatDemandKwh": 21342,
+    "egid": 442719,
+    "lon": 7.621438,
+    "lat": 47.549542,
+    "hectareHeatMwh": 774
+  },
+  {
+    "id": "house-20",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 24427,
+    "egid": 456839,
+    "lon": 7.60154,
+    "lat": 47.566262,
+    "hectareHeatMwh": 17307
+  },
+  {
+    "id": "house-21",
+    "city": "Basel",
+    "servers": 6,
+    "heatDemandKwh": 24446,
+    "egid": 456635,
+    "lon": 7.599257,
+    "lat": 47.568554,
+    "hectareHeatMwh": 5447
+  },
+  {
+    "id": "house-22",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 30018,
+    "egid": 452463,
+    "lon": 7.578076,
+    "lat": 47.566778,
+    "hectareHeatMwh": 2032
+  },
+  {
+    "id": "house-23",
+    "city": "Basel",
+    "servers": 5,
+    "heatDemandKwh": 16083,
+    "egid": 2084321,
+    "lon": 7.62609,
+    "lat": 47.568257,
+    "hectareHeatMwh": 482
+  },
+  {
+    "id": "house-24",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 31476,
+    "egid": 243052225,
+    "lon": 7.602152,
+    "lat": 47.564459,
+    "hectareHeatMwh": 2082
+  },
+  {
+    "id": "house-25",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 17854,
+    "egid": 440884,
+    "lon": 7.59458,
+    "lat": 47.553069,
+    "hectareHeatMwh": 4611
+  },
+  {
+    "id": "house-26",
+    "city": "Basel",
+    "servers": 3,
+    "heatDemandKwh": 26180,
+    "egid": 450856,
+    "lon": 7.564396,
+    "lat": 47.556259,
+    "hectareHeatMwh": 602
+  },
+  {
+    "id": "house-27",
+    "city": "Basel",
+    "servers": 2,
+    "heatDemandKwh": 26970,
+    "egid": 243052266,
+    "lon": 7.598423,
+    "lat": 47.540723,
+    "hectareHeatMwh": 1592
+  },
+  {
+    "id": "house-28",
+    "city": "Basel",
+    "servers": 8,
+    "heatDemandKwh": 22346,
+    "egid": 457875,
+    "lon": 7.596945,
+    "lat": 47.57166,
+    "hectareHeatMwh": 1188
+  },
+  {
+    "id": "house-29",
+    "city": "Basel",
+    "servers": 5,
+    "heatDemandKwh": 17487,
+    "egid": 457644,
+    "lon": 7.593577,
+    "lat": 47.568058,
+    "hectareHeatMwh": 1118
+  },
+  {
+    "id": "house-30",
+    "city": "Basel",
+    "servers": 6,
+    "heatDemandKwh": 25931,
+    "egid": 448913,
+    "lon": 7.563855,
+    "lat": 47.547368,
+    "hectareHeatMwh": 989
+  },
+  {
+    "id": "house-31",
+    "city": "Basel",
+    "servers": 3,
+    "heatDemandKwh": 46576,
+    "egid": 453441,
+    "lon": 7.57741,
+    "lat": 47.573019,
+    "hectareHeatMwh": 969
+  },
+  {
+    "id": "house-32",
+    "city": "Basel",
+    "servers": 5,
+    "heatDemandKwh": 38842,
+    "egid": 243009785,
+    "lon": 7.606306,
+    "lat": 47.538704,
+    "hectareHeatMwh": 1303
+  },
+  {
+    "id": "house-33",
+    "city": "Basel",
+    "servers": 5,
+    "heatDemandKwh": 21658,
+    "egid": 451119,
+    "lon": 7.572681,
+    "lat": 47.557944,
+    "hectareHeatMwh": 1916
+  },
+  {
+    "id": "house-34",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 32533,
+    "egid": 453737,
+    "lon": 7.569012,
+    "lat": 47.57037,
+    "hectareHeatMwh": 700
+  },
+  {
+    "id": "house-35",
+    "city": "Basel",
+    "servers": 5,
+    "heatDemandKwh": 47735,
+    "egid": 453420,
+    "lon": 7.572857,
+    "lat": 47.576499,
+    "hectareHeatMwh": 997
+  },
+  {
+    "id": "house-36",
+    "city": "Basel",
+    "servers": 2,
+    "heatDemandKwh": 33962,
+    "egid": 442839,
+    "lon": 7.618782,
+    "lat": 47.550907,
+    "hectareHeatMwh": 746
+  },
+  {
+    "id": "house-37",
+    "city": "Basel",
+    "servers": 8,
+    "heatDemandKwh": 17342,
+    "egid": 440688,
+    "lon": 7.582375,
+    "lat": 47.556903,
+    "hectareHeatMwh": 1544
+  },
+  {
+    "id": "house-38",
+    "city": "Basel",
+    "servers": 6,
+    "heatDemandKwh": 43808,
+    "egid": 454307,
+    "lon": 7.598607,
+    "lat": 47.563405,
+    "hectareHeatMwh": 2658
+  },
+  {
+    "id": "house-39",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 18250,
+    "egid": 453907,
+    "lon": 7.566955,
+    "lat": 47.576886,
+    "hectareHeatMwh": 493
+  },
+  {
+    "id": "house-40",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 18543,
+    "egid": 461196,
+    "lon": 7.623774,
+    "lat": 47.57455,
+    "hectareHeatMwh": 0
+  },
+  {
+    "id": "house-41",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 33608,
+    "egid": 451372,
+    "lon": 7.570078,
+    "lat": 47.559086,
+    "hectareHeatMwh": 1664
+  },
+  {
+    "id": "house-42",
+    "city": "Basel",
+    "servers": 2,
+    "heatDemandKwh": 32267,
+    "egid": 442936,
+    "lon": 7.596613,
+    "lat": 47.547046,
+    "hectareHeatMwh": 1196
+  },
+  {
+    "id": "house-43",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 26557,
+    "egid": 453409,
+    "lon": 7.571594,
+    "lat": 47.577024,
+    "hectareHeatMwh": 997
+  },
+  {
+    "id": "house-44",
+    "city": "Basel",
+    "servers": 3,
+    "heatDemandKwh": 40015,
+    "egid": 451406,
+    "lon": 7.569476,
+    "lat": 47.558973,
+    "hectareHeatMwh": 1195
+  },
+  {
+    "id": "house-45",
+    "city": "Basel",
+    "servers": 3,
+    "heatDemandKwh": 18892,
+    "egid": 396920,
+    "lon": 7.574616,
+    "lat": 47.541969,
+    "hectareHeatMwh": 2186
+  },
+  {
+    "id": "house-46",
+    "city": "Basel",
+    "servers": 4,
+    "heatDemandKwh": 18922,
+    "egid": 245060268,
+    "lon": 7.62654,
+    "lat": 47.557681,
+    "hectareHeatMwh": 890
+  },
+  {
+    "id": "house-47",
+    "city": "Basel",
+    "servers": 3,
+    "heatDemandKwh": 31537,
+    "egid": 243058377,
+    "lon": 7.608673,
+    "lat": 47.544799,
+    "hectareHeatMwh": 1066
+  },
+  {
+    "id": "house-48",
+    "city": "Basel",
+    "servers": 5,
+    "heatDemandKwh": 34975,
+    "egid": 399550,
+    "lon": 7.621931,
+    "lat": 47.553463,
+    "hectareHeatMwh": 1305
+  },
+  {
+    "id": "house-49",
+    "city": "Basel",
+    "servers": 8,
+    "heatDemandKwh": 33620,
+    "egid": 452092,
+    "lon": 7.560972,
+    "lat": 47.566641,
+    "hectareHeatMwh": 655
+  },
+  {
+    "id": "house-50",
+    "city": "Basel",
+    "servers": 7,
+    "heatDemandKwh": 35837,
+    "egid": 453994,
+    "lon": 7.595645,
+    "lat": 47.559322,
+    "hectareHeatMwh": 2395
+  },
+  {
+    "id": "bern-01",
+    "city": "Bern",
+    "servers": 6,
+    "heatDemandKwh": 50195,
+    "egid": 1234776,
+    "lon": 7.438164,
+    "lat": 46.935626,
+    "hectareHeatMwh": 1109
+  },
+  {
+    "id": "bern-02",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 22565,
+    "egid": 1269979,
+    "lon": 7.435996,
+    "lat": 46.970181,
+    "hectareHeatMwh": 228
+  },
+  {
+    "id": "bern-03",
+    "city": "Bern",
+    "servers": 4,
+    "heatDemandKwh": 35209,
+    "egid": 1233156,
+    "lon": 7.407589,
+    "lat": 46.942786,
+    "hectareHeatMwh": 407
+  },
+  {
+    "id": "bern-04",
+    "city": "Bern",
+    "servers": 7,
+    "heatDemandKwh": 37229,
+    "egid": 1240998,
+    "lon": 7.446667,
+    "lat": 46.95643,
+    "hectareHeatMwh": 4412
+  },
+  {
+    "id": "bern-05",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 20820,
+    "egid": 1233733,
+    "lon": 7.423678,
+    "lat": 46.940423,
+    "hectareHeatMwh": 1028
+  },
+  {
+    "id": "bern-06",
+    "city": "Bern",
+    "servers": 3,
+    "heatDemandKwh": 22445,
+    "egid": 1230081,
+    "lon": 7.455246,
+    "lat": 46.945983,
+    "hectareHeatMwh": 1278
+  },
+  {
+    "id": "bern-07",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 41919,
+    "egid": 1239129,
+    "lon": 7.453225,
+    "lat": 46.950874,
+    "hectareHeatMwh": 1605
+  },
+  {
+    "id": "bern-08",
+    "city": "Bern",
+    "servers": 4,
+    "heatDemandKwh": 47692,
+    "egid": 190164534,
+    "lon": 7.418831,
+    "lat": 46.935164,
+    "hectareHeatMwh": 669
+  },
+  {
+    "id": "bern-09",
+    "city": "Bern",
+    "servers": 7,
+    "heatDemandKwh": 42303,
+    "egid": 1269997,
+    "lon": 7.434923,
+    "lat": 46.970883,
+    "hectareHeatMwh": 449
+  },
+  {
+    "id": "bern-10",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 21780,
+    "egid": 1232894,
+    "lon": 7.41884,
+    "lat": 46.945907,
+    "hectareHeatMwh": 1294
+  },
+  {
+    "id": "bern-11",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 54449,
+    "egid": 1230867,
+    "lon": 7.436993,
+    "lat": 46.959136,
+    "hectareHeatMwh": 886
+  },
+  {
+    "id": "bern-12",
+    "city": "Bern",
+    "servers": 8,
+    "heatDemandKwh": 35207,
+    "egid": 3170770,
+    "lon": 7.394763,
+    "lat": 46.968682,
+    "hectareHeatMwh": 540
+  },
+  {
+    "id": "bern-13",
+    "city": "Bern",
+    "servers": 7,
+    "heatDemandKwh": 31014,
+    "egid": 1234626,
+    "lon": 7.433877,
+    "lat": 46.947539,
+    "hectareHeatMwh": 1388
+  },
+  {
+    "id": "bern-14",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 37019,
+    "egid": 1243475,
+    "lon": 7.400857,
+    "lat": 46.949102,
+    "hectareHeatMwh": 416
+  },
+  {
+    "id": "bern-15",
+    "city": "Bern",
+    "servers": 6,
+    "heatDemandKwh": 46314,
+    "egid": 1230771,
+    "lon": 7.439122,
+    "lat": 46.948613,
+    "hectareHeatMwh": 13371
+  },
+  {
+    "id": "bern-16",
+    "city": "Bern",
+    "servers": 7,
+    "heatDemandKwh": 44842,
+    "egid": 1236379,
+    "lon": 7.451848,
+    "lat": 46.938857,
+    "hectareHeatMwh": 452
+  },
+  {
+    "id": "bern-17",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 31654,
+    "egid": 1284416,
+    "lon": 7.406534,
+    "lat": 46.970021,
+    "hectareHeatMwh": 59
+  },
+  {
+    "id": "bern-18",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 25859,
+    "egid": 2245577,
+    "lon": 7.4305,
+    "lat": 46.946627,
+    "hectareHeatMwh": 2602
+  },
+  {
+    "id": "bern-19",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 38091,
+    "egid": 1273879,
+    "lon": 7.428964,
+    "lat": 46.93095,
+    "hectareHeatMwh": 958
+  },
+  {
+    "id": "bern-20",
+    "city": "Bern",
+    "servers": 3,
+    "heatDemandKwh": 56332,
+    "egid": 1234889,
+    "lon": 7.43505,
+    "lat": 46.937696,
+    "hectareHeatMwh": 1672
+  },
+  {
+    "id": "bern-21",
+    "city": "Bern",
+    "servers": 3,
+    "heatDemandKwh": 25179,
+    "egid": 3170793,
+    "lon": 7.394902,
+    "lat": 46.968849,
+    "hectareHeatMwh": 540
+  },
+  {
+    "id": "bern-22",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 26226,
+    "egid": 1236738,
+    "lon": 7.468048,
+    "lat": 46.940329,
+    "hectareHeatMwh": 985
+  },
+  {
+    "id": "bern-23",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 50495,
+    "egid": 1274090,
+    "lon": 7.40828,
+    "lat": 46.930328,
+    "hectareHeatMwh": 248
+  },
+  {
+    "id": "bern-24",
+    "city": "Bern",
+    "servers": 8,
+    "heatDemandKwh": 38844,
+    "egid": 1238796,
+    "lon": 7.474949,
+    "lat": 46.957284,
+    "hectareHeatMwh": 1098
+  },
+  {
+    "id": "bern-25",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 35934,
+    "egid": 1235056,
+    "lon": 7.429513,
+    "lat": 46.93813,
+    "hectareHeatMwh": 1037
+  },
+  {
+    "id": "bern-26",
+    "city": "Bern",
+    "servers": 8,
+    "heatDemandKwh": 50617,
+    "egid": 1234557,
+    "lon": 7.434657,
+    "lat": 46.94511,
+    "hectareHeatMwh": 4387
+  },
+  {
+    "id": "bern-27",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 19448,
+    "egid": 1231659,
+    "lon": 7.433386,
+    "lat": 46.959325,
+    "hectareHeatMwh": 1511
+  },
+  {
+    "id": "bern-28",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 43711,
+    "egid": 1231418,
+    "lon": 7.428896,
+    "lat": 46.95905,
+    "hectareHeatMwh": 3449
+  },
+  {
+    "id": "bern-29",
+    "city": "Bern",
+    "servers": 4,
+    "heatDemandKwh": 47417,
+    "egid": 1230926,
+    "lon": 7.437682,
+    "lat": 46.9612,
+    "hectareHeatMwh": 1164
+  },
+  {
+    "id": "bern-30",
+    "city": "Bern",
+    "servers": 8,
+    "heatDemandKwh": 45630,
+    "egid": 1230673,
+    "lon": 7.441657,
+    "lat": 46.947628,
+    "hectareHeatMwh": 6783
+  },
+  {
+    "id": "bern-31",
+    "city": "Bern",
+    "servers": 8,
+    "heatDemandKwh": 23851,
+    "egid": 101010788,
+    "lon": 7.411802,
+    "lat": 46.931028,
+    "hectareHeatMwh": 236
+  },
+  {
+    "id": "bern-32",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 25338,
+    "egid": 1241309,
+    "lon": 7.448133,
+    "lat": 46.965781,
+    "hectareHeatMwh": 423
+  },
+  {
+    "id": "bern-33",
+    "city": "Bern",
+    "servers": 6,
+    "heatDemandKwh": 54989,
+    "egid": 1236867,
+    "lon": 7.459609,
+    "lat": 46.940303,
+    "hectareHeatMwh": 465
+  },
+  {
+    "id": "bern-34",
+    "city": "Bern",
+    "servers": 4,
+    "heatDemandKwh": 42812,
+    "egid": 1233041,
+    "lon": 7.413067,
+    "lat": 46.943825,
+    "hectareHeatMwh": 769
+  },
+  {
+    "id": "bern-35",
+    "city": "Bern",
+    "servers": 6,
+    "heatDemandKwh": 23928,
+    "egid": 1232518,
+    "lon": 7.430742,
+    "lat": 46.953835,
+    "hectareHeatMwh": 6409
+  },
+  {
+    "id": "bern-36",
+    "city": "Bern",
+    "servers": 3,
+    "heatDemandKwh": 33400,
+    "egid": 1273728,
+    "lon": 7.421301,
+    "lat": 46.931358,
+    "hectareHeatMwh": 1717
+  },
+  {
+    "id": "bern-37",
+    "city": "Bern",
+    "servers": 4,
+    "heatDemandKwh": 53779,
+    "egid": 1233035,
+    "lon": 7.414499,
+    "lat": 46.943924,
+    "hectareHeatMwh": 750
+  },
+  {
+    "id": "bern-39",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 44191,
+    "egid": 1232660,
+    "lon": 7.425167,
+    "lat": 46.954258,
+    "hectareHeatMwh": 1057
+  },
+  {
+    "id": "bern-40",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 55555,
+    "egid": 1274092,
+    "lon": 7.407525,
+    "lat": 46.93029,
+    "hectareHeatMwh": 248
+  },
+  {
+    "id": "bern-41",
+    "city": "Bern",
+    "servers": 8,
+    "heatDemandKwh": 43882,
+    "egid": 1235769,
+    "lon": 7.448027,
+    "lat": 46.931051,
+    "hectareHeatMwh": 608
+  },
+  {
+    "id": "bern-42",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 30881,
+    "egid": 1239051,
+    "lon": 7.466234,
+    "lat": 46.954994,
+    "hectareHeatMwh": 855
+  },
+  {
+    "id": "bern-43",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 47168,
+    "egid": 1284417,
+    "lon": 7.406005,
+    "lat": 46.97005,
+    "hectareHeatMwh": 59
+  },
+  {
+    "id": "bern-44",
+    "city": "Bern",
+    "servers": 6,
+    "heatDemandKwh": 43159,
+    "egid": 190182440,
+    "lon": 7.419342,
+    "lat": 46.936233,
+    "hectareHeatMwh": 2174
+  },
+  {
+    "id": "bern-45",
+    "city": "Bern",
+    "servers": 7,
+    "heatDemandKwh": 35198,
+    "egid": 1233015,
+    "lon": 7.414887,
+    "lat": 46.944396,
+    "hectareHeatMwh": 750
+  },
+  {
+    "id": "bern-46",
+    "city": "Bern",
+    "servers": 6,
+    "heatDemandKwh": 47518,
+    "egid": 11526570,
+    "lon": 7.460347,
+    "lat": 46.930846,
+    "hectareHeatMwh": 487
+  },
+  {
+    "id": "bern-47",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 33713,
+    "egid": 1237187,
+    "lon": 7.467173,
+    "lat": 46.936768,
+    "hectareHeatMwh": 1535
+  },
+  {
+    "id": "bern-48",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 33944,
+    "egid": 2244425,
+    "lon": 7.399102,
+    "lat": 46.950103,
+    "hectareHeatMwh": 360
+  },
+  {
+    "id": "bern-49",
+    "city": "Bern",
+    "servers": 5,
+    "heatDemandKwh": 51234,
+    "egid": 1240660,
+    "lon": 7.451464,
+    "lat": 46.961051,
+    "hectareHeatMwh": 2794
+  },
+  {
+    "id": "bern-50",
+    "city": "Bern",
+    "servers": 2,
+    "heatDemandKwh": 43779,
+    "egid": 1237259,
+    "lon": 7.46743,
+    "lat": 46.932387,
+    "hectareHeatMwh": 351
+  }
+]

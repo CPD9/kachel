@@ -1,0 +1,127 @@
+# How it works
+
+Each home has servers and a hot-water tank in the basement. A server runs AI jobs only when the
+house can use the heat. Five parts make that happen: the heat loop, the house scheduler, the
+fleet, the agent and the database that feeds the apps.
+
+## The heat loop
+
+![The plant room with each part labelled: server rack, pump, heat exchanger, tank and backup heater](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/setup.webp)
+
+1. **Servers.** Six water-cooled servers of about 1 kW each sit in a rack. Running a job, each
+   turns 1 kWh of electricity an hour into compute, and 80% of it comes back as heat (case
+   brief, `services/scheduler/config.json: server`).
+2. **Plate heat exchanger.** Supply and return pipes and a pump carry the servers' warm water to
+   a plate heat exchanger, which passes the heat across to the tank.
+3. **Tank.** The heat goes into a 35 kWh hot-water tank (`config.json: house`). The tank feeds
+   space heating and hot water, and lets heat made now be used a few hours later.
+4. **Backup heater.** When the servers and the tank cannot cover the demand, a backup heater
+   tops up. The model values server heat at what a heat pump would have spent to make it.
+
+A 20-second film of the plant room is in the
+[media-v1 release](https://github.com/CPD9/kachel/releases/download/media-v1/setup.mp4).
+
+## The scheduler's decision, every hour
+
+One function, `decide` in
+[`heatsched/scheduler.py`](https://github.com/CPD9/kachel/blob/main/services/scheduler/heatsched/scheduler.py),
+plans one house for one hour. It looks at the heat the house needs, the room left in the tank and
+the jobs waiting, and goes through four rules in order:
+
+1. **Interactive sessions run now.** A live session cannot wait. If its heat has nowhere to go,
+   it is dumped.
+2. **Batch jobs with a deadline run as early as their heat is useful.** If a job reaches its last
+   possible hour and the house still cannot use the heat, it moves to another site.
+3. **The backlog fills what heat room is left.** It keeps some tank room free for interactive
+   heat the forecast says is coming. With roof solar, it also waits for the sun when the tank can
+   carry the house until then. It never leaves the house colder to wait.
+4. **Nothing else runs.** A server whose heat is not needed is off.
+
+The same function drives the yearly balance (`make year`) and the live demo, so the numbers and
+the demo follow the same rules.
+
+![13 January 2025 at 12:00: six servers running, the backup heater adding 3.7 kWh](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/scheduler-january.webp)
+
+![15 July 2025 at 19:00: the tank is full, so the flexible backlog is paused while one evening session runs](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/scheduler-july.webp)
+
+## The fleet: each job to where its heat is useful
+
+One house alone has to pause or move work when it is warm. Many houses together can pass it
+on. The fleet model,
+[`heatsched/fleet.py`](https://github.com/CPD9/kachel/blob/main/services/scheduler/heatsched/fleet.py),
+places every waiting job each hour:
+
+1. Jobs go least slack first: the job that can wait least is placed first.
+2. A job goes to the house with the most useful heat room left this hour. A job that ran last
+   hour stays on its house while that house still has room.
+3. A house takes a job only while one more server's heat still fits. Heat is never made where it
+   has nowhere to go.
+4. A job that can still wait, waits. A job that cannot, and that no house can take, goes to an
+   ordinary data centre.
+
+`make fleet` runs this on 50 made-up houses in Basel, 50 in Bern and the 100 together, on a cold
+January day and a July day. The results are on [The numbers](The-numbers#the-fleet).
+
+## The agent: pausing a real job
+
+The agent,
+[`services/agent`](https://github.com/CPD9/kachel/tree/main/services/agent), runs on the server
+box. Every tick (1 second by default) it reads a signal file that says `run` or `pause`:
+
+- On `pause` it stops the job's process with `SIGSTOP`. The process keeps its memory and waits.
+- On `run` it sends `SIGCONT`, and the job carries on where it stopped. Nothing is lost.
+- On each change it writes the job's and the server's state to Supabase.
+
+Today a person writes the signal file, as on stage. The scheduler writing it is next.
+
+## Realtime to the apps
+
+Supabase holds the houses (`sites`), `servers`, `jobs`, `job_runs`, `heat_state` (one row per
+house and hour), `kpis` and `assumptions`. Realtime is on for `servers`, `jobs` and
+`heat_state`, so when the agent writes a change, the host app and the console show it without a
+reload, in under a second in the demo. Row level security shows each person only their own
+rows.
+
+## The whole picture
+
+Boxes marked "next" are not built yet. The diagram follows
+[docs/architecture.md](https://github.com/CPD9/kachel/blob/main/docs/architecture.md), updated
+for what has been built since.
+
+```mermaid
+flowchart LR
+  subgraph home["One home: six 1 kW servers, 35 kWh tank"]
+    servers["Servers running AI jobs"]
+    tank["Plate heat exchanger and tank:<br/>space heating and hot water"]
+    sched["House scheduler<br/>services/scheduler<br/>decides every hour"]
+    agent["Agent<br/>services/agent<br/>pauses and resumes the job"]
+    servers -- "heat" --> tank
+    tank -- "tank level, heat demand" --> sched
+    sched -. "run / pause<br/>(signal file, by hand in the demo)" .-> agent
+    agent -- "SIGSTOP / SIGCONT" --> servers
+  end
+
+  supa[("Supabase<br/>sites, servers, jobs, heat_state<br/>Realtime on")]
+  host["Host app<br/>apps/host<br/>the house, its heat and money"]
+  console["Console<br/>apps/console<br/>submit and follow jobs"]
+  fleet["Fleet model<br/>make fleet<br/>each job to a home whose heat is useful"]
+  outlook["District heating as a summer heat sink (next, #66)"]
+
+  agent -- "job and server state" --> supa
+  fleet -- "one hour of a fleet day<br/>(fleet_write.py)" --> supa
+  console -- "submit a job (QUEUED)" --> supa
+  supa -- "Realtime" --> host
+  supa -- "Realtime" --> console
+  tank -. "heat the house cannot use" .-> outlook
+```
+
+| Part                    | Where                                                 | State                                                                              |
+| ----------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| House scheduler         | `services/scheduler/heatsched/scheduler.py`           | Built. Runs the yearly balance and the live demo                                   |
+| Fleet model             | `services/scheduler/heatsched/fleet.py`               | Built as a model on synthetic houses; `fleet_write.py` puts one hour into Supabase |
+| Agent                   | `services/agent`                                      | Built. Follows a run/pause signal file and writes to Supabase                      |
+| Supabase and Realtime   | `supabase/migrations`, `packages/db`                  | Built. Realtime on `servers`, `jobs` and `heat_state`; row level security on all   |
+| Host app, console, map  | `apps/host`, `apps/console`, `apps/map`               | Built. See [The product](The-product)                                              |
+| Scheduler writes signal | `services/scheduler`, `services/agent`                | Next. On stage the signal file is written by hand                                  |
+| Live routing            | none yet                                              | Next. A job submitted in the console waits as QUEUED; nothing places it live yet   |
+| District heating        | issue [#66](https://github.com/CPD9/kachel/issues/66) | Next. A summer heat sink for heat the houses cannot use                            |

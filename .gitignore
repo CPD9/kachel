@@ -20,6 +20,10 @@ out/*
 !**/out/day_january.csv
 !**/out/day_july.csv
 !**/out/fleet_*.csv
-!**/out/fleet_kpis.json
+!**/out/fleet_*.json
+!services/scheduler/out/bern/
+services/scheduler/out/bern/*
+!services/scheduler/out/bern/day_*.csv
+!services/scheduler/out/bern/kpis.json
 
 .DS_Store

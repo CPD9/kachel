@@ -41,18 +41,25 @@ export function windowShader(): CustomShader {
         return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
       }
       void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
-        // The sun lights the walls even from below the horizon, so dim them by hand at night,
-        // to a faint warm grey, so the city reads as a city and not as a black hole.
-        material.diffuse *= mix(vec3(1.0), vec3(0.16, 0.15, 0.17), u_night);
-        material.specular *= 1.0 - 0.9 * u_night; // no bright sky glints on roofs at night
-        material.roughness = mix(material.roughness, 1.0, u_night);
-        if (u_night <= 0.0) return;
         mat3 toEye = mat3(czm_view);
         vec3 up = normalize(toEye * u_up);
         vec3 east = normalize(toEye * u_east);
         vec3 north = normalize(toEye * u_north);
         vec3 n = normalize(fsInput.attributes.normalEC);
-        if (abs(dot(n, up)) > 0.35) return; // roofs and ground: no windows
+        bool roof = abs(dot(n, up)) > 0.35;
+
+        // One calm palette instead of the tiles' own colours: light plaster walls and muted
+        // terracotta roofs. The sun lights them even from below the horizon, so dim by hand
+        // at night, walls to a cool grey and roofs darker, as in a dusk render.
+        vec3 wall = mix(vec3(0.80, 0.78, 0.74), vec3(0.10, 0.11, 0.14), u_night);
+        vec3 tile = mix(vec3(0.56, 0.31, 0.24), vec3(0.12, 0.07, 0.07), u_night);
+        material.diffuse = roof ? tile : wall;
+        material.specular *= 0.4 * (1.0 - 0.9 * u_night);
+        material.roughness = mix(0.8, 1.0, u_night);
+        // Street light and sky glow, so walls and roofs still read at full night.
+        material.emissive += (roof ? vec3(0.035, 0.022, 0.02) : vec3(0.06, 0.065, 0.085)) * u_night;
+        if (roof) return;
+
         vec3 p = fsInput.attributes.positionEC;
         bool facesEastWest = abs(dot(n, east)) > abs(dot(n, north));
         float along = facesEastWest ? dot(p, north) + u_offset.y : dot(p, east) + u_offset.x;
@@ -62,10 +69,12 @@ export function windowShader(): CustomShader {
         float side = facesEastWest ? sign(dot(n, east)) : 2.0 * sign(dot(n, north));
         vec2 id = floor(cell) + vec2(side * 101.0, side * 37.0);
         float pane = step(0.22, f.x) * step(f.x, 0.78) * step(0.28, f.y) * step(f.y, 0.82);
-        float r = kachelHash(id);
-        float lit = step(r, u_lit) * pane;
-        vec3 warm = mix(vec3(1.0, 0.62, 0.28), vec3(1.0, 0.86, 0.62), kachelHash(id + 7.0));
-        material.emissive += warm * lit * u_night * (0.8 + 0.6 * kachelHash(id + 3.0));
+
+        // Every pane is dark glass; at night a share of them is lit, warm white.
+        material.diffuse = mix(material.diffuse, vec3(0.10, 0.11, 0.14) * (1.0 - 0.6 * u_night), pane);
+        float lit = step(kachelHash(id), u_lit) * pane;
+        vec3 warm = mix(vec3(1.0, 0.66, 0.34), vec3(1.0, 0.88, 0.66), kachelHash(id + 7.0));
+        material.emissive += warm * lit * u_night * (1.2 + 0.8 * kachelHash(id + 3.0));
       }
     `,
   });

@@ -1,7 +1,17 @@
 import { formatEnergy, heatEstimate } from "./estimate";
+import { FLEET, type FleetHouse } from "../fleet/fleet";
 import type { BuildingFacts } from "./geoadmin";
+import { shareOf } from "./group";
+import { ASSUMPTIONS_URL, formatChf, kachelEstimate } from "./kachel";
+import { MonthSlider } from "./MonthSlider";
+import { describeSolar, SOLAR_RADIUS_M } from "./solar";
 
 const NETWORK_THRESHOLD_MWH = 700;
+/**
+ * Above this, heat per m² of heated floor is unusual even for an old, unrenovated building
+ * (our rule of thumb), so the card flags the SFOE estimate for a second look.
+ */
+export const HIGH_KWH_PER_M2 = 300;
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -19,9 +29,15 @@ function Source({ children }: { children: string }) {
 /** A clicked building: its estimated heat and energy use, and the published facts behind them. */
 export function BuildingCard({
   facts,
+  month,
+  fleet = null,
   onClose,
 }: {
   facts: BuildingFacts | "loading";
+  /** The month on the map's clock, 0 for January: where the month slider starts. */
+  month: number;
+  /** The synthetic fleet house placed on this building, if any. */
+  fleet?: FleetHouse | null;
   onClose: () => void;
 }) {
   return (
@@ -37,25 +53,50 @@ export function BuildingCard({
       >
         ×
       </button>
-      {facts === "loading" ? <p>Looking the building up…</p> : <Facts facts={facts} />}
+      {fleet !== null && (
+        <p className="mr-8 mb-2 rounded border border-heat/50 px-2 py-1 text-xs text-paper/80">
+          {`Fleet simulation: here this building gets ${fleet.servers} servers, as synthetic house ${fleet.id}, one of ${FLEET.length} in Basel and Bern. An illustration: the building and the published figures below are real, the fleet is not.`}
+        </p>
+      )}
+      {facts === "loading" ? (
+        <p>Looking the building up…</p>
+      ) : (
+        <Facts facts={facts} month={month} />
+      )}
     </aside>
   );
 }
 
-function Facts({ facts }: { facts: BuildingFacts }) {
-  const { register, roof, hectare } = facts;
-  if (register === null && roof === null && hectare === null) {
+function Facts({ facts, month }: { facts: BuildingFacts; month: number }) {
+  const { register, roof, hectare, osmSolar, group } = facts;
+  if (register === null && roof === null && hectare === null && osmSolar === null) {
     return <p>No published data found for this building.</p>;
   }
+  // Sonnendach's figure is for its whole building, which can be a block of several GWR
+  // buildings. With the group known, this building gets its share by floor area.
+  const area = register?.heatedAreaM2 ?? null;
+  const share = group !== null && group.egids.length > 1 ? shareOf(group, area) : null;
+  const scale = share ?? 1;
+  const groupHeatKwh = roof === null ? 0 : roof.heatingKwh + roof.hotWaterKwh;
   const estimate =
     roof === null
       ? null
       : heatEstimate(
-          roof.heatingKwh,
-          roof.hotWaterKwh,
+          roof.heatingKwh * scale,
+          roof.hotWaterKwh * scale,
           register?.heatingKind ?? "unknown",
-          register?.heatedAreaM2 ?? null,
+          area,
         );
+  // Then the per-m² figure may divide a whole block by one address: show it only when it is
+  // plausible, and call the total what it is. The figure is a group figure when the group is unknown, or when it has several buildings but
+  // this one has no floor area to take a share by.
+  const groupFigure = group === null || (group.egids.length > 1 && share === null);
+  const perM2 =
+    estimate?.perSquareMetre === null || estimate === null
+      ? null
+      : groupFigure && estimate.perSquareMetre > HIGH_KWH_PER_M2
+        ? null
+        : estimate.perSquareMetre;
   return (
     <>
       <h2 className="text-lg font-semibold">{register?.address ?? "Building"}</h2>
@@ -63,13 +104,29 @@ function Facts({ facts }: { facts: BuildingFacts }) {
 
       {estimate !== null && (
         <section className="mt-3">
-          <h3 className="font-medium text-heat">Heat a year, estimated</h3>
+          <h3 className="font-medium text-heat">
+            {share !== null
+              ? "Heat a year, estimated, this building's share"
+              : groupFigure
+                ? "Heat a year, SFOE estimate for the building group"
+                : "Heat a year, estimated"}
+          </h3>
           <p className="text-2xl font-semibold">{formatEnergy(estimate.heatKwh)}</p>
           <dl className="mt-1 space-y-0.5">
-            {estimate.perSquareMetre !== null && (
+            {perM2 !== null && (
               <Row
                 label="Per m² heated floor"
-                value={`${Math.round(estimate.perSquareMetre)} kWh`}
+                value={
+                  perM2 > HIGH_KWH_PER_M2
+                    ? `${Math.round(perM2)} kWh, high, check`
+                    : `${Math.round(perM2)} kWh`
+                }
+              />
+            )}
+            {share !== null && group !== null && (
+              <Row
+                label={`SFOE figure for ${group.egids.length} buildings under one roof`}
+                value={formatEnergy(groupHeatKwh)}
               />
             )}
             <Row
@@ -79,11 +136,22 @@ function Facts({ facts }: { facts: BuildingFacts }) {
               }
             />
           </dl>
+          {roof !== null && (
+            <MonthSlider
+              key={register?.egid ?? "building"}
+              heatingKwh={roof.heatingKwh * scale}
+              hotWaterKwh={roof.hotWaterKwh * scale}
+              degreeDays={roof.degreeDays}
+              initialMonth={month}
+            />
+          )}
           <Source>
-            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023). Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
+            {`Estimate. Space heating and hot water: SFOE Sonnendach, computed from GWR data (data status 21.02.2023), for a whole swissBUILDINGS3D building${share !== null ? `, here split among its ${group?.egids.length ?? 0} GWR buildings by floor area (our split)` : groupFigure ? `; it may cover neighbouring buildings too, so the per-m² figure shows only when plausible` : ""}. Months by the roof's heating degree days, hot water evenly. Energy bought: ${estimate.efficiencySource ?? "no efficiency for this heating"}.`}
           </Source>
         </section>
       )}
+
+      {estimate !== null && <WithKachel heatKwh={estimate.heatKwh} />}
 
       {register !== null && (
         <section className="mt-3">
@@ -112,6 +180,18 @@ function Facts({ facts }: { facts: BuildingFacts }) {
         </section>
       )}
 
+      <section className="mt-3">
+        <h3 className="font-medium">Solar already there</h3>
+        <p>
+          {osmSolar === null
+            ? "OpenStreetMap's Overpass service did not answer just now; click the building again later."
+            : describeSolar(osmSolar) === "none"
+              ? `None mapped within ${SOLAR_RADIUS_M} m. OpenStreetMap is incomplete, so there may still be some.`
+              : `Mapped within ${SOLAR_RADIUS_M} m: ${describeSolar(osmSolar)}.`}
+        </p>
+        <Source>Source: © OpenStreetMap contributors (ODbL), via Overpass.</Source>
+      </section>
+
       {hectare !== null && (
         <section className="mt-3">
           <h3 className="font-medium">The hectare around it</h3>
@@ -130,5 +210,40 @@ function Facts({ facts }: { facts: BuildingFacts }) {
         </section>
       )}
     </>
+  );
+}
+
+/** What Kachel home servers could do here, scaled from the scheduler's reference house. */
+function WithKachel({ heatKwh }: { heatKwh: number }) {
+  const k = kachelEstimate(heatKwh);
+  return (
+    <section className="mt-3 rounded-md border border-heat/50 p-3">
+      <h3 className="font-medium text-heat">If Kachel heated the whole building, estimated</h3>
+      {k === null ? (
+        <p>Too little heat for one 1 kW server.</p>
+      ) : (
+        <dl className="mt-1 space-y-0.5">
+          <Row label="Servers needed, 1 kW each" value={`about ${k.servers}`} />
+          <Row
+            label="Server heat used"
+            value={`${formatEnergy(k.heatFromServersKwh)} (${Math.round(k.sharePct)}%)`}
+          />
+          <Row label="Electricity the servers draw" value={formatEnergy(k.electricityKwh)} />
+          <Row label="A year, before hardware" value={formatChf(k.beforeHardwareChf)} />
+          <Row label="A year, after hardware (mid)" value={formatChf(k.afterHardwareChf.mid)} />
+          <Row label="… cheap hardware (low)" value={formatChf(k.afterHardwareChf.low)} />
+          <Row label="… dear hardware (high)" value={formatChf(k.afterHardwareChf.high)} />
+          <Row label="Payback (mid)" value={`${k.paybackYearsMid} years`} />
+        </dl>
+      )}
+      <p className="mt-1 text-xs text-paper/60">
+        {
+          "Estimate, scaled from Kachel's Basel reference house (6 servers, 31,231 kWh, Basel 2025 weather) in proportion to this building's heat. It assumes interruptible AI work is always waiting and 0.50 CHF a server-hour. "
+        }
+        <a href={ASSUMPTIONS_URL} target="_blank" rel="noreferrer" className="underline">
+          Assumptions and sources
+        </a>
+      </p>
+    </section>
   );
 }

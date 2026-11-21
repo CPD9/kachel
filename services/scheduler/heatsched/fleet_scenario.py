@@ -15,9 +15,11 @@ def _between(rng, lo_hi, integer=False):
     return int(rng.integers(lo, hi + 1)) if integer else float(rng.uniform(lo, hi))
 
 
-def make_sites(profile, cfg):
-    """`profile` is heatsched.profile.build_profile for the city's weather (one row per hour)."""
-    f, rng = cfg["fleet"], np.random.default_rng(cfg["fleet"]["seed"])
+def make_sites(profile, cfg, city="Basel"):
+    """`profile` is heatsched.profile.build_profile for the city's weather (one row per hour);
+    `city` names an entry of config.json: fleet.cities, which gives its seed, ids and area."""
+    f, c = cfg["fleet"], cfg["fleet"]["cities"][city]
+    rng = np.random.default_rng(c["seed"])
     h = cfg["server"]["power_kw"] * cfg["server"]["heat_recovery"]
     heat = profile["heat_kwh"].to_numpy()
     per_day = profile.groupby("date")["hour"].transform("count").to_numpy()
@@ -27,11 +29,11 @@ def make_sites(profile, cfg):
         dhw = _between(rng, f["hot_water_kwh_per_day"])
         demand = tuple(float(x) for x in np.round(scale * heat + dhw / per_day, 4))
         sites.append(Site(
-            id=f"house-{i + 1:02d}",
-            name=f"Synthetic house {i + 1:02d}",
-            city=f["city"],
-            lat=round(_between(rng, f["latitude"]), 5),
-            lon=round(_between(rng, f["longitude"]), 5),
+            id=f"{c['id_prefix']}-{i + 1:02d}",
+            name=f"{c['name_prefix']} {i + 1:02d}",
+            city=city,
+            lat=round(_between(rng, c["latitude"]), 5),
+            lon=round(_between(rng, c["longitude"]), 5),
             n_servers=_between(rng, f["servers_per_house"], integer=True),
             tank_kwh=round(_between(rng, f["tank_kwh"]), 1),
             heat_per_server=h,

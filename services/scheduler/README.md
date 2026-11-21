@@ -24,27 +24,34 @@ two day CSVs are committed; rerun `make year` after any model change.
 
 ## The fleet: many houses, one stream of jobs
 
-`make fleet` runs `heatsched/fleet.py` on 50 synthetic houses in Basel (`config.json: fleet`), each with its own
-servers, tank, hot water and size of heating demand, on the real Basel 2025 weather. Every hour each waiting job goes,
-least slack first, to the house with the most useful heat room left. It waits while its deadline allows and goes to
-an ordinary data centre only when no house can use its heat in time. Each day also runs with every job kept at the
-house it was sent to, for comparison.
+`make fleet` runs `heatsched/fleet.py` on synthetic houses (`config.json: fleet`): 50 in Basel, 50 in Bern, and the
+100 as one fleet. Each house has its own servers, tank, hot water and size of heating demand, on the real 2025 weather
+of its city. Every hour each waiting job goes, least slack first, to the house with the most useful heat room left.
+It waits while its deadline allows and goes to an ordinary data centre only when no house can use its heat in time.
+Each day also runs with every job kept at the house it was sent to, for comparison.
 
-| Day (1,000 jobs)  | Compute heat used | House heat covered | Moved to a data centre | Kept at its house: moved | Deadline misses |
-| ----------------- | ----------------- | ------------------ | ---------------------- | ------------------------ | --------------- |
-| 13 January (cold) | 100 %             | 19 %               | 0                      | 1                        | 0               |
-| 15 July           | 55 %              | 100 %              | 331                    | 489                      | 0               |
+| Fleet, day                  | Jobs  | Compute heat used | House heat covered | Moved to a data centre | Kept at its house: moved | Deadline misses |
+| --------------------------- | ----- | ----------------- | ------------------ | ---------------------- | ------------------------ | --------------- |
+| Basel, 13 January (coldest) | 1,000 | 100 %             | 19 %               | 0                      | 1                        | 0               |
+| Basel, 15 July              | 1,000 | 55 %              | 100 %              | 331                    | 489                      | 0               |
+| Bern, 14 January (coldest)  | 1,000 | 100 %             | 16 %               | 0                      | 0                        | 0               |
+| Bern, 15 July               | 1,000 | 56 %              | 100 %              | 338                    | 472                      | 0               |
+| Basel and Bern, 13 January  | 2,000 | 100 %             | 17 %               | 0                      | 5                        | 0               |
+| Basel and Bern, 15 July     | 2,000 | 56 %              | 100 %              | 636                    | 949                      | 0               |
 
 Compute heat used is the share of the jobs' heat that went into a house. House heat covered is the share of the
 houses' heat demand that day the jobs met; the rest came from their own heating. In January the job stream is far
-smaller than what 50 houses could absorb.
+smaller than what the houses could absorb. Each run takes its first city's coldest January day: 13 January in Basel,
+14 January in Bern, so the combined run uses Basel's.
 
 In July the houses can only take what hot water and the tanks absorb, so routing cannot raise the heat used much;
-it sends a third fewer jobs off-site by putting each where there is room. Outputs in `out/`: `fleet_sites.csv`,
-`fleet_jobs_<day>.csv` (where each job was sent, where it ran, when it moved), `fleet_hourly_<day>.csv` (each house's
-heat by the hour), `fleet_placements_<day>.csv` (each job's house, hour by hour) and `fleet_kpis.json`. Every house is made up. Bern needs its own weather file first.
+it sends about a third fewer jobs off-site by putting each where there is room. Outputs in `out/`, with `<run>` =
+`fleet` (Basel), `fleet_bern` or `fleet_basel_bern`: `<run>_sites.csv`, `<run>_jobs_<day>.csv` (where each job was
+sent, where it ran, when it moved), `<run>_hourly_<day>.csv` (each house's heat by the hour),
+`<run>_placements_<day>.csv` (each job's house, hour by hour) and `<run>_kpis.json`. Every house is made up.
 
-`fleet_write.py --day january --hour 18` puts one hour of a fleet day into the local Supabase (`make dev`): the 50
+`fleet_write.py --day january --hour 18` (add `--run fleet_bern` or `--run fleet_basel_bern` for the others) puts
+one hour of a fleet day into the local Supabase (`make dev`): the 50
 houses, their servers, their heat for the day and the newest jobs, each on the house it landed on or marked as moved
 to a data centre. It reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the environment
 (`services/agent/.env`); `--dry-run` prints what it would write.
@@ -52,7 +59,8 @@ to a data centre. It reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from t
 ## Before you present: three things to replace
 
 1. `config.json → prices.electricity_chf_per_kwh` is a placeholder (Swiss H4 median 2026, 27.7 Rp). Put in IWB Basel H4.
-2. Run on the case CSV. The numbers in this folder were produced with `--synthetic` weather and are previews only.
+2. Run on the case CSV. The numbers in `out/` (`kpis.json`, the day CSVs, the fleet runs) come from the Open-Meteo archive
+   for 2025 (Basel, and Bern for its fleet), not from the case profile.
 3. Run `measure.py` on your own machine with a stated power figure; install sentence-transformers so the job is real inference.
    Our run, its method and the cited second job type are in `docs/measurements.md` and `docs/job-types.md`.
 

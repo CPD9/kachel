@@ -23,14 +23,18 @@ from PIL import Image, ImageDraw, ImageFilter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import compose as c
+from snowdata import snow_hours
 
 HOUR = 36  # frames per hour: 24 h in 36 s
 FADE = 12
 HALF = c.W // 2
-CREDIT = (
-    "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river outline "
-    "approximated. Heat demand: SFOE, hectare cells, data status 2013."
-)
+CREDITS = {
+    "basel": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river outline "
+    "approximated. Heat demand: SFOE, hectare cells, data status 2013.",
+    "bern": "Buildings: swissBUILDINGS3D 3.0 (2024 ed.), © swisstopo. Terrain and river course "
+    "approximated.",
+}
+CITY = {"name": "basel", "snow": None}  # snow: {hour: (depth_m, snowfall_cm)} when on
 
 
 def overlay(r, ctx, minute=0):
@@ -44,7 +48,10 @@ def overlay(r, ctx, minute=0):
         max(d.textlength(t, font=c.F["hour"]), d.textlength(date, font=c.F["body"]))
         + 60
     )
-    c.rounded(d, (HALF - w / 2, 28, HALF + w / 2, 196), c.PANEL)
+    city = CITY["name"].title()
+    sub = f"{city} reference house \u00b7 {city} {r['time'][:4]} weather"
+    w = max(w, d.textlength(sub, font=c.F["small"]) + 60)
+    c.rounded(d, (HALF - w / 2, 28, HALF + w / 2, 226), c.PANEL)
     d.text(
         (HALF - d.textlength(t, font=c.F["hour"]) / 2, 34),
         t,
@@ -57,12 +64,18 @@ def overlay(r, ctx, minute=0):
         font=c.F["body"],
         fill=c.DIM,
     )
-    # Left: outside.
+    d.text(
+        (HALF - d.textlength(sub, font=c.F["small"]) / 2, 184),
+        sub,
+        font=c.F["small"],
+        fill=c.AMBER,
+    )
+    # Left: outside, the weather and demand of this city's run.
     temp = float(r["temp_c"])
     demand = float(r["demand_kwh"])
     c.rounded(d, (28, 28, 400, 160), c.PANEL)
-    d.text((50, 40), "Basel, outside", font=c.F["bodyb"], fill=c.INK)
-    d.text((50, 78), f"{c.num(temp)} °C", font=c.F["date"], fill=c.INK)
+    d.text((50, 40), f"{city}, outside", font=c.F["bodyb"], fill=c.INK)
+    d.text((50, 78), f"{c.num(temp)} \u00b0C", font=c.F["date"], fill=c.INK)
     d.text(
         (50, 126),
         f"House needs {c.num(demand)} kWh this hour",
@@ -75,10 +88,10 @@ def overlay(r, ctx, minute=0):
     heat = float(r["heat_used"])
     backup = float(r["backup_kwh"])
     x0 = c.W - 420
-    c.rounded(
-        d, (x0, 28, c.W - 28, 300 + (50 if "paused" in r["reason"] else 0)), c.PANEL
-    )
-    d.text((x0 + 22, 40), "Basement plant room", font=c.F["bodyb"], fill=c.INK)
+    # Bottom right, over the floor, clear of the pipes and ceiling.
+    top = c.H - 28 - 272 - (50 if "paused" in r["reason"] else 0)
+    c.rounded(d, (x0, top, c.W - 28, c.H - 28), c.PANEL)
+    d.text((x0 + 22, top + 12), "Basement plant room", font=c.F["bodyb"], fill=c.INK)
     items = [
         (
             "Servers running",
@@ -95,7 +108,7 @@ def overlay(r, ctx, minute=0):
     ]
     if "paused" in r["reason"]:
         items.append(("Backlog", "paused: tank full", c.AMBER))
-    y = 88
+    y = top + 60
     for k, v, col in items:
         d.text((x0 + 22, y), k, font=c.F["small"], fill=c.DIM)
         d.text(
@@ -107,8 +120,10 @@ def overlay(r, ctx, minute=0):
         y += 50
     # Attribution, as on the dusk still.
     f = c.F["small"].font_variant(size=15)
-    lines = CREDIT.split(". ", 1)
+    lines = CREDITS[CITY["name"]].split(". ", 1)
     lines = [lines[0] + ".", lines[1]]
+    if CITY["snow"] is not None:
+        lines[1] += " Snow: Open-Meteo."
     tw = max(d.textlength(t, font=f) for t in lines)
     c.rounded(
         d, (HALF - 16 - tw - 24, c.H - 66, HALF - 16, c.H - 14), (16, 19, 24, 200), 6
@@ -171,7 +186,28 @@ def halves(fr, r, minute=0, step=None):
     return lim, rim, len(left)
 
 
+def snowfall(img, cm, phase):
+    """Falling flakes over the outside half, as many as the hour's snowfall asks for."""
+    n = min(600, int(120 * cm))
+    if n <= 0:
+        return img
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    for k in range(n):
+        h = (k * 2654435761) % 2**32
+        x0, y0 = h % HALF, (h >> 12) % c.H
+        size = 1.5 + (h >> 24) % 3
+        fall = 1.2 + size * 0.8
+        x = (x0 + 12 * ((phase * 0.02 + k) % 6.283)) % HALF
+        y = (y0 + phase * fall) % c.H
+        d.ellipse((x - size, y - size, x + size, y + size), fill=(245, 247, 250, 200))
+    layer = layer.filter(ImageFilter.GaussianBlur(0.8))
+    return Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
+
+
 def assemble(lim, rim, r, ctx, t, phase, minute=0):
+    if CITY["snow"]:
+        lim = snowfall(lim, CITY["snow"].get(int(r["hour"]), (0.0, 0.0))[1], phase)
     right, to_px = push_half(rim, t)
     hk = float(r["heat_produced"]) / ctx["heat_full"]
     right = flow_dots(right, ctx["flow"], to_px, phase, 0.6 + 3.4 * hk if hk > 0 else 0)
@@ -185,7 +221,11 @@ def assemble(lim, rim, r, ctx, t, phase, minute=0):
 
 def context(fr, day):
     out = Path(day).parent
-    cfg = json.loads((out.parent / "config.json").read_text())
+    cfg = next(
+        json.loads((d / "config.json").read_text())
+        for d in (out.parent, out.parent.parent)
+        if (d / "config.json").exists()
+    )
     kpis = json.loads((out / "kpis.json").read_text())
     n = int(kpis["servers_per_house"])
     return {
@@ -216,6 +256,10 @@ def main():
     ap.add_argument("--day", help="that day's CSV")
     ap.add_argument("--mp4")
     ap.add_argument("--sheet", required=True)
+    ap.add_argument("--city", default="basel")
+    ap.add_argument(
+        "--snow", action="store_true", help="snow credit and falling flakes"
+    )
     ap.add_argument(
         "--preview",
         nargs="+",
@@ -223,6 +267,9 @@ def main():
         help="DIR,CSV,HH:MM;HH:MM ... : a contact sheet of those times only, no MP4",
     )
     a = ap.parse_args()
+    CITY["name"] = a.city
+    if a.snow:
+        CITY["snow"] = snow_hours(a.day or a.preview[0].split(",")[1], a.city)
     if a.preview:
         shots = []
         for spec in a.preview:
@@ -268,7 +315,7 @@ def main():
                     t = (j + 1) / (fade + 1)
                     cl, cr = Image.blend(prev[0], lim, t), Image.blend(prev[1], rim, t)
                 hour_t = int(r["hour"]) + (s * per + j) / HOUR
-                img = assemble(cl, cr, r, ctx, hour_t, n)
+                img = assemble(cl, cr, r, ctx, hour_t, n, 60 * s // steps)
                 ff.stdin.write(img.tobytes())
                 n += 1
                 if s == 0 and j == per - 1 and int(r["hour"]) in (0, 7, 9, 13, 17, 21):

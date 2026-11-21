@@ -90,6 +90,9 @@ importers:
       '@kachel/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@kachel/economics':
+        specifier: workspace:*
+        version: link:../../packages/economics
       '@kachel/ui':
         specifier: workspace:*
         version: link:../../packages/ui

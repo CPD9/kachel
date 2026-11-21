@@ -1,5 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { BASIS, BUILDINGS, TARIFFS, building, estimate, tariffFor } from "./index";
+import summary from "../../../docs/economics/data/summary.json" with { type: "json" };
+import { BASIS, BUILDINGS, SOLAR, TARIFFS, building, estimate, tariffFor } from "./index";
+
+describe("solar", () => {
+  it("keeps the roof's saving and payback as on the economics page", () => {
+    const base = SOLAR.byPrice.find((p) => p.chfPerKwh === 0.277);
+    expect(base?.setups.pv.savingChfPerYear).toBe(2434);
+    expect(base?.setups.pv.paybackYearsMid).toBe(8.2);
+    expect(base?.setups.pv.ownPvShareOfServerPowerPct).toBe(18.6);
+    expect(base?.setups.none.savingChfPerYear).toBeNull();
+    expect(SOLAR.roofKwp).toBe(10);
+  });
+
+  it("matches the economics page's summary.json", () => {
+    const solar = summary.solar as Record<string, Record<string, { saving_chf_per_year?: number }>>;
+    for (const p of SOLAR.byPrice) {
+      const page = solar[p.chfPerKwh.toFixed(4)];
+      expect(p.setups.pv.savingChfPerYear).toBe(page?.["pv"]?.saving_chf_per_year);
+      expect(p.setups.pv_battery.savingChfPerYear).toBe(page?.["pv_battery"]?.saving_chf_per_year);
+    }
+  });
+});
 
 describe("reference buildings", () => {
   it("keeps the reference house as on the economics page", () => {

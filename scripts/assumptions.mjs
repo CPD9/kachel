@@ -12,7 +12,7 @@ export const PAGE = "docs/assumptions.md";
 
 /** Sources, numbered as in docs/economics/README.md#sources. */
 const BRIEF = "[1] DigitalHeat case brief";
-const WEATHER = "Open-Meteo archive, Basel 2025 (CC BY 4.0)";
+const WEATHER = "Open-Meteo archive, 2025 (CC BY 4.0)";
 const ELCOM = "[3] ElCom 2026 H4 median, a placeholder for Basel (IWB)";
 const FIELD_COP = "[4] Fraunhofer ISE field test";
 const PCSP = "[9] PCSP server prices 2026";
@@ -105,11 +105,8 @@ export const VALUES = {
 
 /** The synthetic fleet for make fleet (config.json: fleet). A [low, high] pair is one value. */
 const FLEET_VALUES = {
-  houses: ["Houses in the fleet", "", show.plain],
-  seed: ["Random seed that draws the houses and jobs", "", show.plain],
-  city: ["City whose weather every house gets", "", show.plain, WEATHER],
-  latitude: ["Latitude range of the houses", "°N", show.range],
-  longitude: ["Longitude range of the houses", "°E", show.range],
+  houses: ["Houses per city", "", show.plain],
+  seed: ["Random seed that draws the jobs", "", show.plain],
   servers_per_house: ["Servers per house", "", show.range],
   tank_kwh: ["Hot-water tank", "kWh", show.range],
   space_heating_scale: ["Space heating, times the reference house", "", show.range],
@@ -127,6 +124,27 @@ const FLEET_VALUES = {
 
 for (const [key, [what, unit, print, source]] of Object.entries(FLEET_VALUES)) {
   VALUES[`fleet.${key}`] = [what, unit, print, source ?? GUESS];
+}
+
+/** Each fleet city (config.json: fleet.cities) and each fleet run (fleet.runs). */
+const CITY_VALUES = {
+  weather: ["weather file", "", show.plain, WEATHER],
+  seed: ["random seed that draws the houses", "", show.plain],
+  id_prefix: ["house id prefix", "", show.plain],
+  name_prefix: ["house name prefix", "", show.plain],
+  latitude: ["latitude range of the houses", "°N", show.range],
+  longitude: ["longitude range of the houses", "°E", show.range],
+};
+
+for (const city of ["Basel", "Bern"]) {
+  for (const [key, [what, unit, print, source]] of Object.entries(CITY_VALUES)) {
+    VALUES[`fleet.cities.${city}.${key}`] = [`${city}: ${what}`, unit, print, source ?? GUESS];
+  }
+}
+
+const runs = (v) => v.join(" and ");
+for (const run of ["fleet", "fleet_bern", "fleet_basel_bern"]) {
+  VALUES[`fleet.runs.${run}`] = [`Run ${run}: one fleet of`, "", runs, GUESS];
 }
 
 const JOB_VALUES = {

@@ -1,0 +1,2 @@
+# The paper scripts follow the agent's lint rules (see lint-staged in package.json).
+extend = "../../services/agent/pyproject.toml"
