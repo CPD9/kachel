@@ -3,11 +3,14 @@ import {
   CalendarRange,
   ArrowRight,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Columns2,
   Columns3,
   Droplet,
   Fan,
   Flame,
+  Hand,
   Heater,
   Landmark,
   Layers,
@@ -17,6 +20,7 @@ import {
   Server,
   ShowerHead,
   SlidersHorizontal,
+  Sparkles,
   Square,
   Timer,
   TrendingUp,
@@ -33,10 +37,13 @@ import {
   FUELS,
   defaultParams,
   type Params,
+  RACKS,
+  type Rack,
   type Result,
   type Windows,
   size,
 } from "./sizing";
+import { RackArt } from "./RackArt";
 import { lightCard as card, lightLabel as label } from "./ui";
 
 type Icon = ComponentType<{ size?: number; className?: string }>;
@@ -442,60 +449,102 @@ function ProjectionCard({ r }: { r: Result }) {
   );
 }
 
-/** Bottom right: the rack we recommend, and how it covers the home's heat. */
-function ProductCard({ r, answers }: { r: Result; answers: Answers }) {
-  const kWh = (x: number) => `${Math.round(x / 100) / 10}k kWh`;
+/** Bottom right: the rack, drawn, with the other models to switch to; the finances follow the pick. */
+function ProductCard({
+  r,
+  answers,
+  onPick,
+}: {
+  r: Result;
+  answers: Answers;
+  onPick: (rack: Rack) => void;
+}) {
+  const i = RACKS.findIndex((k) => k.id === r.rack.id);
+  const best = r.rack.id === r.bestFit.id;
+  const smaller = r.rack.kw < r.bestFit.kw;
+  const go = (d: number) => {
+    const next = RACKS[(i + d + RACKS.length) % RACKS.length];
+    if (next) onPick(next);
+  };
+  const arrow =
+    "pointer-events-auto absolute top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white/80 backdrop-blur hover:bg-white/20";
   return (
     <article
       className={`${card} absolute right-6 bottom-6 w-[300px]`}
       style={{ animationDelay: "220ms" }}
     >
-      <div className="flex items-start justify-between px-2 pt-2">
-        <div>
-          <p className={`${label} text-clay`}>
-            <Server size={11} /> We recommend
-          </p>
-          <h3 className="mt-1 text-[19px] leading-tight font-semibold">{r.rack.name}</h3>
-          <p className="mt-0.5 text-[11.5px] text-muted">
-            {r.rack.kw} kW · {r.rack.servers} servers · {r.rack.size}
-          </p>
+      {/* The rack itself, on a dark stage */}
+      <div className="relative h-40 overflow-hidden rounded-[20px] bg-[radial-gradient(120%_90%_at_50%_100%,#2a2d33,#111316)]">
+        {/* Keyed so a new model fades in */}
+        <div key={r.rack.id} className="absolute inset-x-6 inset-y-1 animate-card-in">
+          <RackArt rack={r.rack} />
         </div>
+        <span
+          className={`absolute top-2 left-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+            best ? "bg-clay text-white" : "bg-white/15 text-white/85"
+          }`}
+        >
+          {best ? <Sparkles size={11} /> : <Hand size={11} />}
+          {best ? "Best fit" : "Your pick"}
+        </span>
+        <span className="absolute top-2 right-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/85 tabular-nums">
+          {r.rack.kw} kW
+        </span>
+        <button aria-label="Previous model" onClick={() => go(-1)} className={`${arrow} left-2`}>
+          <ChevronLeft size={15} />
+        </button>
+        <button aria-label="Next model" onClick={() => go(1)} className={`${arrow} right-2`}>
+          <ChevronRight size={15} />
+        </button>
       </div>
 
-      {/* The rack itself, simple: a column of server slots glowing warm */}
-      <div className="mx-2 mt-3 flex items-end gap-3 rounded-2xl bg-[#1b1d21] p-3">
-        <div className="grid w-14 gap-[3px] rounded-md bg-black/60 p-1.5">
-          {Array.from({ length: Math.min(r.rack.servers, 10) }, (_, i) => (
-            <span
-              key={i}
-              className="h-1.5 animate-pulse rounded-[2px] bg-gradient-to-r from-clay to-amber-400"
-              style={{ animationDelay: `${i * 90}ms` }}
-            />
-          ))}
-        </div>
-        <div className="text-[11px] text-white/70">
-          <p className="text-[22px] leading-none font-semibold text-white tabular-nums">
+      <div className="px-2 pt-2.5">
+        <h3 className="text-[17px] leading-tight font-semibold">{r.rack.name}</h3>
+        <p className="mt-0.5 text-[11px] text-muted">
+          {r.rack.servers} servers · {r.rack.size}
+        </p>
+      </div>
+
+      {/* All models; the best fit marked with a dot */}
+      <div className="mx-1 mt-2 grid grid-cols-4 gap-1 rounded-full bg-black/[0.05] p-0.5">
+        {RACKS.map((k) => (
+          <button
+            key={k.id}
+            onClick={() => onPick(k)}
+            className={`relative rounded-full py-1 text-[11px] font-semibold transition-colors ${
+              k.id === r.rack.id ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
+            }`}
+          >
+            {k.id.toUpperCase()}
+            {k.id === r.bestFit.id && (
+              <span className="absolute top-1 right-2 size-1.5 rounded-full bg-clay" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* How much of the heat it covers, and what that means */}
+      <div className="mt-3 px-2">
+        <div className="flex items-baseline justify-between text-[11px]">
+          <span className="text-muted">Covers your yearly heat</span>
+          <span className="text-[15px] font-semibold tabular-nums">
             {Math.round(r.coverage * 100)}%
-          </p>
-          of your yearly heat from the servers. Your {FUELS[answers.fuel].name.toLowerCase()} stays
-          as backup.
+          </span>
         </div>
+        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/[0.07]">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-clay to-amber-400 transition-[width] duration-500"
+            style={{ width: `${r.coverage * 100}%` }}
+          />
+        </div>
+        <p className="mt-1.5 mb-1 text-[10.5px] leading-snug text-muted">
+          {best
+            ? `Sized for your ${r.peakKw.toFixed(1)} kW peak. Your ${FUELS[answers.fuel].name.toLowerCase()} stays as backup.`
+            : smaller
+              ? `Smaller than your ${r.peakKw.toFixed(1)} kW peak: your ${FUELS[answers.fuel].name.toLowerCase()} does more of the work.`
+              : "More than you need: the extra heat has nowhere to go."}
+        </p>
       </div>
-
-      <dl className="mt-2.5 grid grid-cols-3 gap-1 px-2 pb-1 text-[10.5px]">
-        <div>
-          <dt className="text-muted">Heating</dt>
-          <dd className="font-semibold tabular-nums">{kWh(r.spaceHeat)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted">Hot water</dt>
-          <dd className="font-semibold tabular-nums">{r.hotWater ? kWh(r.hotWater) : "—"}</dd>
-        </div>
-        <div>
-          <dt className="text-muted">Peak load</dt>
-          <dd className="font-semibold tabular-nums">{r.peakKw.toFixed(1)} kW</dd>
-        </div>
-      </dl>
     </article>
   );
 }
@@ -527,7 +576,9 @@ export function Assessment({
   const params = tuned?.fuel === answers.fuel ? tuned.params : defaultParams(answers.fuel);
   const setParam = <K extends keyof Params>(k: K, v: Params[K]) =>
     setTuned({ fuel: answers.fuel, params: { ...params, [k]: v } });
-  const result = size(answers, params);
+  // A model picked instead of the best fit; null keeps the best fit
+  const [picked, setPicked] = useState<Rack | null>(null);
+  const result = size(answers, params, picked);
 
   return (
     <div className="pointer-events-none absolute inset-0 font-sans">
@@ -540,10 +591,13 @@ export function Assessment({
             params={params}
             onParam={setParam}
             onReset={() => setTuned(null)}
-            onRestart={() => setStep(0)}
+            onRestart={() => {
+              setPicked(null);
+              setStep(0);
+            }}
           />
           <ProjectionCard r={result} />
-          <ProductCard r={result} answers={answers} />
+          <ProductCard r={result} answers={answers} onPick={setPicked} />
         </>
       ) : (
         <>

@@ -91,7 +91,10 @@ export type Result = {
   hotWater: number;
   demand: number;
   peakKw: number;
+  /** The rack these numbers are for: the best fit, or the one picked instead. */
   rack: Rack;
+  /** The smallest rack that covers the peak load. */
+  bestFit: Rack;
   /** Share of the yearly heat the rack covers, 0–1; the old heating tops up the rest. */
   coverage: number;
   savingsPerYear: number;
@@ -101,12 +104,17 @@ export type Result = {
   cumulative: number[];
 };
 
-export function size(a: Answers, p: Params = defaultParams(a.fuel)): Result {
+export function size(
+  a: Answers,
+  p: Params = defaultParams(a.fuel),
+  pick: Rack | null = null,
+): Result {
   const spaceHeat = AREA * DEMAND_PER_M2[a.windows] * EMITTER_FACTOR[a.emitters];
   const hotWater = a.hotWater ? a.residents * HOT_WATER_PER_PERSON : 0;
   const demand = spaceHeat + hotWater;
   const peakKw = demand / FULL_LOAD_HOURS;
-  const rack = RACKS.find((r) => r.kw >= peakKw) ?? TWIN_XL;
+  const bestFit = RACKS.find((r) => r.kw >= peakKw) ?? TWIN_XL;
+  const rack = pick ?? bestFit;
   // Servers run all year, but some heat lands when nobody needs it: cap what counts
   const coverage = Math.min(0.92, (rack.kw * FULL_LOAD_HOURS * 0.95) / demand);
   const covered = demand * coverage;
@@ -124,6 +132,7 @@ export function size(a: Answers, p: Params = defaultParams(a.fuel)): Result {
     demand,
     peakKw,
     rack,
+    bestFit,
     coverage,
     savingsPerYear,
     paybackYears: savingsPerYear > 0 ? net / savingsPerYear : Infinity,
