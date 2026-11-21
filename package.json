@@ -13,8 +13,9 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "readme:check": "node scripts/readme-check.mjs",
-    "prepare": "husky"
+    "readme:check": "node scripts/readme-check.mjs && node scripts/readme-figures.mjs --check",
+    "prepare": "husky",
+    "readme:figures": "node scripts/readme-figures.mjs"
   },
   "devDependencies": {
     "@kachel/config": "workspace:*",

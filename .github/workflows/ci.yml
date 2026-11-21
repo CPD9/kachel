@@ -46,6 +46,7 @@ jobs:
           node-version-file: .nvmrc
       - run: node --test scripts/*.test.mjs
       - run: node scripts/readme-check.mjs
+      - run: node scripts/readme-figures.mjs --check
 
   secrets:
     name: Secrets
