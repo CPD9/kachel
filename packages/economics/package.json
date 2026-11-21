@@ -5,6 +5,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./house": "./src/house.ts",
+    "./model": "./src/model.ts",
+    "./prices": "./src/prices.ts",
     "./buildings.json": "./src/buildings.json"
   },
   "scripts": {

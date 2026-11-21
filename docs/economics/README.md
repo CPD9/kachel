@@ -240,6 +240,18 @@ Hot water adds 12 kWh/m² in a house and 16 in flats [38]; offices take 70 kWh/m
 and 2 hot water, schools 105 and 3, and so on (`config.json`, `house_quality`). A 150 m²
 house from the 1960s needs about 28.7 MWh a year, a new one about 9.1 MWh.
 
+### Electricity price per municipality
+
+The map's card prices the servers' electricity at the building's own municipality's 2027
+household tariff (H4, standard product, total) from ElCom [40], asked when the building is
+clicked (the municipality's BFS number is in the building register) and kept for the session.
+Where a municipality has several operators, it takes their median. Without an answer it uses
+the tariffs saved for every municipality of Basel-Stadt and Bern
+(`packages/economics/src/prices.json`, from `node scripts/elcom-prices.mjs`), and elsewhere
+ElCom's Swiss median, 26.557 Rp. The card names the source. Basel pays 33.42 Rp, the city of
+Bern 31.11 Rp, and 192 of the canton of Bern's 333 municipalities (BKW) 25.59 Rp. ElCom's API
+refuses calls from other websites, so the map's dev and preview servers pass them on (`/elcom`).
+
 ## Sources
 
 1. DigitalHeat case brief, reference house: 35 kWh tank, 12 kWh hot water a day, 1 kW server,
@@ -370,6 +382,9 @@ house from the 1960s needs about 28.7 MWh a year, a new one about 9.1 MWh.
 39. EnergieSchweiz and EnFK, "Gebäude erneuern: Energieverbrauch halbieren", 01.2019: a
     comprehensive renovation at least halves an unrenovated building's energy use
     <https://energie.so.ch/fileadmin/energie/_pdf/Gebaeude_erneuern_-_Energieverbrauch_halbieren.pdf>.
+40. ElCom, electricity tariffs API (GraphQL), 2027, category H4, standard product, total
+    without VAT, by municipality, and the Swiss median (26.557 Rp), fetched 21 Nov 2026
+    <https://www.strompreis.elcom.admin.ch/api/graphql>.
 
 Our own assumptions, with no outside source yet:
 

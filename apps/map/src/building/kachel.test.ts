@@ -6,15 +6,19 @@ describe("Kachel estimate", () => {
   it("gives back the reference house for its own heat demand", () => {
     const e = kachelEstimate(31_231);
     expect(e?.servers).toBe(6);
-    expect(e?.beforeHardwareChf).toBe(summary.net_chf_per_house_before_hardware);
-    expect(e?.afterHardwareChf.mid).toBe(summary.hardware.mid.net_chf_after_hardware);
+    expect(e?.beforeHardwareChf).toBeCloseTo(summary.net_chf_per_house_before_hardware, -1);
+    expect(e?.afterHardwareChf.mid).toBeCloseTo(summary.hardware.mid.net_chf_after_hardware, -1);
+    expect(e?.paybackYears.mid).toBeCloseTo(summary.hardware.mid.payback_years, 1);
     expect(e?.electricityKwh).toBe(summary.base_case.server_hours_sold);
   });
 
   it("scales with whole servers", () => {
     const e = kachelEstimate(3 * 31_231);
     expect(e?.servers).toBe(18);
-    expect(e?.beforeHardwareChf).toBeCloseTo(3 * summary.net_chf_per_house_before_hardware);
+    // Within a few francs a house: summary.json rounds the flows.
+    expect(
+      Math.abs((e?.beforeHardwareChf ?? 0) - 3 * summary.net_chf_per_house_before_hardware),
+    ).toBeLessThan(15);
     expect(e?.heatFromServersKwh).toBeCloseTo(3 * 31_231 * 0.796);
   });
 
