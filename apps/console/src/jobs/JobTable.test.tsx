@@ -1,6 +1,6 @@
 import type { JobFeed, LiveJob, LiveServer, LiveSite } from "@kachel/db";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { JobTable } from "./JobTable";
 
 const site: LiveSite = { id: "h1", name: "Reference house", city: "Basel" };
@@ -137,6 +137,38 @@ describe("JobTable", () => {
     expect(screen.getByText("Paused: no heat sink")).toBeTruthy();
     await push({ ...job, state: "RUNNING", updated_at: "2026-11-21T10:00:09+00:00" });
     expect(screen.getByText("Running")).toBeTruthy();
+  });
+
+  it("lists the jobs as labelled cards on a phone, with no table", async () => {
+    const phone = (query: string) =>
+      ({
+        matches: true,
+        media: query,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList;
+    vi.stubGlobal("matchMedia", phone);
+    try {
+      const { feed } = fakeFeed([job, queued, moved]);
+      render(<JobTable feed={feed} />);
+      await screen.findByText("Embeddings backlog, part 3");
+      expect(screen.queryByRole("table")).toBeNull();
+      const list = screen.getByRole("list", { name: /Your jobs/ });
+      const cards = within(list).getAllByRole("listitem");
+      expect(cards[0]?.textContent).toMatch(/^Evening chat session/);
+
+      const running = screen.getByText("Embeddings backlog, part 3").closest("li") as HTMLElement;
+      expect(within(running).getByText("Running").dataset["state"]).toBe("RUNNING");
+      const fact = (term: string) => within(running).getByText(term).nextElementSibling;
+      expect(fact("House · server")?.textContent).toBe("Reference house, Basel · Server 4");
+      expect(fact("Heat delivered")?.textContent).toBe("0.40 kWh");
+      expect(fact("Deadline")?.textContent).toBe("None");
+
+      const away = screen.getByText("Transcription batch").closest("li") as HTMLElement;
+      expect(within(away).getByText("No house could use its heat in time")).toBeTruthy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("says plainly when the database cannot be reached", async () => {
