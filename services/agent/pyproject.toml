@@ -3,7 +3,7 @@ name = "kachel-agent"
 version = "0.1.0"
 description = "Runs on the server box: pauses and resumes the real job on the heat signal."
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = ["httpx==0.28.1"]
 
 [dependency-groups]
 dev = ["pytest==9.2.0", "ruff==0.17.6"]
