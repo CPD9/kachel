@@ -86,7 +86,9 @@ describe.skipIf(!url || !anonKey || !serviceKey)("Realtime on servers, jobs and 
         await write();
         const got = await hear(heard, (h) => h.table === table, WITHIN_MS);
         expect(got, `${table}: no change within ${WITHIN_MS} ms`).toBeDefined();
-        expect((got?.at ?? Infinity) - start).toBeLessThan(WITHIN_MS);
+        const delay = (got?.at ?? Infinity) - start;
+        console.log(`Realtime: ${table} change heard after ${Math.round(delay)} ms`);
+        expect(delay).toBeLessThan(WITHIN_MS);
       }
     } finally {
       await app.removeChannel(channel);
