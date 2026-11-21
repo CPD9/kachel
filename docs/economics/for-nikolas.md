@@ -66,9 +66,40 @@ agree within about 1.5 points (heat covered: 78.1% here, 79.6% with real weather
 Income minus electricity plus the heat credit leaves about 9,700 CHF per house and year
 with real weather, before anyone pays for the servers themselves.
 
+## Hardware: three cases
+
+The `hardware` block in `config.json` adds what the servers cost. There are three cases, low,
+mid and high, and the results use the mid one. Prices are without VAT; dollar and pound
+prices are converted at the ECB rates of 20 Nov 2026. Each source is listed on the
+[economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md#7-paying-back-the-hardware).
+
+| Input                              | Low           | Mid            | High           | Where it comes from                                                                                                                          |
+| ---------------------------------- | ------------- | -------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Server, about 1 kW                 | 2,518 CHF     | 5,034 CHF      | 6,714 CHF      | Low and high: refurbished GPU host (PCSP, Aug 2026). Mid: new GPU workstation (VRLA Tech, Jun 2026). That each draws about 1 kW is our guess |
+| Water loop to the tank, per server | 496 CHF       | 633 CHF        | 771 CHF        | Water loop price (Watercooling UK, Jul 2026). The heat exchanger costing about the same as a radiator is our guess                           |
+| Fitter, per house                  | 6 h × 103 CHF | 10 h × 120 CHF | 16 h × 148 CHF | Rates from a Swiss heating firm's 2025 price list. Hours are our guess                                                                       |
+| Electrician, per house             | 2 h × 151 CHF | 3 h × 151 CHF  | 4 h × 151 CHF  | Rate from EIT.nordwest (Basel) 2026. Hours are our guess                                                                                     |
+| Upkeep, per house and year         | 190 CHF       | 315 CHF        | 630 CHF        | Service rate and call-out from the same firm. Number of visits is our guess                                                                  |
+| Lifetime                           | 6 years       | 5 years        | 4 years        | Write-off periods used by large cloud providers (Amazon 10-K, SiliconANGLE)                                                                  |
+| Discount rate                      | 3.28%         | 3.75%          | 6%             | Swiss grid WACC 2027 (UVEK); PV WACC 2026; 6% is our guess                                                                                   |
+
+| Result, per house                         | Low        | Mid        | High        | What it means                                                                              |
+| ----------------------------------------- | ---------- | ---------- | ----------- | ------------------------------------------------------------------------------------------ |
+| Paid up front                             | 19,004 CHF | 35,655 CHF | 47,882 CHF  | Six servers, six water loops, fitter and electrician.                                      |
+| Hardware per year                         | 3,731 CHF  | 8,268 CHF  | 14,448 CHF  | The up-front cost spread over the lifetime at the discount rate (an annuity), plus upkeep. |
+| Left per year after hardware              | 5,952 CHF  | 1,415 CHF  | −4,765 CHF  | The 9,683 CHF above, minus hardware per year.                                              |
+| Payback                                   | 2.1 years  | 4.2 years  | 6.6 years   | Years until the discounted yearly cash has repaid the up-front cost.                       |
+| Net present value                         | 31,948 CHF | 6,344 CHF  | −16,512 CHF | Over the lifetime, at the discount rate.                                                   |
+| Break-even per server-hour, with hardware | 0.308 CHF  | 0.454 CHF  | 0.653 CHF   | Lowest price per server-hour that also pays for the hardware.                              |
+
+In short: at 0.50 CHF a server-hour the mid case only just pays, and the high case does not
+pay back within its four-year life. These figures are also in
+[hardware.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/hardware.csv).
+
 ## The charts
 
-These are the same six charts as on the economics page.
+These are the same seven charts as on the economics page. Chart 6 now shows the result after
+hardware (mid case), so its numbers are lower than the 9,700 CHF above.
 
 ![When the house needs heat](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/01_weather_and_demand.png)
 
@@ -82,6 +113,8 @@ These are the same six charts as on the economics page.
 
 ![What moves the result](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/06_what_moves_the_result.png)
 
+![Paying back the hardware](https://raw.githubusercontent.com/CPD9/kachel/main/docs/economics/07_payback.png)
+
 ## The tables behind the charts
 
 Each opens in Excel or Google Sheets (use Download, then open the file).
@@ -93,7 +126,11 @@ Each opens in Excel or Google Sheets (use Download, then open the file).
 - [servers_per_house.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/servers_per_house.csv):
   every result for 1 to 14 servers per house
 - [sensitivity.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/sensitivity.csv):
-  the yearly result when one input moves at a time
+  the yearly result after hardware when one input moves at a time
+- [hardware.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/hardware.csv):
+  up-front cost, payback, NPV and break-even for each hardware case
+- [payback.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/payback.csv):
+  payback years against the compute price, for each hardware case
 - [weather_basel_2025.csv](https://github.com/CPD9/kachel/blob/main/docs/economics/data/weather_basel_2025.csv):
   hourly Basel temperature and sunshine for 2025
 
@@ -105,9 +142,10 @@ and [issue #27](https://github.com/CPD9/kachel/issues/27) on solar and storage.
 These are the questions we are least sure of, and where your background counts most.
 
 1. **Compute price.** What does an hour of pausable 1 kW compute really sell for? We use
-   0.50 CHF and only know the break-even (0.188 CHF).
-2. **Hardware payback.** What does a server cost to buy, fit to a tank and keep running, and
-   over how many years should we write it off? Which discount rate would you use?
+   0.50 CHF. Break-even is 0.188 CHF before hardware and 0.31 to 0.65 CHF with it.
+2. **Hardware payback.** Are our three hardware cases sensible? The fitting hours, the
+   upkeep and the 6% rate for the high case are still our guesses. Which discount rate
+   would you use, and should a home server be written off over 4, 5 or 6 years?
 3. **Tariffs.** Which Basel tariff should the servers pay: the IWB household tariff, a
    time-of-use tariff, or a business tariff? Does cheap night power change when they should
    run?

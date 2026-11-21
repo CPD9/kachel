@@ -1,6 +1,8 @@
 input,low_case,low_chf,high_case,high_chf
-"Compute price, 0.25 to 0.75 CHF per server-hour",0.25,1914,0.75,17451
-Backlog of flexible jobs: none vs unlimited,none,1365,unlimited,9683
-"Electricity price, 10.6 to 45.9 Rp per kWh",45.9,5838,10.6,13298
-"Heat recovered, 60% to 95%",60%,9665,95%,9485
-"Heat pump COP, 4.9 to 2.5",4.9,8335,2.5,9683
+"Compute price, 0.25 to 0.75 CHF per server-hour",0.25,-6354,0.75,9183
+Backlog of flexible jobs: none vs unlimited,none,-6903,unlimited,1415
+"Electricity price, 10.6 to 45.9 Rp per kWh",45.9,-2430,10.6,5030
+"Heat recovered, 60% to 95%",60%,1397,95%,1217
+"Heat pump COP, 4.9 to 2.5",4.9,67,2.5,1415
+"Server price, 6,714 to 2,518 CHF each","6,714",-833,"2,518",4782
+"Server lifetime, 4 to 6 years",4 years,-397,6 years,2622
