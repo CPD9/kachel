@@ -1,5 +1,8 @@
 import { DEMO_HOST, type AppAuth, type HouseFeed, type JobFeed } from "@kachel/db";
 import { HeatLoop, SignIn, useSession } from "@kachel/ui";
+import { Chat } from "./chat/Chat";
+import type { ChatModel } from "./chat/model";
+import type { ChatData } from "./chat/tools";
 import { House } from "./house/House";
 import { LiveJobs } from "./live/LiveJobs";
 
@@ -12,11 +15,14 @@ export function App({
   house,
   auth,
   local,
+  chat,
 }: {
   feed: JobFeed;
   house: HouseFeed;
   auth: AppAuth;
   local: boolean;
+  /** The local model and the house data it may read (#26); no panel without it. */
+  chat?: { model: ChatModel; data: ChatData };
 }) {
   const email = useSession(auth);
 
@@ -54,6 +60,7 @@ export function App({
           <div className="rounded-lg border border-grid bg-paper py-1">
             <LiveJobs feed={feed} />
           </div>
+          {chat && <Chat model={chat.model} data={chat.data} />}
         </div>
       )}
     </main>
