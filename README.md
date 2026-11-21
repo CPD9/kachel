@@ -2,6 +2,8 @@
 
 Your AI heats your shower.
 
+<p align="center"><img src="packages/ui/src/heat-loop.svg" width="360" alt="A basement server runs a job, its heat fills the hot-water tank and warms the house"></p>
+
 Small servers in a home's basement run AI jobs, and their heat warms the house and its hot water.
 A job runs only when its heat is useful.
 
