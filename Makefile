@@ -70,6 +70,42 @@ heat-loop:
 	$(call heat-loop-render,house,1080x900,720:600,heat-loop)
 	$(call heat-loop-render,wide,1440x480,960:320,heat-loop-wide)
 
+# Pitch video segments (see scripts/video/). Renders with Blender 5.2 on the GPU,
+# one Cycles job at a time, and writes MP4s and contact sheets to $(VIDEO_OUT).
+VIDEO_OUT ?= $(HOME)/.cache/kachel/video
+SCHED_OUT ?= services/scheduler/out
+VIDEO_SAMPLES ?= 64
+SETUP_SAMPLES ?= 32
+VIDEO_BLEND := scripts/video/assets/plantroom.blend
+VIDEO_BLENDER = TMPDIR=$(HOME)/.cache/kachel/tmp $(BLENDER) --background $(VIDEO_BLEND)
+
+.PHONY: video-setup video-scheduler video-glb
+
+video-setup:
+	mkdir -p $(VIDEO_OUT)/work/setup $(HOME)/.cache/kachel/tmp
+	scripts/video/gpu_wait.sh
+	$(VIDEO_BLENDER) --python scripts/video/setup.py -- \
+		--out $(VIDEO_OUT)/work/setup --samples $(SETUP_SAMPLES)
+	uv run --no-project --with pillow python scripts/video/compose_setup.py \
+		--frames $(VIDEO_OUT)/work/setup \
+		--mp4 $(VIDEO_OUT)/02-setup.mp4 --sheet $(VIDEO_OUT)/02-setup-sheet.png
+
+video-scheduler:
+	test -f $(SCHED_OUT)/day_january.csv -a -f $(SCHED_OUT)/day_july.csv || $(MAKE) year
+	mkdir -p $(VIDEO_OUT)/work/scheduler $(HOME)/.cache/kachel/tmp
+	scripts/video/gpu_wait.sh
+	$(VIDEO_BLENDER) --python scripts/video/scheduler.py -- \
+		--days $(SCHED_OUT)/day_january.csv $(SCHED_OUT)/day_july.csv \
+		--out $(VIDEO_OUT)/work/scheduler --samples $(VIDEO_SAMPLES)
+	uv run --no-project --with pillow python scripts/video/compose.py \
+		--frames $(VIDEO_OUT)/work/scheduler \
+		--days $(SCHED_OUT)/day_january.csv $(SCHED_OUT)/day_july.csv \
+		--mp4 $(VIDEO_OUT)/03-scheduler.mp4 --sheet $(VIDEO_OUT)/03-scheduler-sheet.png
+
+# The plant room meshes as they appear in the video, for three.js.
+video-glb:
+	$(VIDEO_BLENDER) --python scripts/video/export_glb.py -- --out docs/models/plantroom.glb
+
 # Render the economics charts for the pitch video with Blender 5.2 and ffmpeg (see
 # scripts/video/charts.py): one H.264 MP4 per chart and a PNG of its last frame.
 CHARTS_OUT ?= $(HOME)/.cache/kachel/video/charts
