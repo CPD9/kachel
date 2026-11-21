@@ -7,6 +7,7 @@ SUPABASE_SERVICE_ROLE_KEY from the environment (services/agent/.env.example).
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
 from pathlib import Path
 
 from .loop import follow, read_signal_file
@@ -24,16 +25,18 @@ def main() -> None:
     args = parser.parse_args()
     if (args.job_id is None) != (args.server_id is None):
         parser.error("--job-id and --server-id go together")
-    report = (
-        Reporter(client_from_env(), args.job_id, args.server_id, args.pid) if args.job_id else None
-    )
-    for change in follow(Job(args.pid), read_signal_file(args.signal), args.tick):
-        print(
-            f"tick {change.tick}: signal {'run' if change.run else 'pause'} -> {change.state}",
-            flush=True,
-        )
-        if report is not None:
-            report(change)
+    with ExitStack() as stack:
+        report = None
+        if args.job_id:
+            http = stack.enter_context(client_from_env())
+            report = Reporter(http, args.job_id, args.server_id, args.pid)
+        for change in follow(Job(args.pid), read_signal_file(args.signal), args.tick):
+            print(
+                f"tick {change.tick}: signal {'run' if change.run else 'pause'} -> {change.state}",
+                flush=True,
+            )
+            if report is not None:
+                report(change)
 
 
 if __name__ == "__main__":
