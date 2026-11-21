@@ -39,6 +39,8 @@ export type SimParams = {
   heat: number;
   /** Rack size, kW. */
   rackKw: number;
+  /** How much batch work from far away (outside Basel) is waiting for the rack, kW. */
+  remote: number;
   /** Which neighbours have signed up (by index into NEIGHBOURS). */
   signed: boolean[];
 };
@@ -47,6 +49,7 @@ export const DEFAULT_SIM: SimParams = {
   batch: 0.34,
   heat: 0.14,
   rackKw: 15,
+  remote: 8,
   signed: NEIGHBOURS.map(() => true),
 };
 
@@ -97,9 +100,26 @@ export type Hour = {
   /** Heat used by the house, kW; the rest is vented. */
   used: number;
   spare: number;
-  /** CHF this hour from batch jobs and heat, minus electricity (subscriptions come monthly). */
+  /** CHF this hour from computing and heat, minus electricity (plans come monthly). */
   earn: number;
 };
+
+/** The colour of the work from far away, on the map and in the cards. */
+export const REMOTE_COLOR = "#8b5cf6";
+/** Where the far-away work comes in from on the map: Zürich, off-screen to the east. */
+export const REMOTE_FROM: [number, number] = [8.5417, 47.3769];
+
+/** Kachel's cut of everything the computing earns (plans, usage, batch jobs). */
+export const KACHEL_FEE = 0.42;
+
+/**
+ * What the neighbours pay per kWh they compute, on top of their plan: the batch rate, but never
+ * so little that the owner's share falls below the electricity. So a neighbour is always worth
+ * more than the batch jobs they push out in winter, and never costs money in summer.
+ */
+export function usageRate(p: SimParams): number {
+  return Math.max(p.batch, p.power / (1 - KACHEL_FEE));
+}
 
 export function simulateDay(mean: number, p: SimParams): Hour[] {
   return Array.from({ length: 24 }, (_, h) => {
@@ -107,7 +127,7 @@ export function simulateDay(mean: number, p: SimParams): Hour[] {
     const demand = demandKw(temp);
     const wanted = NEIGHBOURS.reduce((s, _, i) => s + (p.signed[i] ? neighbourKw(i, h) : 0), 0);
     const customers = Math.min(p.rackKw, wanted);
-    const batch = Math.max(0, Math.min(demand - customers, p.rackKw - customers));
+    const batch = Math.max(0, Math.min(demand - customers, p.rackKw - customers, p.remote));
     const heat = customers + batch;
     const used = Math.min(heat, demand);
     return {
@@ -118,14 +138,20 @@ export function simulateDay(mean: number, p: SimParams): Hour[] {
       batch,
       used,
       spare: heat - used,
-      earn: batch * p.batch + used * p.heat - heat * p.power,
+      earn:
+        (customers * usageRate(p) + batch * p.batch) * (1 - KACHEL_FEE) +
+        used * p.heat -
+        heat * p.power,
     };
   });
 }
 
 export type Month = {
+  /** The neighbours' plans plus their computing. */
   subscriptions: number;
   batch: number;
+  /** Kachel's cut of the plans, usage and batch jobs. */
+  fee: number;
   heatSaved: number;
   power: number;
   net: number;
@@ -137,17 +163,21 @@ export function simulateMonth(i: number, weather: Weather, p: SimParams): Month 
   const m = MONTHS[i] ?? MONTHS[0];
   const day = simulateDay(m.temp + WEATHER[weather].offset, p);
   const sum = (f: (h: Hour) => number) => day.reduce((s, h) => s + f(h), 0) * m.days;
-  const subscriptions = NEIGHBOURS.reduce((s, n, j) => s + (p.signed[j] ? n.plans[1].price : 0), 0);
+  const subscriptions =
+    NEIGHBOURS.reduce((s, n, j) => s + (p.signed[j] ? n.plans[1].price : 0), 0) +
+    sum((h) => h.customers) * usageRate(p);
   const batch = sum((h) => h.batch) * p.batch;
   const heatSaved = sum((h) => h.used) * p.heat;
   const power = sum((h) => h.customers + h.batch) * p.power;
   const demand = sum((h) => h.demand);
+  const fee = (subscriptions + batch) * KACHEL_FEE;
   return {
     subscriptions,
     batch,
+    fee,
     heatSaved,
     power,
-    net: subscriptions + batch + heatSaved - power,
+    net: subscriptions + batch - fee + heatSaved - power,
     coverage: demand > 0 ? sum((h) => h.used) / demand : 0,
   };
 }
@@ -166,4 +196,6 @@ export type SimView = {
   kw: number[];
   /** Heat the rack gives off on average, kW. */
   rack: number;
+  /** Batch work from far away actually running on the rack, on average, kW. */
+  remote: number;
 };

@@ -1,9 +1,9 @@
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Flame, Plus, Zap } from "lucide-react";
+import { Flame, Globe2, Plus, Zap } from "lucide-react";
 import { HOME, NEIGHBOURS } from "./neighbours";
-import type { SimView } from "./simulation";
+import { REMOTE_COLOR, REMOTE_FROM, type SimView } from "./simulation";
 
 /** One full turn every this many seconds. */
 const SECONDS_PER_REVOLUTION = 120;
@@ -54,9 +54,18 @@ const OVERVIEW_CAMERA = {
 const ORBIT_SPEED = 0.03;
 const NEIGHBOUR_FLY_MS = 3000;
 const SWITCH_FLY_MS = 1800;
-const RISE_MS = 1400;
 const NEIGHBOUR_BUILDINGS = "neighbour-buildings";
 const LINK = "rack-link";
+const REMOTE_LINK = "remote-link";
+/** Where the far-away line's tag sits: this far from HOME along the line, in metres. */
+const REMOTE_TAG_M = 520;
+const REMOTE_TAG_AT: [number, number] = (() => {
+  const [lng, lat] = HOME;
+  const dx = (REMOTE_FROM[0] - lng) * 111_320 * Math.cos((lat * Math.PI) / 180);
+  const dy = (REMOTE_FROM[1] - lat) * 110_540;
+  const t = REMOTE_TAG_M / Math.hypot(dx, dy);
+  return [lng + (REMOTE_FROM[0] - lng) * t, lat + (REMOTE_FROM[1] - lat) * t];
+})();
 
 const BUILDINGS = "3d-buildings";
 const HOME_BUILDING = "home-building";
@@ -201,7 +210,7 @@ type Raised = {
 };
 
 /**
- * Every neighbour's building rises out of the ground in its colour (bright for the picked one,
+ * Every neighbour's building is highlighted as a solid block in its colour (bright for the picked one,
  * dim for the rest), each with a fibre line back to HOME; the picked line glows with a bright
  * dashed core. Null if none of the buildings has loaded yet.
  */
@@ -276,7 +285,7 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
     paint: {
       "fill-extrusion-color": "#555",
       "fill-extrusion-base": ["get", "min_height"],
-      "fill-extrusion-height": ["get", "min_height"],
+      "fill-extrusion-height": ["get", "height"],
       "fill-extrusion-opacity": 1,
     },
   });
@@ -312,20 +321,6 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
   });
   paint();
 
-  // Rise with an ease-out, like the mall in baselhack_2026_adobe
-  const start = performance.now();
-  let frame = requestAnimationFrame(function tick(now) {
-    if (!map.getLayer(NEIGHBOUR_BUILDINGS)) return;
-    const t = Math.min(1, (now - start) / RISE_MS);
-    const k = 1 - (1 - t) ** 3;
-    map.setPaintProperty(NEIGHBOUR_BUILDINGS, "fill-extrusion-height", [
-      "+",
-      ["get", "min_height"],
-      ["*", ["-", ["get", "height"], ["get", "min_height"]], k],
-    ]);
-    if (t < 1) frame = requestAnimationFrame(tick);
-  });
-
   return {
     heights,
     home: Number(homeFeature?.properties?.["height"] ?? 12),
@@ -335,7 +330,6 @@ function raiseNeighbours(map: mapboxgl.Map, selected: number): Raised | null {
     },
     resolve,
     cleanup: () => {
-      cancelAnimationFrame(frame);
       for (const layer of [NEIGHBOUR_BUILDINGS, LINK, `${LINK}-glow`, `${LINK}-others`])
         if (map.getLayer(layer)) map.removeLayer(layer);
       if (map.getSource(LINK)) map.removeSource(LINK);
@@ -489,6 +483,73 @@ function HomeTag({ kw, temp }: { kw: number; temp: number }) {
       </span>
     </div>
   );
+}
+
+/** In the simulation: the work coming in from far away, on its line into HOME. */
+function RemoteTag({ kw }: { kw: number }) {
+  return (
+    <div className="pointer-events-none flex animate-pill-in flex-col items-center font-sans">
+      <span
+        className={`flex items-center gap-1.5 rounded-full border py-1 pr-2.5 pl-1 text-[11px] font-semibold whitespace-nowrap shadow-[0_4px_16px_rgba(0,0,0,0.5)] backdrop-blur-md ${
+          kw > 0.05
+            ? "border-white/15 bg-[#1b1d21]/90 text-white"
+            : "border-dashed border-white/25 bg-[#1b1d21]/60 text-white/55"
+        }`}
+      >
+        <span
+          className="grid size-5 place-items-center rounded-full"
+          style={{ background: REMOTE_COLOR }}
+        >
+          <Globe2 size={11} />
+        </span>
+        From far away
+        <Zap size={10} className="text-amber-300" />
+        <span className="tabular-nums">{kw.toFixed(1)} kW</span>
+      </span>
+      <span className="h-3 w-px bg-white/30" />
+    </div>
+  );
+}
+
+/**
+ * The line from far away into HOME, in REMOTE_COLOR: a soft glow with a dashed core, both
+ * thicker the more work comes in, and faint when none does.
+ */
+function drawRemoteLink(map: mapboxgl.Map, kw: number) {
+  if (!map.getSource(REMOTE_LINK)) {
+    map.addSource(REMOTE_LINK, {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: [REMOTE_FROM, HOME] },
+      },
+    });
+    map.addLayer({
+      id: `${REMOTE_LINK}-glow`,
+      type: "line",
+      source: REMOTE_LINK,
+      paint: { "line-color": REMOTE_COLOR, "line-blur": 10 },
+    });
+    map.addLayer({
+      id: REMOTE_LINK,
+      type: "line",
+      source: REMOTE_LINK,
+      layout: { "line-cap": "round" },
+      paint: { "line-color": "#c4b5fd", "line-dasharray": [1, 2] },
+    });
+  }
+  const on = kw > 0.05;
+  map.setPaintProperty(`${REMOTE_LINK}-glow`, "line-width", on ? 8 + kw * 2 : 0);
+  map.setPaintProperty(`${REMOTE_LINK}-glow`, "line-opacity", on ? 0.65 : 0);
+  map.setPaintProperty(REMOTE_LINK, "line-width", on ? 2 + kw * 0.3 : 1.5);
+  map.setPaintProperty(REMOTE_LINK, "line-opacity", on ? 1 : 0.35);
+}
+
+function removeRemoteLink(map: mapboxgl.Map) {
+  for (const layer of [REMOTE_LINK, `${REMOTE_LINK}-glow`])
+    if (map.getLayer(layer)) map.removeLayer(layer);
+  if (map.getSource(REMOTE_LINK)) map.removeSource(REMOTE_LINK);
 }
 
 /** A small pin on the other neighbours' roofs: click to switch to them. */
@@ -767,6 +828,19 @@ export function Globe({
     };
   }, [neighbour, simOn]);
 
+  // The work from far away: its line into HOME, only in the simulation
+  const remoteKw = sim ? Math.round(sim.remote * 10) / 10 : null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || remoteKw === null || !roofs) return;
+    drawRemoteLink(map, remoteKw);
+  }, [remoteKw, roofs]);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !simOn) return;
+    return () => removeRemoteLink(map);
+  }, [simOn]);
+
   // The simulated weather on the map: falling snow, rain, and a sky tinted by the temperature
   const weather = sim?.weather ?? null;
   const temp = sim ? Math.round(sim.temp) : null;
@@ -823,6 +897,11 @@ export function Globe({
       {roofs && sim && (
         <OnRoof map={roofs.map} at={HOME} height={roofs.home} front>
           <HomeTag kw={sim.rack} temp={sim.temp} />
+        </OnRoof>
+      )}
+      {roofs && sim && (
+        <OnRoof map={roofs.map} at={REMOTE_TAG_AT} height={0}>
+          <RemoteTag kw={sim.remote} />
         </OnRoof>
       )}
       {roofs &&

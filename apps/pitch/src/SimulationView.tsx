@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   CloudRain,
   Coins,
+  Globe2,
   SlidersHorizontal,
   Snowflake,
   Sun,
@@ -13,6 +14,7 @@ import {
   DEFAULT_SIM,
   MONTHS,
   neighbourKw,
+  REMOTE_COLOR,
   type SimParams,
   type SimView,
   simulateDay,
@@ -35,7 +37,7 @@ const WEATHER_ICON: Record<Weather, typeof Sun> = {
 /** All the simulation's state, kept in App so the map can show it too. */
 export function useSimulation() {
   const [month, setMonth] = useState(0);
-  const [weather, setWeather] = useState<Weather>("snow");
+  const [weather, setWeather] = useState<Weather>("clear");
   const [params, setParams] = useState<SimParams>(DEFAULT_SIM);
 
   const mean = (MONTHS[month]?.temp ?? 0) + WEATHER[weather].offset;
@@ -48,6 +50,7 @@ export function useSimulation() {
     temp: mean,
     kw: NEIGHBOURS.map((_, i) => averageKw(i)),
     rack: day.reduce((sum, h) => sum + h.customers + h.batch, 0) / day.length,
+    remote: day.reduce((sum, h) => sum + h.batch, 0) / day.length,
   };
 
   const toggle = (i: number) =>
@@ -150,6 +153,8 @@ function Slider({
   max,
   step,
   unit,
+  scale = 100,
+  accent = "accent-cyan-500",
   onChange,
 }: {
   name: string;
@@ -158,6 +163,9 @@ function Slider({
   max: number;
   step: number;
   unit: string;
+  /** Shown value = value × scale (CHF → Rp by default). */
+  scale?: number;
+  accent?: string;
   onChange: (v: number) => void;
 }) {
   return (
@@ -165,7 +173,7 @@ function Slider({
       <span className="flex justify-between text-[11px]">
         <span className="text-white/60">{name}</span>
         <span className="font-semibold tabular-nums">
-          {Math.round(value * 100)} {unit}
+          {Math.round(value * scale)} {unit}
         </span>
       </span>
       <input
@@ -175,7 +183,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 h-1 w-full cursor-pointer accent-cyan-500"
+        className={`mt-1 h-1 w-full cursor-pointer ${accent}`}
       />
     </label>
   );
@@ -231,6 +239,35 @@ function SettingsCard({ s }: { s: Sim }) {
           );
         })}
       </ul>
+
+      <div className="mt-1.5 border-t border-white/[0.08] pt-1.5">
+        <div className="flex items-center gap-2 px-2 py-1">
+          <span
+            className="grid size-6 shrink-0 place-items-center rounded-full"
+            style={{ background: REMOTE_COLOR }}
+          >
+            <Globe2 size={12} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[11.5px] font-medium">From far away</span>
+            <span className="block text-[10px] text-white/50">Batch jobs from outside Basel</span>
+          </span>
+          <span className="text-[10.5px] text-white/50 tabular-nums">
+            ⌀ {s.view.remote.toFixed(1)} kW
+          </span>
+        </div>
+        <Slider
+          name="Demand"
+          value={s.params.remote}
+          min={0}
+          max={s.params.rackKw}
+          step={0.5}
+          unit="kW"
+          scale={1}
+          accent="accent-violet-500"
+          onChange={(v) => set("remote", v)}
+        />
+      </div>
 
       <div className="mt-1.5 border-t border-white/[0.08] pt-1.5 pb-1">
         <p className={`${label} px-2 pb-0.5`}>
@@ -371,8 +408,9 @@ function EarningsCard({ s }: { s: Sim }) {
           <p className="text-[10.5px] font-semibold text-white/70">
             {monthName} · {WEATHER[s.weather].label}
           </p>
-          <Row k="Neighbours' plans" v={m.subscriptions} tone="plus" />
-          <Row k="Batch jobs" v={m.batch} tone="plus" />
+          <Row k="Neighbours" v={m.subscriptions} tone="plus" />
+          <Row k="Batch jobs from far away" v={m.batch} tone="plus" />
+          <Row k="Kachel's cut" v={m.fee} tone="minus" />
           <Row k="Heat you don't buy" v={m.heatSaved} tone="plus" />
           <Row k="Electricity" v={m.power} tone="minus" />
           <div className="flex items-center justify-between border-t border-white/10 pt-1.5 text-[12.5px] font-semibold">
