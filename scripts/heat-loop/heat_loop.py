@@ -45,7 +45,7 @@ from mathutils import Matrix, Vector
 
 FRONT = -1.2  # the house is cut open along y = FRONT
 LEFT = -3.2  # and along x = LEFT, so the camera sees in at the corner
-PITCH = math.radians(26)
+PITCH = math.radians(21)
 RIDGE_Y = (FRONT + 2.2) / 2
 RIDGE = 2.95 + math.tan(PITCH) * (2.2 - RIDGE_Y)
 
@@ -395,14 +395,23 @@ def build_shell(m):
     front += [(RIDGE_Y, RIDGE + thick), (FRONT - eave, roof_z(FRONT - eave) + thick)]
     back = [(RIDGE_Y, RIDGE), (2.2 + eave, roof_z(2.2 + eave))]
     back += [(2.2 + eave, roof_z(2.2 + eave) + thick), (RIDGE_Y, RIDGE + thick)]
-    prism("roof_front", front, "x", LEFT, 3.5, m["roof"], bevel=0.04)
-    prism("roof_back", back, "x", LEFT, 3.5, m["roof"], bevel=0.04)
+    prism("roof_front", front, "x", LEFT, 3.5, m["roof"], m["cut"], bevel=0.04)
+    prism("roof_back", back, "x", LEFT, 3.5, m["roof"], m["cut"], bevel=0.04)
+    # Charcoal fascia boards along both eaves.
+    for name, y in (("fascia_front", FRONT - eave), ("fascia_back", 2.2 + eave)):
+        z = roof_z(y)
+        box(
+            name,
+            (LEFT, y - 0.05, z - 0.04),
+            (3.5, y + 0.05, z + thick + 0.02),
+            m["trim"],
+        )
     turn = Matrix.Rotation(math.pi / 2, 4, "Y")
     cylinder(
         "ridge",
         0.1,
         6.82,
-        m["roof"],
+        m["trim"],
         Matrix.Translation((0.09, RIDGE_Y, RIDGE + thick - 0.02)) @ turn,
     )
 
@@ -800,8 +809,8 @@ def build_pipes(m):
 
 
 def roof_material():
-    """Slate with faint rows running along the roof."""
-    mat, bsdf = principled("roof", "#39414f", rough=0.6)
+    """Warm grey slate with faint rows running along the roof."""
+    mat, bsdf = principled("roof", "#a39a90", rough=0.65)
     tree = mat.node_tree
     coords = tree.nodes.new("ShaderNodeTexCoord")
     rows = tree.nodes.new("ShaderNodeTexWave")
@@ -813,9 +822,9 @@ def roof_material():
     rows.inputs["Scale"].default_value = 2 * math.pi / (20 * 0.3 * math.sin(PITCH))
     lines = tree.nodes.new("ShaderNodeValToRGB")
     lines.color_ramp.interpolation = "EASE"
-    lines.color_ramp.elements[0].color = lin("#262c37")
+    lines.color_ramp.elements[0].color = lin("#7f766d")
     lines.color_ramp.elements[1].position = 0.12
-    lines.color_ramp.elements[1].color = lin("#3d4554")
+    lines.color_ramp.elements[1].color = lin("#a39a90")
     tree.links.new(rows.outputs["Fac"], lines.inputs["Fac"])
     tree.links.new(lines.outputs["Color"], bsdf.inputs["Base Color"])
     return mat
@@ -900,11 +909,11 @@ def lights_and_world(scene):
 def camera(scene, width, height):
     data = bpy.data.cameras.new("camera")
     data.type = "ORTHO"
-    data.ortho_scale = 11.2
+    data.ortho_scale = 10.6
     data.shift_y = 0.0
     cam = link(bpy.data.objects.new("camera", data), "fx")
     az, el = math.radians(28), math.radians(13)
-    target = Vector((0.15, 0.3, 0.35))
+    target = Vector((0.15, 0.3, 0.15))
     direction = Vector(
         (-math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el))
     )
