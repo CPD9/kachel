@@ -157,3 +157,52 @@ values
   ('jobs.opportunistic', 'deadline_h', 'null'::jsonb, 'ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model.'),
   ('jobs.opportunistic', 'unlimited', 'true'::jsonb, 'ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model.'),
   ('jobs.opportunistic', 'when_heat_not_needed', '"pause"'::jsonb, 'ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model.');
+
+-- The fleet (#81): twelve more houses, eight in Basel and four in Bern, all SYNTHETIC. Names,
+-- tanks, hot water and server counts are made up; each point sits in the named quarter, not on
+-- a real house. One synthetic host account owns them all, so the reference host and buyer above
+-- see exactly what they saw before. Jobs on these houses come from `make fleet` through
+-- services/scheduler/fleet_write.py, not from this seed.
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+values
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'fleet@kachel.test',
+   extensions.crypt('kachel-demo', extensions.gen_salt('bf')), now(),
+   '{"provider": "email", "providers": ["email"]}', '{"name": "Synthetic fleet host"}', now(), now(), '', '', '', '');
+
+insert into auth.identities (
+  id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+)
+values
+  ('00000000-0000-4000-8000-000000000005', '00000000-0000-4000-8000-000000000005', '00000000-0000-4000-8000-000000000005',
+   '{"sub": "00000000-0000-4000-8000-000000000005", "email": "fleet@kachel.test", "email_verified": true}', 'email', now(), now(), now());
+
+insert into public.sites (
+  id, host_id, name, city, latitude, longitude, tank_kwh, hot_water_kwh_per_day, hot_water_shape
+)
+values
+  ('00000000-0000-4000-8000-000000001001', '00000000-0000-4000-8000-000000000005', 'Synthetic house, St. Johann', 'Basel', 47.5670, 7.5780, 35.0, 12.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001002', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Gundeldingen', 'Basel', 47.5430, 7.5940, 50.0, 16.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001003', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Matthäus', 'Basel', 47.5670, 7.5960, 20.0, 8.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001004', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Bachletten', 'Basel', 47.5480, 7.5720, 35.0, 10.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001005', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Iselin', 'Basel', 47.5580, 7.5620, 30.0, 12.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001006', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Breite', 'Basel', 47.5520, 7.6120, 45.0, 14.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001007', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Hirzbrunnen', 'Basel', 47.5720, 7.6150, 25.0, 9.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001008', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Gotthelf', 'Basel', 47.5560, 7.5670, 40.0, 18.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001009', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Länggasse', 'Bern', 46.9550, 7.4300, 35.0, 12.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001010', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Breitenrain', 'Bern', 46.9600, 7.4550, 50.0, 15.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001011', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Kirchenfeld', 'Bern', 46.9400, 7.4500, 30.0, 11.0, 'flat'),
+  ('00000000-0000-4000-8000-000000001012', '00000000-0000-4000-8000-000000000005', 'Synthetic house, Bümpliz', 'Bern', 46.9450, 7.3900, 20.0, 7.0, 'flat');
+
+-- Their servers, each as config.json: server. House n has 2 + (n mod 7) servers (2 to 8), all
+-- off until a job lands. Server ids end in 2HH0S: HH = house, S = slot.
+insert into public.servers (id, site_id, slot, name, power_kw, heat_recovery, idle_power_kw, state)
+select
+  ('00000000-0000-4000-8000-00000002' || lpad(house::text, 2, '0') || '0' || slot::text)::uuid,
+  ('00000000-0000-4000-8000-0000000010' || lpad(house::text, 2, '0'))::uuid,
+  slot, 'Server ' || slot, 1.0, 0.8, 0.0, 'OFF'
+from generate_series(1, 12) as house
+cross join lateral generate_series(1, 2 + house % 7) as slot;

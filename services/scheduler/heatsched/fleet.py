@@ -36,6 +36,7 @@ class Site:
     city: str = ""
     lat: float = 0.0
     lon: float = 0.0
+    hot_water_kwh_per_day: float = 0.0   # already in `demand`; kept for the sites table
 
 
 @dataclass(frozen=True)

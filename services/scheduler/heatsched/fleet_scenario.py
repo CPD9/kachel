@@ -36,6 +36,7 @@ def make_sites(profile, cfg):
             tank_kwh=round(_between(rng, f["tank_kwh"]), 1),
             heat_per_server=h,
             demand=demand,
+            hot_water_kwh_per_day=round(dhw, 1),
         ))
     return sites
 

@@ -185,7 +185,8 @@ reset role;
 -- ---------------------------------------------------------------- agent (service role)
 select set_config('request.jwt.claims', '{"role": "service_role"}', true);
 set local role service_role;
-select is((select count(*) from public.sites), 2::bigint, 'the agent reads every site');
+-- 14: the seed's reference house and its twelve synthetic fleet houses (#81), and site 101.
+select is((select count(*) from public.sites), 14::bigint, 'the agent reads every site');
 select lives_ok(
   $$update public.servers set state = 'OFF' where id = '00000000-0000-4000-8000-000000000211'$$,
   'the agent writes a server''s state');

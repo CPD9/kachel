@@ -187,6 +187,7 @@ export type Database = {
           items_total: number | null;
           kind: Database["public"]["Enums"]["job_kind"];
           label: string;
+          moved_offsite: boolean;
           pid: number | null;
           server_hours: number | null;
           server_id: string | null;
@@ -207,6 +208,7 @@ export type Database = {
           items_total?: number | null;
           kind: Database["public"]["Enums"]["job_kind"];
           label: string;
+          moved_offsite?: boolean;
           pid?: number | null;
           server_hours?: number | null;
           server_id?: string | null;
@@ -226,6 +228,7 @@ export type Database = {
           items_total?: number | null;
           kind?: Database["public"]["Enums"]["job_kind"];
           label?: string;
+          moved_offsite?: boolean;
           pid?: number | null;
           server_hours?: number | null;
           server_id?: string | null;
