@@ -1,5 +1,8 @@
 name: CI
 
+# During the hack main takes direct pushes and nothing here blocks a merge.
+# Every check still runs on every push and pull request, so red is visible at once.
+
 on:
   pull_request:
   push:
@@ -46,13 +49,10 @@ jobs:
           node-version-file: .nvmrc
       - run: node --test scripts/*.test.mjs
       - run: node scripts/readme-check.mjs
+      - run: node scripts/readme-figures.mjs --check
 
   secrets:
     name: Secrets
-    # Every change reaches main through a pull request, so the pull request is where new
-    # commits are scanned. On a push to main the scan has no earlier commit to compare
-    # against on a new repository, and fails without finding anything.
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

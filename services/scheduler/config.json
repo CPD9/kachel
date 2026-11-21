@@ -1,5 +1,5 @@
 {
-  "_note": "Every number the model uses lives here. 'source' says where it comes from.",
+  "_note": "Every number the model uses lives here. 'source' says where it comes from. Charts, cited sources and open questions: docs/economics/README.md",
   "house": {
     "tank_kwh": 35.0,
     "hot_water_kwh_per_day": 12.0,

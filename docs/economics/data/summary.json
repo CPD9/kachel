@@ -1,0 +1,35 @@
+{
+  "base_case": {
+    "servers_per_house": 6,
+    "heat_demand_kwh": 31231,
+    "share_of_heat_covered_pct": 79.6,
+    "heat_dumped_kwh": 9.1,
+    "backup_heat_kwh": 6380,
+    "utilisation_pct": 59.1,
+    "server_hours_sold": 31075,
+    "missed_deadlines_pct_of_jobs": 0.0,
+    "moved_offsite_pct_of_deadline_jobs": 0.0,
+    "electricity_cost_chf": 8608,
+    "value_of_heat_used_chf": 2753,
+    "computing_income_chf": 15538,
+    "break_even_chf_per_server_hour": 0.1884,
+    "pays_off_at_assumed_compute_price": true
+  },
+  "no_backlog_case": {
+    "servers_per_house": 6,
+    "heat_demand_kwh": 31231,
+    "share_of_heat_covered_pct": 11.2,
+    "heat_dumped_kwh": 0.0,
+    "backup_heat_kwh": 27727,
+    "utilisation_pct": 8.3,
+    "server_hours_sold": 4380,
+    "missed_deadlines_pct_of_jobs": 0.0,
+    "moved_offsite_pct_of_deadline_jobs": 0.0,
+    "electricity_cost_chf": 1213,
+    "value_of_heat_used_chf": 388,
+    "computing_income_chf": 2190,
+    "break_even_chf_per_server_hour": 0.1884,
+    "pays_off_at_assumed_compute_price": true
+  },
+  "net_chf_per_house_before_hardware": 9683
+}
