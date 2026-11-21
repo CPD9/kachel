@@ -20,7 +20,7 @@ scheduler and the agent in Python. No cloud account is needed.
 make bootstrap                    # install the JavaScript and Python dependencies
 pnpm exec supabase start          # start local Supabase in Docker
 pnpm exec supabase status -o env  # the keys for the .env files (below)
-make dev                          # Supabase (already up), then all three apps
+make dev                          # Supabase (already up), then all four apps
 make check                        # every check CI runs
 ```
 
@@ -31,6 +31,7 @@ make check                        # every check CI runs
 | Host app    | http://localhost:5173 |
 | Console     | http://localhost:5174 |
 | 3D heat map | http://localhost:5175 |
+| Operator    | http://localhost:5177 |
 
 Before `make dev`, copy each `.env.example` to `.env` (in `apps/host`, `apps/console` and
 `services/agent`) and fill in the keys from `pnpm exec supabase status -o env`. The apps read
@@ -51,12 +52,19 @@ anything in a `VITE_` variable ends up in the browser, so that key never goes th
 
 ## Demo accounts (local stack only)
 
-The seed makes two accounts. Both exist only in your local database.
+The seed makes these accounts. All exist only in your local database.
 
-| Who        | Email               | Password      | Sign in to |
-| ---------- | ------------------- | ------------- | ---------- |
-| Demo host  | `host@kachel.test`  | `kachel-demo` | Host app   |
-| Demo buyer | `buyer@kachel.test` | `kachel-demo` | Console    |
+| Who        | Email                  | Password      | Sign in to    |
+| ---------- | ---------------------- | ------------- | ------------- |
+| Demo host  | `host@kachel.test`     | `kachel-demo` | Host app      |
+| Demo buyer | `buyer@kachel.test`    | `kachel-demo` | Console       |
+| Operator   | `operator@kachel.test` | `kachel-demo` | Operator view |
+
+Six more buyers are synthetic, each a kind of compute the fleet sells: game streaming
+(`play@`), 3D rendering (`render@`), an AI lab (`lab@`), a video studio (`studio@`),
+embeddings (`embed@`) and speech to text (`speech@`), all `@kachel.test` with the same password.
+Their jobs run on the synthetic fleet houses. The operator reads every house, server, job and
+buyer and changes none; that role is set in the account's app metadata, which no app can write.
 
 The apps offer these accounts on the sign-in screen only when they talk to a local stack.
 
@@ -131,8 +139,8 @@ If the stack is not up, the same moment is recorded in
 
 ## When something goes wrong
 
-- **`make dev` stops all three apps with "Port 5175 is already in use":** each app needs its
-  port free. Stop the old server on 5173, 5174 or 5175 (`ss -ltnp | grep 517`) and run it again.
+- **`make dev` stops all four apps with "Port 5175 is already in use":** each app needs its
+  port free. Stop the old server on 5173, 5174, 5175 or 5177 (`ss -ltnp | grep 517`) and run it again.
 - **`permission denied ... docker.sock`:** your user is not in the `docker` group in this shell;
   run `newgrp docker` first.
 - **Server 4 shows Done:** the job ended and the agent with it. Start both again (step 2 above);

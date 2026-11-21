@@ -1,8 +1,9 @@
 # The product
 
-Three apps, one for each person who meets Kachel: the **host app** for the homeowner, the
-**console** for the buyer of compute, and the **heat map** for anyone asking where home servers
-could heat homes. All three run on your laptop today; none is deployed.
+Four apps, one for each person who meets Kachel: the **host app** for the homeowner, the
+**console** for the buyer of compute, the **operator view** for the business that runs the fleet,
+and the **heat map** for anyone asking where home servers could heat homes. All four run on your
+laptop today; none is deployed.
 
 ## The host app: your house, your heat, your servers
 
@@ -56,6 +57,24 @@ host app yet: that is issue [#26](https://github.com/CPD9/kachel/issues/26).
 What is not built yet: nothing places a newly submitted job on a house live. It waits as Queued.
 The jobs that show a house come from the seed or from one hour of a fleet run
 (`fleet_write.py`).
+
+## The operator view: the whole fleet and its revenue
+
+`apps/operator`, on http://localhost:5177 in development.
+
+![The operator view in November: the fleet's totals, the year month by month and every house](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/app-operator.png)
+
+- **Totals at the top.** Houses, servers running, heat delivered, backup heat, revenue for an
+  hour, a day and the year, and the margin before hardware.
+- **A month slider and a temperature slider.** Pick a month of 2025, or make every hour warmer or
+  colder by up to 6 °C. Heat demand, the servers it can use and the revenue follow.
+- **The year.** The fleet's heat each month: from the servers, and from the backup heaters.
+- **Every house.** Its servers (running on average, and installed), its size, its tank, and its
+  heat demand, server heat and backup in kW.
+
+Every figure comes from `make months` (`services/scheduler/out/fleet_months.json`): the 100
+synthetic Basel and Bern houses of the fleet, each run through the scheduler for the year on its
+city's real 2025 weather. The view says it is a model; hover a number for its source.
 
 ## The heat map: Basel in 3D through the day
 

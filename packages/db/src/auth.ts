@@ -40,6 +40,7 @@ export function supabaseAuth(db: KachelClient): AppAuth {
 /** The seed's demo accounts (supabase/seed.sql). Shown only when an app talks to a local stack. */
 export const DEMO_HOST = { email: "host@kachel.test", password: "kachel-demo" } as const;
 export const DEMO_BUYER = { email: "buyer@kachel.test", password: "kachel-demo" } as const;
+export const DEMO_OPERATOR = { email: "operator@kachel.test", password: "kachel-demo" } as const;
 
 /** True for the local Supabase stack from `make dev`, where the seed's demo accounts exist. */
 export function isLocalStack(url: string | undefined): boolean {
