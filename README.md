@@ -20,7 +20,7 @@ make dev
 make check
 ```
 
-`make dev` starts the local Supabase stack (Docker) and serves the host app on http://localhost:5173 and the console on http://localhost:5174.
+`make dev` starts the local Supabase stack (Docker) and serves the host app on http://localhost:5173, the console on http://localhost:5174 and the 3D heat map on http://localhost:5175.
 Copy each `.env.example` to `.env` and fill in the keys from `pnpm exec supabase status -o env`.
 Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test` with the password `kachel-demo` (local stack only).
 
@@ -30,6 +30,7 @@ Row level security shows each person only their own rows, so sign in to the host
 | -------------------- | --------------------------------------------------------------- |
 | `apps/host`          | React app for hosts: their house, their heat, their servers     |
 | `apps/console`       | React app for compute buyers: jobs and their state              |
+| `apps/map`           | 3D map of Basel and Switzerland: buildings, heat, day and night |
 | `packages/ui`        | Shared components and design tokens                             |
 | `packages/db`        | Typed Supabase client and the generated database types          |
 | `packages/config`    | Shared ESLint and TypeScript settings                           |
