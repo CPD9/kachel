@@ -446,6 +446,8 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
               {m.list.map((q) => (
                 <span
                   key={q.offer.id}
+                  role="img"
+                  aria-label={`${q.offer.address}${q.miss ? `: ${q.miss}` : ": fits"}`}
                   title={`${q.offer.address}${q.miss ? ` · ${q.miss}` : ""}`}
                   className={`grid size-8 place-items-center rounded-lg transition-all duration-300 ${
                     q.miss ? "scale-90 bg-white/[0.06] text-white/60 opacity-25" : ""
