@@ -213,6 +213,7 @@ export function DeviceModel({ state }: { state: DeviceState }) {
     controls.maxPolarAngle = Math.PI * 0.52;
     controls.enablePan = false;
     const dash = dashTexture();
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
     let built: Built | null = null;
     let disposed = false;
@@ -295,7 +296,9 @@ export function DeviceModel({ state }: { state: DeviceState }) {
           const [x, y, z] = EXPLODE[name];
           g.node.position.set(g.home.x + x * k, g.home.y + y * k, g.home.z + z * k);
         }
-        dash.offset.x -= dt * 1.1;
+        // With reduced motion the pipes still glow, but nothing slides or turns.
+        const move = still ? 0 : dt;
+        dash.offset.x -= move * 1.1;
         for (const pipe of built.pipes) {
           const on = pipe.step === null ? s.summer : pipe.step <= s.step;
           const now_ = pipe.step === s.step || (pipe.step === null && s.summer);
@@ -307,8 +310,8 @@ export function DeviceModel({ state }: { state: DeviceState }) {
         for (const e of built.ends) e.visible = k < 0.25;
         // The shaft turns once vapour reaches the turbine; faster while the generator is the step.
         const rate = s.step >= 2 ? (s.step === 3 ? 16 : 9) : 0;
-        built.shaft?.rotateX(rate * dt);
-        for (const f of built.fans) f.rotateOnWorldAxis(UP, (s.step >= 2 ? 6 : 0) * dt);
+        built.shaft?.rotateX(rate * move);
+        for (const f of built.fans) f.rotateOnWorldAxis(UP, (s.step >= 2 ? 6 : 0) * move);
         // Labels: the top of each part, on screen.
         const rect = el.getBoundingClientRect();
         const active = new Set(STEPS[s.step]?.parts ?? []);
