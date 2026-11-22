@@ -12,6 +12,8 @@
   --color-border: #e3e5e9;
   --color-muted: #5b616b;
   --color-ink: #111418;
+  /* apps/map's background (packages/ui tokens.css, --color-ink), for the hand-over fade */
+  --color-map-ink: oklch(0.22 0.02 250);
 
   /* The globe fading in behind the collapsed voice bar */
   --animate-globe-in: globe-in 1200ms ease-out both;
@@ -32,6 +34,17 @@
     }
     100% {
       opacity: 0;
+    }
+  }
+  /* The fade to the map's background before the hand-over (handoff.ts FADE_MS) */
+  --animate-handoff: handoff 600ms ease-in both;
+
+  @keyframes handoff {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
     }
   }
   /* Building cards sliding up over the map */
