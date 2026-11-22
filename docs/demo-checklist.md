@@ -69,6 +69,8 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
 6. Operator console, http://localhost:5177: Today names the homes that need you. Under Jobs,
    sign in as `operator@kachel.test` / `kachel-demo` for the buyers, live. Under Billing, click
    July, then slide the temperature up: the settlement and the year's revenue fall.
+   With `?tour=1` (the pitch's last A opens it so), A walks Today → Buildings → Quotes →
+   Settlement → The year → July → January; Shift+A or Backspace back, Esc ends.
 7. The two films, open in the video player.
 
 If a tab is blank, reload it once.

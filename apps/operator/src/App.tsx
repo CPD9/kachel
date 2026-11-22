@@ -10,6 +10,7 @@ import { Quotes } from "./pages/Quotes";
 import { Today } from "./pages/Today";
 import { useRoute, type Route } from "./shell/route";
 import { Shell } from "./shell/Shell";
+import { TourHint, useTour } from "./shell/Tour";
 
 /** Today in Basel, where the fleet's clock runs. */
 function now() {
@@ -55,6 +56,7 @@ export function App({
   const [offset, setOffset] = useState(0);
   const [added, setAdded] = useState<NewBuilding[]>([]);
   const live = useLive(source);
+  const tour = useTour(setMonth);
 
   const m = useMemo(() => fleetMonth(file, { month, offset }), [file, month, offset]);
   const brightest = useMemo(
@@ -114,6 +116,9 @@ export function App({
           onMonth={setMonth}
           onOffset={setOffset}
         />
+      )}
+      {tour.step !== null && (
+        <TourHint step={tour.step} onNext={() => tour.go("next")} onEnd={() => tour.go("end")} />
       )}
     </Shell>
   );
