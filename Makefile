@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months video-charts paper pitch-graphics live verify-live
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months video-charts paper pitch-graphics live live-demo verify-live
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -68,6 +68,11 @@ LIVE_ARGS ?=
 live:
 	cd $(SCHED) && set -a && . ../agent/.env && set +a && uv run python live.py \
 		--agent $(LIVE_AGENT) --seconds-per-hour $(LIVE_PACE) $(LIVE_ARGS)
+
+# The stage demo in one command (scripts/live-demo.sh): a real embedding job on Server 4, its agent
+# and the live loop on 13 January and 15 July, about a minute a day. Ctrl-C stops all three.
+live-demo:
+	LIVE_PACE=$(LIVE_PACE) scripts/live-demo.sh
 
 # Replay the decision log through decide() and report any mismatch (VERIFY_ARGS=--db for the table).
 VERIFY_ARGS ?=

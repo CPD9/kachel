@@ -96,21 +96,24 @@ lines.
 
 ### 2:32–3:32, live (60 s)
 
-Before the talk, Duc has run `make dev`, started the embedding job, and started the agent on
-Server 4 with `--tick 0.2` (commands in [the demo checklist](demo-checklist.md)), signal file
-`/tmp/heat` holding `run`. The host app is open full screen, Server 4 shows Running.
+Before the talk, Duc has run `make dev` and `make db-reset`. The host app is open full screen,
+scrolled to "Your servers now" and "Why this decision". A terminal is ready with
+`make live-demo LIVE_PACE=1.2` (commands in [the demo checklist](demo-checklist.md)). No one
+writes a signal file: the scheduler does.
 
-- 2:32 Duc switches the projector to the host app. Peter: "This is the host app, live on
-  our laptop. Server 4 is running a real embedding job."
-- 2:42 Peter: "Now the tank is full." Duc runs `echo pause > /tmp/heat`.
-- 2:45 The agent stops the process and writes to Supabase; Realtime pushes it and the pill
-  turns Paused in under a second. Peter: "The agent paused the job. No reload: the screen
-  heard it from the database."
-- 3:00 Peter: "The house wants heat again." Duc runs `echo run > /tmp/heat`. The pill turns
-  Running.
-- 3:10 Peter: "Same job, same process, carried on where it stopped. Nothing lost, nothing
-  dumped."
-- 3:20 Duc switches back to the slides.
+- 2:30 Duc starts `make live-demo LIVE_PACE=1.2`: a real embedding job on Server 4, its agent,
+  and the scheduler's live loop on 13 January, then 15 July, about 29 s a day.
+- 2:32 Duc switches the projector to the host app. Peter: "This is the host app, live on our
+  laptop. Server 4 runs a real embedding job. 13 January, minus four outside: the house needs
+  every bit of heat, so the scheduler runs the backlog."
+- 2:47 July begins. Peter: "15 July. The tank is full, so the scheduler pauses the backlog by
+  itself. The agent freezes the process; the screen hears it from the database."
+- 2:55 The pill turns Running again. Peter: "Hot water has drawn the tank down: the scheduler
+  resumes it. Same process, carried on where it stopped. Nothing lost, nothing dumped."
+- 3:05 Peter points at "Why this decision": "Each decision shows what the scheduler saw and why,
+  with its hash, chained to the one before. `make verify-live` replays every one through the
+  same code as our yearly figures."
+- 3:20 Duc switches back to the slides. The loop ends by itself after July.
 
 If the stack is not up, Duc plays
 [live-demo.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)

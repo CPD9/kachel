@@ -79,12 +79,13 @@ Source: Open-Meteo archive, Basel 2025
 | 3D map: swisstopo buildings and imagery                                   | Real                                           |
 | Fleet houses, buyer accounts, jobs in the apps                            | Synthetic                                      |
 | Demo transcript and the questionnaire figures in Duc's pitch intro (#156) | Synthetic                                      |
-| Scheduler writing the agent's signal; live placement of submitted jobs    | Not yet: by hand on stage                      |
+| Scheduler writing the agent's signal; live placement of submitted jobs    | Real, on a replayed day; hash-chained log      |
 | ORC turbine with a heat-pump booster, district heating as a summer sink   | Concept, outlook only                          |
 
 ### What's next, with four more weeks
 
-1. Close the loop: the scheduler writes the agent's signal and places submitted jobs live.
+1. Run the live loop on real time: `make live LIVE_ARGS="--source db --tick 3600"` reads
+   `heat_state` for the clock's hour, which a heat meter in the house would write.
 2. Meter the power with a plug meter, and run a neural embedding and a Whisper job on a GPU
    box instead of citing them.
 3. Prices from real compute buyers who accept pauses, and the reference house's yearly
@@ -123,7 +124,7 @@ building's energy card open, cropped from [map-card.webp](images/map-card.webp).
 | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | At least two job types with runtime, energy, interruptible, deadline, jobs a day and source | [job-types.md](job-types.md): transcription batch (24 h deadline, cited) and embedding backlog; interactive sessions as a third (#77)                                                       | Met                                                                                                 |
 | One job type measured on our machine and scaled to 1 kW                                     | [measurements.md](measurements.md), `services/scheduler/measure.py` (#77)                                                                                                                   | Met; power from TDP, not metered                                                                    |
-| The same scheduler code pauses and resumes one real process on the heat signal              | `services/scheduler/demo_live.py` calls `decide()` from `heatsched/scheduler.py` and holds a real job with SIGSTOP/SIGCONT (#38); the stage agent (#36, #60)                                | Met; on stage the agent's signal file is written by hand                                            |
+| The same scheduler code pauses and resumes one real process on the heat signal              | `make live` (`services/scheduler/live.py`) runs `decide()` from `heatsched/scheduler.py` each tick and writes the agent's signal; the agent holds a real job with SIGSTOP/SIGCONT (#191)    | Met; no hand on stage. Every decision is hash-chained and `make verify-live` replays it             |
 | Yearly balance: servers, heat covered, dumped, utilisation, missed deadlines, cost, income  | `make year` writes `services/scheduler/out/kpis.json` (#44); figures above                                                                                                                  | Met                                                                                                 |
 | Break-even CHF per server-hour, and when it does not pay off                                | `kpis.json`, [economics/README.md](economics/README.md) charts 4 to 7, the no-backlog case                                                                                                  | Met                                                                                                 |
 | Every assumption visible                                                                    | [assumptions.md](assumptions.md), generated from `config.json` (#75); [the model paper](paper/kachel-model.pdf) (#153)                                                                      | Met; the reference house uses the ElCom median, the map card each municipality's ElCom price (#174) |
