@@ -1,6 +1,6 @@
 # Pitch and demo script
 
-Five minutes at FHNW Campus Dreispitz, Basel, during the 36-hour sprint on Basel's climate
+Five minutes and ten seconds at FHNW Campus Dreispitz, Basel, during the 36-hour sprint on Basel's climate
 goal. Two slides, one Blender film we talk over, one live moment, then the ask.
 
 - Slides: [docs/pitch/slides.md](pitch/slides.md) (Marp), rendered to
@@ -27,7 +27,7 @@ water", never a single room or appliance.
 - **Peter** speaks throughout and clicks the slides.
 - **Duc** sits at the demo laptop: plays the film, runs the live flip, switches the projector
   between the film and the host app.
-- **Loyola** keeps the clock and holds up a card at 2:30 and 4:30.
+- **Loyola** keeps the clock and holds up a card at 2:30 and 4:40.
 - **Nikolas** takes questions on the numbers.
 
 ## Running order
@@ -40,9 +40,10 @@ water", never a single room or appliance.
 | 1:21–1:41 | 20 s   | [setup.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/setup.mp4)         | media-v1              |
 | 1:41–2:07 | 26 s   | [scheduler.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/scheduler.mp4) | media-v1              |
 | 2:07–2:32 | 25 s   | Charts: month (9 s), break-even (8 s), what moves the result (8 s)                       | media-v1              |
-| 2:32–3:32 | 60 s   | Live: the host app on the local stack                                                    | demo laptop           |
-| 3:32–4:35 | 63 s   | Slide 2: the numbers and the ask                                                         | `pitch/slides.md`     |
-| 4:35–5:00 | 25 s   | Slide 2 stays; close and team                                                            | `pitch/slides.md`     |
+| 2:32–3:20 | 48 s   | Live: the host app on the local stack                                                    | demo laptop           |
+| 3:20–3:42 | 22 s   | Host app stays up: the AI runs in the house too                                          | demo laptop           |
+| 3:42–4:45 | 63 s   | Slide 2: the numbers and the ask                                                         | `pitch/slides.md`     |
+| 4:45–5:10 | 25 s   | Slide 2 stays; close and team                                                            | `pitch/slides.md`     |
 
 The day-night film is still rendering (24 hours in 36 s, the January day). Until it is in the
 release, show the [skyline at dusk](media/skyline-dusk.webp) for those 36 s and say the same
@@ -94,7 +95,7 @@ lines.
 - 2:24 what moves the result (8 s): "Two things decide it: the price a server-hour fetches,
   and whether there is always flexible work waiting."
 
-### 2:32–3:32, live (60 s)
+### 2:32–3:20, live (48 s)
 
 Before the talk, Duc has run `make dev` and `make db-reset`. The host app is open full screen,
 scrolled to "Your servers now" and "Why this decision". A terminal is ready with
@@ -113,25 +114,38 @@ writes a signal file: the scheduler does.
 - 3:05 Peter points at "Why this decision": "Each decision shows what the scheduler saw and why,
   with its hash, chained to the one before. `make verify-live` replays every one through the
   same code as our yearly figures."
-- 3:20 Duc switches back to the slides. The loop ends by itself after July.
+- 3:20 The host app stays up; see the next block. The loop ends by itself after July.
 
 If the stack is not up, Duc plays
 [live-demo.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
 (30 s) and Peter says the same lines over it.
 
-### 3:32–4:35, slide 2
+### 3:20–3:42, the AI runs in the house (22 s)
 
-- 3:32 "One Basel house, six servers, real 2025 weather. Server heat covers 79.6 percent of
+Peter, after the first live demo, plain voice, host app still on screen:
+
+- 3:20 "The AI runs in the house too. Your questions and your data never leave the basement."
+- 3:27 "No cloud: the model that answers you runs on the same servers that heat your water."
+- 3:34 "Image and video tagging, say a rail operator's station footage, runs overnight, just when
+  the house wants heat."
+- 3:42 Duc switches back to the slides.
+
+If Duc played live-demo.mp4 instead, it ends at about 3:02. He pauses it on its last frame and
+leaves it up for these lines.
+
+### 3:42–4:45, slide 2
+
+- 3:42 "One Basel house, six servers, real 2025 weather. Server heat covers 79.6 percent of
   the heat demand, and the house sells 31,075 server-hours a year."
-- 3:47 "Before hardware it pays from 0.188 francs a server-hour. We assume 0.50."
-- 3:57 "That leaves 9,683 francs a year before hardware. After hardware, mid case, 2,965, and
+- 3:57 "Before hardware it pays from 0.188 francs a server-hour. We assume 0.50."
+- 4:07 "That leaves 9,683 francs a year before hardware. After hardware, mid case, 2,965, and
   the hardware pays back in 4.0 years."
-- 4:12 "The buyer pays for compute, the home gets the heat. Next, one scheduler for many homes
+- 4:22 "The buyer pays for compute, the home gets the heat. Next, one scheduler for many homes
   sends each job to wherever the heat is useful now."
-- 4:22 "Our ask: a Basel building for a pilot, buyers of compute that can pause, and a
+- 4:32 "Our ask: a Basel building for a pilot, buyers of compute that can pause, and a
   fitter's quote."
 
-### 4:35–5:00, close
+### 4:45–5:10, close
 
 "For homeowners and building operators who want cheaper heat, and buyers who want compute
 that does double duty. Your AI heats your home. Thank you." Then the team: Peter, Duc,
