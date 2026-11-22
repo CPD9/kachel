@@ -66,9 +66,9 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
 5. Map, http://localhost:5175. Click Basel, then a building, for its energy card. **Tour** (top
    centre) stops at FHNW Campus Dreispitz, where we are: newer than swisstopo's 3D data, so an
    orange pin stands on its site.
-6. Operator, http://localhost:5177, signed in as `operator@kachel.test` / `kachel-demo`: the
-   whole fleet, the buyers and the revenue. Click July, then slide the temperature up: heat
-   demand, servers running and revenue fall.
+6. Operator console, http://localhost:5177: Today names the homes that need you. Under Jobs,
+   sign in as `operator@kachel.test` / `kachel-demo` for the buyers, live. Under Billing, click
+   July, then slide the temperature up: the settlement and the year's revenue fall.
 7. The two films, open in the video player.
 
 If a tab is blank, reload it once.
