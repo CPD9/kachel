@@ -123,6 +123,21 @@ describe("operator console", () => {
     expect(screen.queryByText(/Sign in as the operator/)).toBeNull();
   });
 
+  it("marks on the map only the houses the list shows, even in a cold what-if", () => {
+    at("#/billing");
+    render(<App startMonth={10} />);
+    fireEvent.change(screen.getByRole("slider", { name: "Outdoor temperature" }), {
+      target: { value: "-6" },
+    });
+    act(() => {
+      window.location.hash = "#/today";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    const rows = document.querySelectorAll("tr[data-attention]").length;
+    expect(screen.getByText(/more in/)).toBeTruthy();
+    expect(document.querySelectorAll("[data-marked]")).toHaveLength(rows);
+  });
+
   it("says nothing needs you in a month when every home's servers keep up", () => {
     render(<App startMonth={6} />);
     expect(document.querySelector("[data-headline]")?.textContent).toMatch(/Nothing needs you/);

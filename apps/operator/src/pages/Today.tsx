@@ -35,15 +35,17 @@ export function Today({
   const attention = useMemo(() => needsAttention(month, monthName), [month, monthName]);
   const total = month.houses.length;
   const fine = total - attention.length;
+  // The map marks the rows the table shows, so the two always agree.
+  const shown = attention.slice(0, SHOWN);
   const marked = useMemo(
-    () => new Map(attention.map((a) => [a.row.house.id, houseName(a.row)])),
+    () => new Map(attention.slice(0, SHOWN).map((a) => [a.row.house.id, houseName(a.row)])),
     [attention],
   );
   const headline =
     attention.length === 0
       ? `${dateLine} Nothing needs you. All ${total} homes are warm on server heat.`
       : `${dateLine} ${fine} homes warm on server heat, ${attention.length} need${attention.length === 1 ? "s" : ""} you.`;
-  const byCity = (c: string) => attention.filter((a) => a.row.house.city === c).length;
+  const byCity = (c: string) => shown.filter((a) => a.row.house.city === c).length;
 
   return (
     <>
@@ -66,7 +68,7 @@ export function Today({
         ) : (
           <>
             <ul className="mt-2 divide-y divide-sep/60 border-t border-sep/60 md:hidden">
-              {attention.slice(0, SHOWN).map((a) => (
+              {shown.map((a) => (
                 <li key={a.row.house.id} data-attention={a.row.house.id} className="px-4 py-3">
                   <p className="flex items-center justify-between gap-3">
                     <span className="font-semibold">
@@ -98,7 +100,7 @@ export function Today({
                 </tr>
               </thead>
               <tbody className="divide-y divide-sep/60">
-                {attention.slice(0, SHOWN).map((a) => (
+                {shown.map((a) => (
                   <tr key={a.row.house.id} data-attention={a.row.house.id}>
                     <td className="py-3 pr-4 pl-5 font-semibold whitespace-nowrap">
                       {houseName(a.row)}
@@ -144,8 +146,8 @@ export function Today({
             <p key={c} className={c === "Bern" ? "col-start-3" : ""}>
               {c}.{" "}
               {byCity(c) === 0
-                ? "Every home is warm."
-                : `${byCity(c)} ${byCity(c) === 1 ? "house" : "houses"} marked, every other home is warm.`}
+                ? "No house marked."
+                : `${byCity(c)} ${byCity(c) === 1 ? "house" : "houses"} marked.`}
             </p>
           ))}
         </div>
