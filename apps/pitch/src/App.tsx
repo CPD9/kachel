@@ -200,7 +200,8 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
   useEffect(() => {
     if (!picked) return;
     const onKey = (e: KeyboardEvent) => {
-      if (!typing(e) && e.key.toLowerCase() === "a") toOperator();
+      // Not on key repeat: a held "a" from the step before must not skip the houses
+      if (!typing(e) && !e.repeat && e.key.toLowerCase() === "a") toOperator();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
