@@ -38,6 +38,12 @@ pauses; a deadline job that cannot wait moves to another house or a data centre.
 their house, servers and heat in the host app; buyers submit and follow jobs in the console;
 an operator view shows the whole fleet and its revenue.
 
+The AI that runs the house runs in the house. The scheduler and the agent work on the box,
+and "Ask your house" in the host app is answered by a local model, qwen3:4b through Ollama,
+on the same computer: no cloud model, and the household's questions and data stay in the
+house. Buyers send AI work such as transcription and image and video tagging; it runs on the
+house's servers, close to where the data is made.
+
 ### How it works, and what is real
 
 One pure scheduler function drives both the yearly balance on real 2025 Basel weather and
@@ -72,25 +78,31 @@ Source: Open-Meteo archive, Basel 2025
 | Weather (Open-Meteo archive, Basel and Bern 2025)                         | Real                                           |
 | Scheduler, yearly balance, economics                                      | Real code, our model                           |
 | Agent pausing and resuming a real process                                 | Real                                           |
-| Embedding job, measured on our machine and scaled to 1 kW                 | Real, power stated from TDP, not metered       |
+| Embedding and chat jobs, measured on our machine and scaled to 1 kW       | Real, GPU power metered; CPU share stated      |
 | Transcription job                                                         | Cited from published benchmarks, not run by us |
+| Image and video tagging jobs (MLPerf RetinaNet 5.0-0023, NVIDIA NVDEC)    | Cited from published benchmarks, not run by us |
+| Local AI: "Ask your house" on qwen3:4b through Ollama, no cloud model     | Real, on the same computer; energy metered     |
 | Building data: GWR, SFOE heat demand and Sonnendach, ElCom prices         | Real public data                               |
 | Supabase with Realtime and row level security                             | Real, local stack                              |
 | 3D map: swisstopo buildings and imagery                                   | Real                                           |
 | Fleet houses, buyer accounts, jobs in the apps                            | Synthetic                                      |
 | Demo transcript and the questionnaire figures in Duc's pitch intro (#156) | Synthetic                                      |
-| Scheduler writing the agent's signal; live placement of submitted jobs    | Not yet: by hand on stage                      |
+| Scheduler writing the agent's signal; live placement of submitted jobs    | Real, on a replayed day; hash-chained log      |
 | ORC turbine with a heat-pump booster, district heating as a summer sink   | Concept, outlook only                          |
 
 ### What's next, with four more weeks
 
-1. Close the loop: the scheduler writes the agent's signal and places submitted jobs live.
+1. Run the live loop on real time: `make live LIVE_ARGS="--source db --tick 3600"` reads
+   `heat_state` for the clock's hour, which a heat meter in the house would write.
 2. Meter the power with a plug meter, and run a neural embedding and a Whisper job on a GPU
    box instead of citing them.
 3. Prices from real compute buyers who accept pauses, and the reference house's yearly
    balance on its own municipality's ElCom tariff, as the map card already does (#174).
 4. One Basel pilot building with a fitter's quote, and a summer heat sink worked out with the
    district heating operator.
+5. A pilot with a rail operator's tagging backlog (station and track images and video), run
+   overnight on the pilot building's servers, measured against the cited figures in
+   [job-types.md](job-types.md).
 
 ## Repository URL
 
@@ -122,7 +134,7 @@ building's energy card open, cropped from [map-card.webp](images/map-card.webp).
 | Must-have                                                                                   | Evidence                                                                                                                                                                                    | Status                                                                                              |
 | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | At least two job types with runtime, energy, interruptible, deadline, jobs a day and source | [job-types.md](job-types.md): transcription batch (24 h deadline, cited) and embedding backlog; interactive sessions as a third (#77)                                                       | Met                                                                                                 |
-| One job type measured on our machine and scaled to 1 kW                                     | [measurements.md](measurements.md), `services/scheduler/measure.py` (#77)                                                                                                                   | Met; power from TDP, not metered                                                                    |
+| One job type measured on our machine and scaled to 1 kW                                     | [measurements.md](measurements.md), `make measure-ai` (#194)                                                                                                                                | Met; power from TDP, not metered                                                                    |
 | The same scheduler code pauses and resumes one real process on the heat signal              | `services/scheduler/demo_live.py` calls `decide()` from `heatsched/scheduler.py` and holds a real job with SIGSTOP/SIGCONT (#38); the stage agent (#36, #60)                                | Met; on stage the agent's signal file is written by hand                                            |
 | Yearly balance: servers, heat covered, dumped, utilisation, missed deadlines, cost, income  | `make year` writes `services/scheduler/out/kpis.json` (#44); figures above                                                                                                                  | Met                                                                                                 |
 | Break-even CHF per server-hour, and when it does not pay off                                | `kpis.json`, [economics/README.md](economics/README.md) charts 4 to 7, the no-backlog case                                                                                                  | Met                                                                                                 |

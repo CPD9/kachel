@@ -83,15 +83,15 @@ Note in config.json: electricity: PLACEHOLDER = ElCom 2026 Swiss H4 median (27.7
 
 ## Interactive jobs
 
-| What                           | Key                    | Value                                                | Unit         | Source    |
-| ------------------------------ | ---------------------- | ---------------------------------------------------- | ------------ | --------- |
-| What it is                     | `label`                | Interactive sessions (local AI chat, game streaming) |              | our guess |
-| Can be paused                  | `interruptible`        | false                                                |              | our guess |
-| Deadline after arrival         | `deadline_h`           | 0 h                                                  |              | our guess |
-| Server-hours arriving each day | `arrivals_server_h`    | 1 at 18:00, 1 at 19:00, 1 at 20:00, 1 at 21:00       | server-hours | our guess |
-| When the house needs no heat   | `when_heat_not_needed` | run_and_dump                                         |              | our guess |
+| What                           | Key                    | Value                                                | Unit         | Source                                             |
+| ------------------------------ | ---------------------- | ---------------------------------------------------- | ------------ | -------------------------------------------------- |
+| What it is                     | `label`                | Interactive sessions (local AI chat, game streaming) |              | [24] our measurement (the local AI chat, qwen3:4b) |
+| Can be paused                  | `interruptible`        | false                                                |              | our guess                                          |
+| Deadline after arrival         | `deadline_h`           | 0 h                                                  |              | our guess                                          |
+| Server-hours arriving each day | `arrivals_server_h`    | 1 at 18:00, 1 at 19:00, 1 at 20:00, 1 at 21:00       | server-hours | our guess                                          |
+| When the house needs no heat   | `when_heat_not_needed` | run_and_dump                                         |              | our guess                                          |
 
-Note in config.json: OUR scenario: one evening session block of 4 h per house and day.
+Note in config.json: OUR scenario: one evening session block of 4 h per house and day. Size of the local AI chat, measured on our machine (docs/measurements.md; raw: docs/measurements/ai-summary.json, ai-inference-samples.csv): qwen3:4b through Ollama on an RTX 2080 Ti, thinking off, 136.7 tokens/s, 225.3 W GPU above idle plus a stated CPU share, 0.13828 Wh per 256-token answer, about 7,200 answers per 1 kW server-hour.
 
 ## Batch jobs
 
@@ -115,7 +115,32 @@ Note in config.json: Whisper large-v3 speech to text, the MLPerf Inference speec
 | Backlog never runs out       | `unlimited`            | true                               |      | our guess                                           |
 | When the house needs no heat | `when_heat_not_needed` | pause                              |      | our guess                                           |
 
-Note in config.json: ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model. Job size measured on our machine: 0.113 Wh and 34.2 CPU-s per 200,000 items, about 8,840 jobs per 1 kW server-hour (docs/measurements.md).
+Note in config.json: ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model. Job size measured on our machine (docs/measurements.md; raw: docs/measurements/ai-summary.json, ai-embeddings-samples.csv): nomic-embed-text through Ollama on an RTX 2080 Ti, 174.4 texts/s, 68.2 W GPU above idle plus a stated CPU share, 33.248 Wh per job of 200,000 texts, about 30 jobs per 1 kW server-hour.
+
+## More job types: image and video tagging
+
+| What                                                                      | Key                         | Value                                                             | Unit         | Source                                                                                             |
+| ------------------------------------------------------------------------- | --------------------------- | ----------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| Image tagging: what it is                                                 | `label`                     | Image tagging (objects in photos, e.g. station and track images)  |              | [43] MLPerf Inference v5.0, result 5.0-0023                                                        |
+| Image tagging: runs as                                                    | `runs_as`                   | batch                                                             |              | the scheduler's batch rule                                                                         |
+| Image tagging: can be paused                                              | `interruptible`             | true                                                              |              | [43] MLPerf Inference v5.0, result 5.0-0023 (offline: each image on its own)                       |
+| Image tagging: deadline after arrival                                     | `deadline_h`                | 12 h                                                              |              | our guess                                                                                          |
+| Image tagging: server-hours arriving each day                             | `arrivals_server_h`         | 2 at 20:00                                                        | server-hours | our guess                                                                                          |
+| Image tagging: images a second, MLPerf system                             | `mlperf_images_per_s`       | 11106.2                                                           | images/s     | [43] MLPerf Inference v5.0, result 5.0-0023                                                        |
+| Image tagging: MLPerf system power at the wall                            | `mlperf_system_w`           | 4848.69                                                           | W            | [43] MLPerf Inference v5.0, result 5.0-0023                                                        |
+| Image tagging: GPUs in the MLPerf system                                  | `mlperf_gpus`               | 8                                                                 |              | [43] MLPerf Inference v5.0, result 5.0-0023                                                        |
+| Image tagging: energy per image                                           | `j_per_image`               | 0.4366                                                            | J            | [43] MLPerf Inference v5.0, result 5.0-0023: power ÷ images a second                               |
+| Image tagging: images per 1 kW server-hour                                | `images_per_server_hour`    | 8246000                                                           | images       | [43] MLPerf Inference v5.0, result 5.0-0023: 3.6 MJ ÷ energy per image                             |
+| Video tagging: what it is                                                 | `label`                     | Video tagging (labels for each sampled frame of recorded footage) |              | [45] Google Cloud Video Intelligence, label detection                                              |
+| Video tagging: runs as                                                    | `runs_as`                   | batch                                                             |              | the scheduler's batch rule                                                                         |
+| Video tagging: can be paused                                              | `interruptible`             | true                                                              |              | our guess: per clip                                                                                |
+| Video tagging: deadline after arrival                                     | `deadline_h`                | 24 h                                                              |              | our guess                                                                                          |
+| Video tagging: server-hours arriving each day                             | `arrivals_server_h`         | 2 at 22:00                                                        | server-hours | our guess                                                                                          |
+| Video tagging: frames tagged a second                                     | `sampled_fps`               | 1                                                                 | fps          | [45] Google Cloud Video Intelligence, label detection                                              |
+| Video tagging: frame rate of the footage                                  | `footage_fps`               | 25                                                                | fps          | our guess                                                                                          |
+| Video tagging: 1080p H.264 frames decoded a second, one Blackwell decoder | `decode_fps_per_engine`     | 2172                                                              | fps          | [44] NVIDIA NVDEC Application Note, SDK 13.0                                                       |
+| Video tagging: tagging energy per hour of footage                         | `tag_wh_per_footage_hour`   | 0.4366                                                            | Wh           | [45] Google Cloud Video Intelligence, label detection, [43] MLPerf Inference v5.0, result 5.0-0023 |
+| Video tagging: decoder time per hour of footage                           | `decode_s_per_footage_hour` | 41.4                                                              | s            | [44] NVIDIA NVDEC Application Note, SDK 13.0; 25 fps our guess                                     |
 
 ## Fleet (synthetic, make fleet)
 

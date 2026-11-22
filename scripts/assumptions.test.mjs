@@ -58,3 +58,15 @@ test("lays tables out as Prettier does", () => {
     "| long cell | our guess |",
   ]);
 });
+
+test("keeps the tagging jobs' derived figures in step with their sources", () => {
+  const { image_tagging: img, video_tagging: vid } = config.workloads;
+  const joules = img.mlperf_system_w / img.mlperf_images_per_s;
+  assert.equal(Number(joules.toFixed(4)), img.j_per_image);
+  assert.equal(Math.round(3.6e6 / joules / 1000) * 1000, img.images_per_server_hour);
+  // Wh per hour of footage: frames a second x 3,600 s x J a frame, over 3,600 J a Wh
+  assert.equal(Number((vid.sampled_fps * joules).toFixed(4)), vid.tag_wh_per_footage_hour);
+  const decodeS = (vid.footage_fps * 3600) / vid.decode_fps_per_engine;
+  assert.equal(Number(decodeS.toFixed(1)), vid.decode_s_per_footage_hour);
+  for (const job of [img, vid]) assert.equal(job.runs_as, "batch");
+});

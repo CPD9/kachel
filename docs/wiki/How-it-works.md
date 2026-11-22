@@ -66,19 +66,57 @@ January day and a July day. The results are on [The numbers](The-numbers#the-fle
 
 The agent,
 [`services/agent`](https://github.com/CPD9/kachel/tree/main/services/agent), runs on the server
-box. Every tick (1 second by default) it reads a signal file that says `run` or `pause`:
+box. Every tick (1 second by default) it reads a signal file whose first line says `run` or
+`pause`:
 
 - On `pause` it stops the job's process with `SIGSTOP`. The process keeps its memory and waits.
 - On `run` it sends `SIGCONT`, and the job carries on where it stopped. Nothing is lost.
 - On each change it writes the job's and the server's state to Supabase.
 
-Today a person writes the signal file, as on stage. The scheduler writing it is next.
+## The live loop: the scheduler drives the agent
+
+`make live` ([`services/scheduler/live.py`](https://github.com/CPD9/kachel/blob/main/services/scheduler/live.py))
+runs the same `decide()` as the yearly balance on the house in Supabase, tick by tick. Each tick
+it reads the house's servers and jobs and the heat of the hour (a replayed day on the saved Basel
+weather, or `heat_state` for the clock's hour), decides, and carries it out: the agent's signal
+file, with the reason and the decision's hash on the lines after `run` or `pause`; the state of
+the other jobs and servers; and a server for each job queued in the console, through the fleet's
+`place_hour`. No person writes the signal file any more. `make live-demo` starts a real job, its
+agent and the loop in one command, and replays 13 January and 15 July at about a minute a day.
+
+## Every decision, verifiable
+
+Each decision is appended to `out/decisions.jsonl` and the `decisions` table. An entry holds the
+inputs (time, outdoor temperature, heat demand, tank, servers, jobs), the Signal, the decision,
+the jobs it ran, when it was made, and a SHA-256 hash over all of it and the previous entry's
+hash. The table is append-only: not even the service role can change or delete a row.
+`make verify-live` checks every link and hash and replays each entry's inputs through
+`decide()`; a decision that does not follow from its inputs is reported and the command fails.
+The host app and the operator view show the newest decisions and their hashes under "Why this
+decision".
+
+## The AI stays in the house
+
+The AI that runs a house runs in the house, not in a cloud. The scheduler decides on the box,
+the agent pauses and resumes jobs on the box, and "Ask your house" in the host app asks a local
+model, qwen3:4b through [Ollama](https://ollama.com), on the same computer. The chat talks only
+to a model on that machine (`isLocalUrl` in
+[`apps/host/src/chat/model.ts`](https://github.com/CPD9/kachel/blob/main/apps/host/src/chat/model.ts));
+if none is running, the chat is off and the rest of the page still works. A household's
+questions, and the house data the model reads to answer them, stay in the house.
+
+## Heat to power: a concept
+
+When no building needs the heat, it could make electricity with an ORC (organic Rankine cycle)
+turbine. Server water is too cool for that to work well, so a small heat pump would first lift
+its temperature, and the turbine would then run on the hotter water. This is a concept only:
+it has no figures and is in none of our numbers.
 
 ## Realtime to the apps
 
 Supabase holds the houses (`sites`), `servers`, `jobs`, `job_runs`, `heat_state` (one row per
-house and hour), `kpis` and `assumptions`. Realtime is on for `servers`, `jobs` and
-`heat_state`, so when the agent writes a change, the host app and the console show it without a
+house and hour), `kpis` and `assumptions`. Realtime is on for `servers`, `jobs`,
+`heat_state` and `decisions`, so when the agent or the loop writes a change, the host app and the console show it without a
 reload, in under a second in the demo. Row level security shows each person only their own
 rows.
 
@@ -95,9 +133,10 @@ flowchart LR
     tank["Plate heat exchanger and tank:<br/>space heating and hot water"]
     sched["House scheduler<br/>services/scheduler<br/>decides every hour"]
     agent["Agent<br/>services/agent<br/>pauses and resumes the job"]
+    llm["Local AI model<br/>qwen3:4b through Ollama<br/>on the box, no cloud"]
     servers -- "heat" --> tank
     tank -- "tank level, heat demand" --> sched
-    sched -. "run / pause<br/>(signal file, by hand in the demo)" .-> agent
+    sched -- "run / pause<br/>(signal file, make live)" --> agent
     agent -- "SIGSTOP / SIGCONT" --> servers
   end
 
@@ -106,22 +145,31 @@ flowchart LR
   console["Console<br/>apps/console<br/>submit and follow jobs"]
   fleet["Fleet model<br/>make fleet<br/>each job to a home whose heat is useful"]
   outlook["District heating as a summer heat sink (next, #66)"]
+  booster["Small heat pump<br/>lifts the water temperature<br/>(concept)"]
+  orc["ORC turbine<br/>heat to electricity<br/>(concept, no figures)"]
 
   agent -- "job and server state" --> supa
+  sched -- "decisions (hash-chained),<br/>placements" --> supa
   fleet -- "one hour of a fleet day<br/>(fleet_write.py)" --> supa
   console -- "submit a job (QUEUED)" --> supa
   supa -- "Realtime" --> host
   supa -- "Realtime" --> console
+  host -- "Ask your house:<br/>questions, local only" --> llm
   tank -. "heat the house cannot use" .-> outlook
+  tank -. "heat the house cannot use" .-> booster
+  booster -. "hotter water" .-> orc
 ```
 
-| Part                    | Where                                                 | State                                                                              |
-| ----------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| House scheduler         | `services/scheduler/heatsched/scheduler.py`           | Built. Runs the yearly balance and the live demo                                   |
-| Fleet model             | `services/scheduler/heatsched/fleet.py`               | Built as a model on synthetic houses; `fleet_write.py` puts one hour into Supabase |
-| Agent                   | `services/agent`                                      | Built. Follows a run/pause signal file and writes to Supabase                      |
-| Supabase and Realtime   | `supabase/migrations`, `packages/db`                  | Built. Realtime on `servers`, `jobs` and `heat_state`; row level security on all   |
-| Host app, console, map  | `apps/host`, `apps/console`, `apps/map`               | Built. See [The product](The-product)                                              |
-| Scheduler writes signal | `services/scheduler`, `services/agent`                | Next. On stage the signal file is written by hand                                  |
-| Live routing            | none yet                                              | Next. A job submitted in the console waits as QUEUED; nothing places it live yet   |
-| District heating        | issue [#66](https://github.com/CPD9/kachel/issues/66) | Next. A summer heat sink for heat the houses cannot use                            |
+| Part                    | Where                                                   | State                                                                              |
+| ----------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| House scheduler         | `services/scheduler/heatsched/scheduler.py`             | Built. Runs the yearly balance and the live demo                                   |
+| Fleet model             | `services/scheduler/heatsched/fleet.py`                 | Built as a model on synthetic houses; `fleet_write.py` puts one hour into Supabase |
+| Agent                   | `services/agent`                                        | Built. Follows a run/pause signal file and writes to Supabase                      |
+| Supabase and Realtime   | `supabase/migrations`, `packages/db`                    | Built. Realtime on `servers`, `jobs` and `heat_state`; row level security on all   |
+| Host app, console, map  | `apps/host`, `apps/console`, `apps/map`                 | Built. See [The product](The-product)                                              |
+| Scheduler writes signal | `services/scheduler/live.py`, `services/agent`          | Built (#191). `make live` writes the agent's signal from `decide()` each tick      |
+| Live routing            | `services/scheduler/heatsched/live.py`                  | Built (#191). A queued console job gets a server through the fleet's `place_hour`  |
+| Decision log            | `heatsched/ledger.py`, `decisions` table                | Built (#191). SHA-256 chained, append-only; `make verify-live` replays it          |
+| District heating        | issue [#66](https://github.com/CPD9/kachel/issues/66)   | Next. A summer heat sink for heat the houses cannot use                            |
+| Local AI model          | `apps/host/src/chat`, Ollama                            | Built. qwen3:4b on the same computer answers "Ask your house"; no cloud model      |
+| ORC with a heat pump    | issue [#159](https://github.com/CPD9/kachel/issues/159) | Concept, no figures. A small heat pump lifts the temperature, then the turbine     |

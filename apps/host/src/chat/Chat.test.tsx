@@ -33,6 +33,13 @@ describe("chat panel", () => {
     expect(screen.getByText(/answered without reading any data/)).toBeTruthy();
   });
 
+  it("says in its header that the model runs locally", async () => {
+    const { model } = scriptedModel([]);
+    render(<Chat model={model} data={fakeData()} />);
+    expect(await screen.findByText("Local AI · no cloud")).toBeTruthy();
+    expect(screen.getByText(/no question or answer leaves the house/)).toBeTruthy();
+  });
+
   it("says so when Ollama is not running, and offers no questions", async () => {
     const { model } = scriptedModel([], "offline");
     render(<Chat model={model} data={fakeData()} />);

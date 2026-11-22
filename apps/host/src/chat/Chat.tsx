@@ -141,12 +141,18 @@ export function Chat({ model, data }: { model: ChatModel; data: ChatData }) {
   const ready = status === "ready";
   return (
     <section aria-labelledby="ask" className="rounded-lg border border-grid bg-paper p-5">
-      <h2 id="ask" className="text-lg font-semibold">
-        Ask your house
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="ask" className="text-lg font-semibold">
+          Ask your house
+        </h2>
+        <span className="rounded-full border border-grid px-2 py-0.5 text-xs font-medium">
+          Local AI · no cloud
+        </span>
+      </div>
       <p className="mt-1 text-xs text-muted">
-        {model.name} on this computer answers from your house&apos;s own data; nothing goes to the
-        cloud. Every number comes from a tool, shown with its source.
+        {model.name} runs on this computer, as it would on the house&apos;s own server, and answers
+        from your house&apos;s own data; no question or answer leaves the house. Every number comes
+        from a tool, shown with its source.
       </p>
       {status === "checking" && (
         <p className="mt-3 text-sm text-muted">Looking for the local model…</p>

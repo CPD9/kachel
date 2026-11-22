@@ -68,9 +68,10 @@ The seed makes these accounts. All exist only in your local database.
 | Demo buyer | `buyer@kachel.test`    | `kachel-demo` | Console       |
 | Operator   | `operator@kachel.test` | `kachel-demo` | Operator view |
 
-Six more buyers are synthetic, each a kind of compute the fleet sells: game streaming
+Seven more buyers are synthetic, each a kind of compute the fleet sells: game streaming
 (`play@`), 3D rendering (`render@`), an AI lab (`lab@`), a video studio (`studio@`),
-embeddings (`embed@`) and speech to text (`speech@`), all `@kachel.test` with the same password.
+embeddings (`embed@`), speech to text (`speech@`) and a rail operator tagging images and video
+of stations and track (`rail@`), all `@kachel.test` with the same password.
 Their jobs run on the synthetic fleet houses. The operator reads every house, server, job and
 buyer and changes none; that role is set in the account's app metadata, which no app can write.
 
@@ -101,8 +102,23 @@ uv run python fleet_write.py --day january --hour 18   # --dry-run prints instea
 The stage version, with the order and the fallbacks, is the
 [demo checklist](https://github.com/CPD9/kachel/blob/main/docs/demo-checklist.md).
 
-This is the moment from the pitch: a real job on Server 4 pauses and resumes, and the host app
-follows within a second.
+This is the moment from the pitch: a real job on Server 4 pauses and resumes because the
+scheduler decided so, and the host app follows within a second.
+
+With `make dev` running and the host app signed in as the demo host, one command does it all:
+
+```sh
+make live-demo
+```
+
+It starts a real embedding job, the agent on Server 4, and the scheduler's live loop, which
+replays 13 January and 15 July on the saved Basel weather at about a minute a day. In January the
+house needs every bit of heat and the backlog runs. In July the tank fills, the scheduler pauses
+the backlog by itself and resumes it when hot water has drawn the tank down. "Why this decision"
+in the host app shows each decision, why, and its hash. `make verify-live` then replays the log
+through `decide()` and reports any mismatch. Ctrl-C stops the job, the agent and the loop.
+
+By hand, step by step (the same agent, with you as the scheduler):
 
 1. Run `make dev` and sign in to the host app as the demo host.
 2. From the repo root, start the real embedding job and note its process id:

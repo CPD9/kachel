@@ -60,7 +60,7 @@ const SUGGESTIONS = ["How does it work?", "Is my building suitable?", "What does
 const STEPS = [
   {
     title: "Servers compute",
-    text: "Real workloads run on hardware in your basement or plant room.",
+    text: "Real workloads, AI included, run on hardware in your basement or plant room, not in a distant cloud.",
   },
   {
     title: "Heat is captured",
@@ -403,7 +403,8 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
             </h1>
             <p className="max-w-lg text-base leading-relaxed text-muted">
               We install servers in your building. They do real computing work, and the heat they
-              give off warms your rooms and water.
+              give off warms your rooms and water. The AI that plans your heat and answers your
+              questions runs on them too, so your data stays in the house.
             </p>
           </div>
           <VoicePrompt onSend={send} />

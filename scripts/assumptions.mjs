@@ -37,12 +37,16 @@ const SWISSOLAR = "[32] Swissolar factsheet 2025";
 const IWB_2027 = "[3] ElCom, IWB Basel 2027 H4";
 const SONNENDACH = "[38] Meteotest and Egon AG for SFOE (Sonnendach), from SIA 2024";
 const RENOVATION = "[39] EnergieSchweiz and EnFK 2019";
+const MLPERF_RETINANET = "[43] MLPerf Inference v5.0, result 5.0-0023";
+const NVDEC = "[44] NVIDIA NVDEC Application Note, SDK 13.0";
+const VIDEO_AI = "[45] Google Cloud Video Intelligence, label detection";
 
 /** Job values that have a source; every other job value is our guess (docs/job-types.md). */
 const JOB_SOURCES = {
   "batch.label": `${MLPERF}, ${ASR}`,
   "batch.interruptible": `${MLPERF} (offline: the whole batch is there at the start)`,
   "batch.deadline_h": BATCH_API,
+  "interactive.label": `${MEASURED} (the local AI chat, qwen3:4b)`,
   "opportunistic.label": MEASURED,
   "opportunistic.interruptible": `${MEASURED}: it checkpoints every 64 items`,
 };
@@ -233,6 +237,102 @@ for (const kind of ["interactive", "batch", "opportunistic"]) {
   }
 }
 
+/** Sourced job types a buyer can send (config.json: workloads); each runs as a scheduler kind. */
+const WORKLOAD_VALUES = {
+  "image_tagging.label": ["Image tagging: what it is", "", show.plain, MLPERF_RETINANET],
+  "image_tagging.runs_as": ["Image tagging: runs as", "", show.plain, "the scheduler's batch rule"],
+  "image_tagging.interruptible": [
+    "Image tagging: can be paused",
+    "",
+    show.plain,
+    `${MLPERF_RETINANET} (offline: each image on its own)`,
+  ],
+  "image_tagging.deadline_h": ["Image tagging: deadline after arrival", "", show.hours, GUESS],
+  "image_tagging.arrivals_server_h": [
+    "Image tagging: server-hours arriving each day",
+    "server-hours",
+    show.arrivals,
+    GUESS,
+  ],
+  "image_tagging.mlperf_images_per_s": [
+    "Image tagging: images a second, MLPerf system",
+    "images/s",
+    show.plain,
+    MLPERF_RETINANET,
+  ],
+  "image_tagging.mlperf_system_w": [
+    "Image tagging: MLPerf system power at the wall",
+    "W",
+    show.plain,
+    MLPERF_RETINANET,
+  ],
+  "image_tagging.mlperf_gpus": [
+    "Image tagging: GPUs in the MLPerf system",
+    "",
+    show.plain,
+    MLPERF_RETINANET,
+  ],
+  "image_tagging.j_per_image": [
+    "Image tagging: energy per image",
+    "J",
+    show.plain,
+    `${MLPERF_RETINANET}: power ÷ images a second`,
+  ],
+  "image_tagging.images_per_server_hour": [
+    "Image tagging: images per 1 kW server-hour",
+    "images",
+    show.plain,
+    `${MLPERF_RETINANET}: 3.6 MJ ÷ energy per image`,
+  ],
+  "video_tagging.label": ["Video tagging: what it is", "", show.plain, VIDEO_AI],
+  "video_tagging.runs_as": ["Video tagging: runs as", "", show.plain, "the scheduler's batch rule"],
+  "video_tagging.interruptible": [
+    "Video tagging: can be paused",
+    "",
+    show.plain,
+    `${GUESS}: per clip`,
+  ],
+  "video_tagging.deadline_h": ["Video tagging: deadline after arrival", "", show.hours, GUESS],
+  "video_tagging.arrivals_server_h": [
+    "Video tagging: server-hours arriving each day",
+    "server-hours",
+    show.arrivals,
+    GUESS,
+  ],
+  "video_tagging.sampled_fps": [
+    "Video tagging: frames tagged a second",
+    "fps",
+    show.plain,
+    VIDEO_AI,
+  ],
+  "video_tagging.footage_fps": [
+    "Video tagging: frame rate of the footage",
+    "fps",
+    show.plain,
+    GUESS,
+  ],
+  "video_tagging.decode_fps_per_engine": [
+    "Video tagging: 1080p H.264 frames decoded a second, one Blackwell decoder",
+    "fps",
+    show.plain,
+    NVDEC,
+  ],
+  "video_tagging.tag_wh_per_footage_hour": [
+    "Video tagging: tagging energy per hour of footage",
+    "Wh",
+    show.plain,
+    `${VIDEO_AI}, ${MLPERF_RETINANET}`,
+  ],
+  "video_tagging.decode_s_per_footage_hour": [
+    "Video tagging: decoder time per hour of footage",
+    "s",
+    show.plain,
+    `${NVDEC}; 25 fps ${GUESS}`,
+  ],
+};
+
+for (const [key, row] of Object.entries(WORKLOAD_VALUES)) VALUES[`workloads.${key}`] = row;
+
 /** Each hardware case's values (config.json: hardware.cases), shown side by side. */
 export const HARDWARE = {
   label: ["What it is", "", show.plain, `${PCSP}, ${VRLA}`],
@@ -326,6 +426,7 @@ const SECTIONS = [
   ["Interactive jobs", "jobs.interactive"],
   ["Batch jobs", "jobs.batch"],
   ["Backlog jobs", "jobs.opportunistic"],
+  ["More job types: image and video tagging", "workloads"],
   ["Fleet (synthetic, make fleet)", "fleet"],
   ["Hardware", "hardware"],
 ];

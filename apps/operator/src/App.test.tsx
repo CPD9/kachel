@@ -102,6 +102,8 @@ describe("operator view", () => {
     expect(reading("Revenue this year")).toBeGreaterThan(0);
     expect(document.querySelectorAll("tbody tr[data-house]")).toHaveLength(100);
     expect(document.querySelectorAll("li[data-house-card]")).toHaveLength(100);
+    // Every house says its AI runs on its own server
+    expect(screen.getAllByText("Runs locally")).toHaveLength(100);
     expect(screen.getByRole("img", { name: /Basel and Bern/ })).toBeTruthy();
     // Without Supabase (a deployed build): the model shows, and the live part says what it needs
     expect(screen.getByText(/Live data needs the local stack/)).toBeTruthy();

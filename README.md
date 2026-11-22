@@ -21,6 +21,7 @@ Your AI heats your home.
 
 Small servers in a home's basement run AI jobs, and their heat goes into space heating and hot water.
 A job runs only when its heat is useful.
+The AI that runs each house runs in it too, not in a cloud: the scheduler, the agent, and a local model (qwen3:4b through Ollama) that answers the household's questions, so their data stays in the house.
 
 <p align="center"><img src="packages/ui/src/heat-loop.webp" width="360" alt="A basement server runs a job, its heat fills the hot-water tank and warms the house"></p>
 

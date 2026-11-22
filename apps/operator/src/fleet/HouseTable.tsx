@@ -5,6 +5,10 @@ import type { HouseMonth } from "./months";
 
 type Sort = "demand" | "name";
 
+/** Where each house's AI runs: on its own box, by design, for every house of the fleet. */
+const RUNS_LOCALLY =
+  "On the house's own server: the scheduler decides there, the agent pauses and resumes jobs there, and the house chat's model (qwen3:4b through Ollama) answers there. House data stays in the house. The houses are synthetic; every house follows this design (docs/architecture.md).";
+
 /** "Synthetic Bern house 07" reads as "House 07"; the city shows beside it. */
 const houseName = (r: HouseMonth) => r.house.name.replace(/^Synthetic (Bern )?house/, "House");
 
@@ -91,7 +95,8 @@ export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName:
               </div>
             </dl>
             <p className="mt-0.5 text-[13px] text-white/55 tabular-nums">
-              {mwh(r.house.heat_demand_kwh_2025)} MWh a year · tank {count(r.house.tank_kwh)} kWh
+              {mwh(r.house.heat_demand_kwh_2025)} MWh a year · tank {count(r.house.tank_kwh)} kWh ·
+              AI runs locally
             </p>
           </li>
         ))}
@@ -141,6 +146,7 @@ export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName:
               >
                 Backup, kW
               </Head>
+              <Head source={RUNS_LOCALLY}>AI</Head>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10">
@@ -161,6 +167,7 @@ export function HouseTable({ rows, monthName }: { rows: HouseMonth[]; monthName:
                 <td className="py-1.5 pr-4 text-right tabular-nums">{fixed1(r.demandKw)}</td>
                 <td className="py-1.5 pr-4 text-right tabular-nums">{fixed1(r.servedKw)}</td>
                 <td className="py-1.5 pr-4 text-right tabular-nums">{fixed1(r.backupKw)}</td>
+                <td className="py-1.5 pr-4 whitespace-nowrap text-white/70">Runs locally</td>
               </tr>
             ))}
           </tbody>

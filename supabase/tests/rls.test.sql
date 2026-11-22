@@ -199,11 +199,11 @@ set local role authenticated;
 select is((select count(*) from public.sites), 14::bigint, 'operator reads every site');
 -- 6 in the reference house, 60 in the twelve fleet houses, and server 211.
 select is((select count(*) from public.servers), 67::bigint, 'operator reads every server');
--- 25 from the seed, job 311 and the one the buyer submitted above.
-select is((select count(*) from public.jobs), 27::bigint, 'operator reads every buyer''s jobs');
-select is((select count(distinct buyer_id) from public.jobs), 8::bigint,
-  'operator sees the jobs of all eight buyers');
-select is((select count(*) from public.buyers), 7::bigint, 'operator reads every buyer');
+-- 28 from the seed, job 311 and the one the buyer submitted above.
+select is((select count(*) from public.jobs), 30::bigint, 'operator reads every buyer''s jobs');
+select is((select count(distinct buyer_id) from public.jobs), 9::bigint,
+  'operator sees the jobs of all nine buyers');
+select is((select count(*) from public.buyers), 8::bigint, 'operator reads every buyer');
 select is((select count(*) from public.heat_state), 49::bigint, 'operator reads the heat in every site');
 select is((select count(*) from public.kpis), 2::bigint, 'operator reads every yearly balance');
 select is((select count(*) from public.job_runs), 4::bigint, 'operator reads every job run');
