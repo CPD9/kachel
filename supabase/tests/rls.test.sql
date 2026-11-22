@@ -3,7 +3,7 @@
 -- Database CI job runs it on every push. Everything is rolled back at the end.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(61);
+select plan(69);
 
 -- Seed: host 01 owns site 100 with servers 201-206; buyer 02 owns jobs 301-305
 -- (301-304 on servers 201-204, 305 still queued). Here: host 03 with site 101 and server 211,
@@ -32,6 +32,15 @@ insert into public.kpis (site_id, profile_source, servers_per_house, heat_demand
   electricity_cost_chf, value_of_heat_used_chf, computing_income_chf,
   pays_off_at_assumed_compute_price)
 values ('00000000-0000-4000-8000-000000000101', 'test', 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, true);
+
+-- One logged decision for each house (#191): the live loop writes them with the service role.
+insert into public.decisions (hash, prev_hash, seq, site_id, time, demand_kwh, soc_kwh, tank_kwh,
+  interactive, batch, opportunistic, reason, run, entry)
+values
+  ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '0000000000000000000000000000000000000000000000000000000000000000', 0, '00000000-0000-4000-8000-000000000100', '2025-07-15 00:00:00+02', 0.5, 34.3, 35, 0, 0, 0,
+   'tank full / no heat sink: backlog paused', '[]', '{}'),
+  ('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', '0000000000000000000000000000000000000000000000000000000000000000', 0, '00000000-0000-4000-8000-000000000101', '2025-07-15 00:00:00+02', 0.5, 20, 30, 0, 0, 1,
+   'heat needed', '[]', '{}');
 
 -- Every table in public has row level security on.
 select is(
@@ -66,6 +75,8 @@ select is((select count(*) from public.heat_state where site_id = '00000000-0000
   0::bigint, 'host cannot read another site''s heat state');
 select is((select count(*) from public.kpis), 1::bigint, 'host reads their own yearly balance only');
 select is((select count(*) from public.buyers), 0::bigint, 'host reads no buyers');
+select is((select count(*) from public.decisions where hash in ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')), 1::bigint,
+  'host reads the decisions for their own house only');
 
 update public.sites set name = 'Renamed by host' where id = '00000000-0000-4000-8000-000000000100';
 update public.sites set name = 'Hijacked' where id = '00000000-0000-4000-8000-000000000101';
@@ -107,6 +118,8 @@ select is((select count(*) from public.jobs), 7::bigint, 'buyer reads their own 
 select is((select count(*) from public.jobs where id = '00000000-0000-4000-8000-000000000311'),
   0::bigint, 'buyer cannot read another buyer''s job');
 select is((select count(*) from public.job_runs), 3::bigint, 'buyer reads the runs of their jobs');
+select is((select count(*) from public.decisions where hash in ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')), 0::bigint,
+  'buyer reads no house''s decisions');
 select set_eq('select id::text from public.sites',
   array['00000000-0000-4000-8000-000000000100', '00000000-0000-4000-8000-000000001003',
         '00000000-0000-4000-8000-000000001009'],
@@ -173,6 +186,8 @@ select results_eq('select id::text from public.jobs',
   array['00000000-0000-4000-8000-000000000311'], 'the second host reads only the job on their server');
 select is((select count(*) from public.sites where id = '00000000-0000-4000-8000-000000000100'),
   0::bigint, 'the second host cannot read the first host''s site');
+select results_eq($$select hash from public.decisions where hash in ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')$$,
+  array['bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'], 'the second host reads only their own house''s decision');
 reset role;
 
 -- ---------------------------------------------------------------- operator
@@ -192,6 +207,8 @@ select is((select count(*) from public.buyers), 7::bigint, 'operator reads every
 select is((select count(*) from public.heat_state), 49::bigint, 'operator reads the heat in every site');
 select is((select count(*) from public.kpis), 2::bigint, 'operator reads every yearly balance');
 select is((select count(*) from public.job_runs), 4::bigint, 'operator reads every job run');
+select is((select count(*) from public.decisions where hash in ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')), 2::bigint,
+  'operator reads every decision');
 update public.sites set name = 'Renamed by operator' where id = '00000000-0000-4000-8000-000000000101';
 update public.jobs set state = 'GONE' where id = '00000000-0000-4000-8000-000000000311';
 select throws_ok(
@@ -223,6 +240,7 @@ select is((select count(*) from public.servers), 0::bigint, 'anon reads no serve
 select is((select count(*) from public.jobs), 0::bigint, 'anon reads no jobs');
 select is((select count(*) from public.heat_state), 0::bigint, 'anon reads no heat state');
 select is((select count(*) from public.buyers), 0::bigint, 'anon reads no buyers');
+select is((select count(*) from public.decisions), 0::bigint, 'anon reads no decisions');
 select ok((select count(*) from public.assumptions) > 0, 'anon reads the public assumptions');
 select throws_ok(
   $$insert into public.jobs (buyer_id, kind, label, interruptible)
@@ -238,6 +256,18 @@ select is((select count(*) from public.sites), 14::bigint, 'the agent reads ever
 select lives_ok(
   $$update public.servers set state = 'OFF' where id = '00000000-0000-4000-8000-000000000211'$$,
   'the agent writes a server''s state');
+select lives_ok(
+  $$insert into public.decisions (hash, prev_hash, seq, site_id, time, demand_kwh, soc_kwh, tank_kwh,
+      interactive, batch, opportunistic, reason, run, entry)
+    values ('cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 1, '00000000-0000-4000-8000-000000000100', '2025-07-15 01:00:00+02',
+      0.5, 34.6, 35, 0, 0, 1, 'heat needed', '[]', '{}')$$,
+  'the live loop adds a decision');
+select throws_ok(
+  $$update public.decisions set reason = 'rewritten' where hash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'$$,
+  'P0001', null, 'not even the service role can change a logged decision');
+select throws_ok(
+  $$delete from public.decisions where hash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'$$,
+  'P0001', null, 'not even the service role can delete a logged decision');
 reset role;
 
 select * from finish();

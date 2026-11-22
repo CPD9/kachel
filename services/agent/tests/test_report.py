@@ -5,9 +5,9 @@ import sys
 import httpx
 import pytest
 
-from kachel_agent.loop import Change, follow
+from kachel_agent.loop import Change, Note, follow
 from kachel_agent.process import Job, State
-from kachel_agent.report import MissingSetting, Reporter, client_from_env
+from kachel_agent.report import MissingSetting, Reporter, client_from_env, reason
 
 JOB = "00000000-0000-4000-8000-000000000304"
 SERVER = "00000000-0000-4000-8000-000000000204"
@@ -61,6 +61,17 @@ def test_a_pause_writes_the_job_its_server_and_a_run() -> None:
             },
         ),
     ]
+
+
+def test_the_scheduler_s_reason_and_decision_go_in_the_run() -> None:
+    fake = FakeSupabase()
+    note = Note("tank full / no heat sink: backlog paused", "0123456789ab" + "c" * 52)
+    Reporter(fake.client(), JOB, SERVER, pid=4104)(Change(4, False, State.PAUSED), note)
+    assert fake.writes()[2][3]["reason"] == (
+        "paused by the scheduler: tank full / no heat sink: backlog paused (decision 0123456789ab)"
+    )
+    assert reason(State.RUNNING, Note("heat needed")) == "running by the scheduler: heat needed"
+    assert reason(State.GONE, note) == "job ended"
 
 
 def test_a_finished_job_turns_its_server_off() -> None:

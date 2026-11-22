@@ -14,12 +14,13 @@ from dataclasses import dataclass
 
 import httpx
 
-from .loop import Change
+from .loop import Change, Note
 from .process import State
 
-# What the house view shows as the reason (supabase/seed.sql writes the same). The agent only
-# sees its signal file, not the tank, so each reason says where it came from rather than guessing
-# why: on stage the file is flipped by hand.
+# What the house view shows as the reason when the signal file holds run or pause alone, as when a
+# person writes it (supabase/seed.sql writes the same). The agent never sees the tank, so it does
+# not guess why. When the scheduler's live loop writes the file, its own reason and the hash of
+# the logged decision are used instead (see `reason`).
 REASONS = {
     State.RUNNING: "running on its signal file (demo switch)",
     State.PAUSED: "paused by its signal file (demo switch, not the tank)",
@@ -32,6 +33,15 @@ SERVER_STATES = {State.RUNNING: "RUNNING", State.PAUSED: "PAUSED", State.GONE: "
 
 class MissingSetting(RuntimeError):
     pass
+
+
+def reason(state: State, note: Note | None) -> str:
+    """The job_runs reason: the scheduler's own words and decision hash, or the plain signal."""
+    if note is None or state is State.GONE:
+        return REASONS[state]
+    verb = "running" if state is State.RUNNING else "paused"
+    where = f" (decision {note.decision[:12]})" if note.decision else ""
+    return f"{verb} by the scheduler: {note.reason}{where}"
 
 
 def client_from_env(
@@ -65,15 +75,15 @@ class Reporter:
     server_id: str
     pid: int
 
-    def __call__(self, change: Change) -> bool:
+    def __call__(self, change: Change, note: Note | None = None) -> bool:
         try:
-            self._write(change)
+            self._write(change, note)
         except httpx.HTTPError as err:
             print(f"tick {change.tick}: could not report to Supabase: {err}", file=sys.stderr)
             return False
         return True
 
-    def _write(self, change: Change) -> None:
+    def _write(self, change: Change, note: Note | None = None) -> None:
         job = {"state": str(change.state), "server_id": self.server_id, "pid": self.pid}
         self.http.patch("/jobs", params={"id": f"eq.{self.job_id}"}, json=job).raise_for_status()
         self.http.patch(
@@ -87,6 +97,6 @@ class Reporter:
             "tick": change.tick,
             "run": change.run,
             "state": str(change.state),
-            "reason": REASONS[change.state],
+            "reason": reason(change.state, note),
         }
         self.http.post("/job_runs", json=run).raise_for_status()
