@@ -29,7 +29,7 @@ life. See [The numbers](The-numbers).
 ## Are these figures measured?
 
 Mostly not. They are model results on real 2025 Basel weather, with inputs from the case brief
-and from cited sources. One job is measured on our own machine. No server has been fitted to a
+and from cited sources. Two AI jobs are measured on our own machine with a GPU power meter. No server has been fitted to a
 real tank yet. Values without a source are marked "our guess" on the
 [assumptions page](https://github.com/CPD9/kachel/blob/main/docs/assumptions.md).
 

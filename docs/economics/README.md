@@ -342,8 +342,9 @@ price.
     synchronous price <https://developers.openai.com/api/docs/guides/batch>.
 23. Alibaba, cluster-trace-gpu-v2020: over 6,500 GPUs, July and August 2020, training and
     inference jobs <https://github.com/alibaba/clusterdata/tree/master/cluster-trace-gpu-v2020>.
-24. Our own measurement of the embedding job on an Intel Core i7-9700K, 21 Nov 2026:
-    [measurements.md](../measurements.md).
+24. Our own measurement of two AI jobs, embeddings (nomic-embed-text) and chat answers
+    (qwen3:4b), through Ollama on an RTX 2080 Ti with GPU power metered by nvidia-smi, 22 Nov
+    2026: [measurements.md](../measurements.md).
 25. JRC, PVGIS 5.3, Basel (47.56 N, 7.59 E), 1 kWp, 30° south, 14% system loss, SARAH3
     2005–2023: 1,160 kWh per kWp a year, 21.05% total loss, checked 21 Nov 2026:
     <https://re.jrc.ec.europa.eu/pvg_tools/en/>.

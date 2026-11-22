@@ -94,8 +94,9 @@ mean temperature, and the prices with their source. The operator view (`apps/ope
 1. `config.json → prices.electricity_chf_per_kwh` is a placeholder (Swiss H4 median 2026, 27.7 Rp). Put in IWB Basel H4.
 2. Run on the case CSV. The numbers in `out/` (`kpis.json`, the day CSVs, the fleet runs) come from the Open-Meteo archive
    for 2025 (Basel, and Bern for its fleet), not from the case profile.
-3. Run `measure.py` on your own machine with a stated power figure; install sentence-transformers so the job is real inference.
-   Our run, its method and the cited second job type are in `docs/measurements.md` and `docs/job-types.md`.
+3. Run `make measure-ai` on your own machine (Ollama with nomic-embed-text and qwen3:4b, an NVIDIA GPU): it meters the
+   GPU while real embeddings and chat answers run. Our run, its method and the cited job type are in
+   `docs/measurements.md` and `docs/job-types.md`.
 
 ## How the scheduler decides (every hour)
 

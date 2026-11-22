@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months video-charts paper pitch-graphics live live-demo verify-live
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months measure-ai video-charts paper pitch-graphics live verify-live
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -97,6 +97,14 @@ fleet:
 MONTHS_JOBS ?=
 months:
 	cd $(SCHED) && uv run python run_months.py $(if $(MONTHS_JOBS),--jobs $(MONTHS_JOBS))
+
+# Measure the two real AI jobs on this machine through the local Ollama (nomic-embed-text and
+# qwen3:4b, already pulled; nothing is downloaded), GPU power metered with nvidia-smi every 100 ms
+# above the idle baseline. Waits up to an hour for an idle GPU with no Blender on it. Writes
+# docs/measurements/ai-*.csv and ai-summary.json; see docs/measurements.md. About five minutes.
+measure-ai:
+	cd $(SCHED) && uv run python -u measure_ai.py
+	pnpm exec prettier --write docs/measurements/ai-summary.json
 
 check-readme:
 	python3 scripts/pitch/voiceover.py --check

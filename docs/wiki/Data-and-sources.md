@@ -52,9 +52,11 @@ refers to.
 
 ## Our own measurement
 
-One job type is measured on our own machine, an Intel Core i7-9700K, on 21 Nov 2026: the
-embedding job, 34.2 CPU seconds and 0.113 Wh for 200,000 texts, about 8,840 jobs per 1 kW
-server-hour. The power is the chip's design limit split over its cores, not a meter reading.
+Two AI jobs are measured on our own machine, an RTX 2080 Ti through Ollama, on 22 Nov 2026,
+with GPU power read every 100 ms above the idle baseline: embeddings (nomic-embed-text), 174.4
+texts a second and 33.2 Wh for 200,000 texts, about 30 jobs per 1 kW server-hour; and chat
+answers (qwen3:4b), 136.7 tokens a second and 0.138 Wh an answer, about 7,200 per server-hour.
+The CPU's share is stated from its design limit, not metered.
 Method and limits: [measurements.md](https://github.com/CPD9/kachel/blob/main/docs/measurements.md).
 
 ## Our guesses
