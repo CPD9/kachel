@@ -52,11 +52,13 @@ refers to.
 
 ## Our own measurement
 
-Two AI jobs are measured on our own machine, an RTX 2080 Ti through Ollama, on 22 Nov 2026,
-with GPU power read every 100 ms above the idle baseline: embeddings (nomic-embed-text), 174.4
-texts a second and 33.2 Wh for 200,000 texts, about 30 jobs per 1 kW server-hour; and chat
-answers (qwen3:4b), 136.7 tokens a second and 0.138 Wh an answer, about 7,200 per server-hour.
-The CPU's share is stated from its design limit, not metered.
+Three AI jobs are measured on our own machine, an RTX 2080 Ti, on 22 Nov 2026, with GPU power
+read every 100 ms above the idle baseline: embeddings (nomic-embed-text), 174.4 texts a second
+and 33.2 Wh for 200,000 texts, about 30 jobs per 1 kW server-hour; chat answers (qwen3:4b),
+136.7 tokens a second and 0.138 Wh an answer, about 7,200 per server-hour; and image tagging
+(RetinaNet ResNet-50 FPN on synthetic frames), 20.1 images a second and 3.21 Wh per 1,000 images,
+about 312,000 per server-hour, next to MLPerf's cited 8.2 million. Tagging accuracy is not
+measured, only energy and throughput. The CPU's share is stated from its design limit, not metered.
 Method and limits: [measurements.md](https://github.com/CPD9/kachel/blob/main/docs/measurements.md).
 
 ## Our guesses

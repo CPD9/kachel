@@ -107,7 +107,10 @@
       "mlperf_gpus": 8,
       "j_per_image": 0.4366,
       "images_per_server_hour": 8246000,
-      "source": "MLPerf Inference v5.0, closed, datacenter, result 5.0-0023 (Fujitsu PRIMERGY CDI, 8x NVIDIA H100 NVL 94GB, TensorRT 10.8), RetinaNet object detection, Offline: 11,106.2 images a second at 4,848.69 W measured at the wall for the whole system, mAP 37.31. 4,848.69 / 11,106.2 = 0.4366 J an image, 0.72 GPU-ms an image; 3.6 MJ / 0.4366 J = about 8.2 million images per 1 kW server-hour, by the same equal-energy rule as the other jobs. Interruptible per image. Deadline 12 h (an overnight batch from 20:00 to 08:00) and 2 server-hours a night: OUR GUESS."
+      "measured_images_per_s": 20.13,
+      "measured_wh_per_1000_images": 3.208,
+      "measured_images_per_server_hour": 312000,
+      "source": "MLPerf Inference v5.0, closed, datacenter, result 5.0-0023 (Fujitsu PRIMERGY CDI, 8x NVIDIA H100 NVL 94GB, TensorRT 10.8), RetinaNet object detection, Offline: 11,106.2 images a second at 4,848.69 W measured at the wall for the whole system, mAP 37.31. 4,848.69 / 11,106.2 = 0.4366 J an image, 0.72 GPU-ms an image; 3.6 MJ / 0.4366 J = about 8.2 million images per 1 kW server-hour, by the same equal-energy rule as the other jobs. Interruptible per image. Deadline 12 h (an overnight batch from 20:00 to 08:00) and 2 server-hours a night: OUR GUESS. Measured on our machine next to it (docs/measurements.md; raw: docs/measurements/tagging-summary.json, tagging-run1-samples.csv, tagging-run2-samples.csv): torchvision RetinaNet ResNet-50 FPN (COCO weights, fp32, batches of 4) on an RTX 2080 Ti, synthetic 1280x720 frames, 20.13 images/s at 220.5 W GPU above idle plus a stated CPU share, 3.208 Wh per 1,000 images (11.5 J an image), about 312,000 images per 1 kW server-hour; two runs agree within 0.2 %. Accuracy not measured, only energy and throughput."
     },
     "video_tagging": {
       "label": "Video tagging (labels for each sampled frame of recorded footage)",

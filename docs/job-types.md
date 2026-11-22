@@ -3,7 +3,8 @@
 Every value the model uses is listed in [assumptions.md](assumptions.md), generated from
 `services/scheduler/config.json`. This page gives the sizes and sources behind the job types. Embeddings and the local
 AI chat are measured on our machine with a GPU power meter ([measurements.md](measurements.md), #194); transcription is
-cited (#18). Image and video tagging, at the end, are cited too (#159).
+cited (#18). Image and video tagging, at the end, are cited from MLPerf (#159); image tagging is also measured on our
+machine, next to the cited figure.
 
 ## Batch with a deadline: speech to text
 
@@ -60,6 +61,27 @@ measured power. The scheduler runs it with its batch rule (`config.json: workloa
 | Deadline              | 12 hours (in at 20:00, done by 08:00)      | OUR GUESS: an overnight batch                                                                                                                                                                                                                                                                                                                             |
 | Jobs a day            | 2 server-hours a house, arriving at 20:00  | OUR GUESS                                                                                                                                                                                                                                                                                                                                                 |
 
+### Measured on our machine
+
+The same network family, run by us: torchvision's RetinaNet ResNet-50 FPN with its COCO weights,
+fp32 in PyTorch, batches of 4, on our RTX 2080 Ti, over 300 synthetic 1280×720 frames we draw
+ourselves (sky, ground, track lines, blocks and discs; no photo dataset). Two runs of 1,200 images
+each ([measurements.md](measurements.md); raw samples and summary in [measurements/](measurements/)):
+
+| What                  | Measured, RTX 2080 Ti                                   | Cited, MLPerf 5.0-0023 (above)    |
+| --------------------- | ------------------------------------------------------- | --------------------------------- |
+| Throughput            | 20.1 images a second                                    | 11,106.2 images a second, 8× H100 |
+| Power                 | 220.5 W GPU above idle, plus a stated CPU share         | 4,848.69 W at the wall            |
+| Energy                | 3.21 Wh per 1,000 images (11.5 J an image)              | 0.121 Wh per 1,000 (0.4366 J)     |
+| On the 1 kW reference | about 312,000 images a server-hour                      | about 8.2 million                 |
+| Repeatability         | the two runs agree within 0.2 %                         |                                   |
+| Accuracy              | **not measured**: synthetic frames have no ground truth | mAP 37.31 on OpenImages           |
+
+Ours costs about 26 times the energy per image. MLPerf's row is TensorRT tuned for the benchmark
+on data-centre H100s, with 800×800 inputs; ours is untuned fp32 PyTorch on a 2018 consumer card,
+and the model scales our frames to 1333×750, 1.6 times the pixels. The two are the ends of a
+range. The scheduler counts server-hours, not images, so its results do not change either way.
+
 ## Video tagging: labels for recorded footage
 
 The job: label what is in recorded footage, such as station and track video, frame by frame. It is
@@ -85,6 +107,7 @@ image tagging on sampled frames, plus decoding the video first
   transcription a day; the tagging jobs are sized and sourced here so a buyer can send them.
 - **Why RetinaNet, not ResNet-50.** MLPerf Inference v5.0 and v5.1 publish no closed, datacenter
   ResNet-50 result with power; RetinaNet 5.0-0023 is the one with measured wall power.
-- **Not run by us.** A measured run on our machine, like the embedding job, needs a detection
-  model downloaded first (for example torchvision's RetinaNet ResNet-50 FPN weights, about
-  130 MB) and a few hundred test images. Nothing has been downloaded yet.
+- **Run by us for energy and throughput only.** `make measure-tagging` runs the image tagging
+  job above on our GPU. It does not check what the model finds in the frames, and it leaves out
+  reading and decoding image files. Video tagging is not run by us: at our measured cost, the
+  3,600 frames of an hour of footage would take 11.5 Wh instead of 0.4366 Wh, decoding aside.

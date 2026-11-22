@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months measure-ai video-charts paper pitch-graphics live live-demo verify-live
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months measure-ai measure-tagging video-charts paper pitch-graphics live live-demo verify-live
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -105,6 +105,13 @@ months:
 measure-ai:
 	cd $(SCHED) && uv run python -u measure_ai.py
 	pnpm exec prettier --write docs/measurements/ai-summary.json
+
+# Image tagging on the GPU (measure_tagging.py). Needs torch and torchvision, which the scheduler's own
+# environment leaves out: TORCH_PY=/path/to/a/venv/bin/python make measure-tagging
+TORCH_PY ?= python3
+measure-tagging:
+	cd $(SCHED) && $(TORCH_PY) -u measure_tagging.py
+	pnpm exec prettier --write docs/measurements/tagging-summary.json
 
 check-readme:
 	python3 scripts/pitch/voiceover.py --check

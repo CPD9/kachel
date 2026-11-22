@@ -1,0 +1,74 @@
+{
+  "measured_utc": "2026-11-22 02:21",
+  "machine": {
+    "gpu": "NVIDIA GeForce RTX 2080 Ti, 610.57.04, 260.00 W",
+    "cpu": "Intel Core i7-9700K, 8 cores, 95 W TDP",
+    "os": "Linux 7.2.5-3-omarchy",
+    "torch": "2.15.0+cu132",
+    "torchvision": "0.29.2+cu132",
+    "rapl_readable": false
+  },
+  "model": "torchvision RetinaNet ResNet-50 FPN, COCO_V1 weights (retinanet_resnet50_fpn_coco-eeacb38b.pth, 34,014,999 parameters), fp32",
+  "images": "300 synthetic 1280x720 frames (seed 2026, measure_tagging.frames) x 4 passes = 1200 images a run, batches of 4",
+  "counted": "frames in memory to the GPU, the model's own resize (shorter side 800) and normalisation, detection, and boxes, labels and scores above 0.5 back to the CPU; file reading and decoding not counted",
+  "accuracy": "not measured: the frames are synthetic and have no ground truth; only energy and throughput are",
+  "meter": "nvidia-smi power.draw (board power, instantaneous on Turing, +/- 5 W) and utilization.gpu every 100 ms; energy by trapezoids over the run, minus the mean idle baseline sampled just before it",
+  "gate": "each run starts only with the GPU below 5 % and no Blender process on it",
+  "scaling_rule": "equal energy per item on the 1 kW reference server (equal performance per watt): images per server-hour = 1,000 Wh / Wh per image, with Wh per image = (GPU above idle + CPU share) / images",
+  "raw_samples": ["tagging-run1-samples.csv", "tagging-run2-samples.csv"],
+  "image_tagging": {
+    "images_per_s": 20.13,
+    "gpu_w_above_idle": 220.5,
+    "wh_per_1000_images": 3.208,
+    "j_per_image": 11.547,
+    "images_per_reference_server_hour": 312000,
+    "spread_between_runs_pct": {
+      "images_per_s": 0.2,
+      "wh_per_1000_images": 0.2
+    }
+  },
+  "runs": [
+    {
+      "workload": "tagging_run1",
+      "wall_s": 59.66,
+      "items": 1200,
+      "tags_above_0_5": 116,
+      "items_per_s": 20.11,
+      "gpu_idle_baseline_w": 32.39,
+      "gpu_mean_w_during_run": 252.84,
+      "gpu_w_above_idle": 220.45,
+      "gpu_mean_util_pct": 95.2,
+      "gpu_samples": 571,
+      "gpu_wh_total": 4.1933,
+      "gpu_wh_above_idle": 3.6564,
+      "this_process_cpu_s_above_baseline": 59.29,
+      "cpu_wh": 0.196,
+      "cpu_method": "RAPL not readable without root; this process's CPU seconds above baseline x 11.9 W per busy core (95 W TDP / 8 cores, stated, not metered)",
+      "wh_above_idle": 3.8524,
+      "wh_per_item": 0.0032104,
+      "items_per_reference_server_hour": 311492,
+      "wh_per_1000_images": 3.21
+    },
+    {
+      "workload": "tagging_run2",
+      "wall_s": 59.56,
+      "items": 1200,
+      "tags_above_0_5": 116,
+      "items_per_s": 20.15,
+      "gpu_idle_baseline_w": 32.15,
+      "gpu_mean_w_during_run": 252.72,
+      "gpu_w_above_idle": 220.57,
+      "gpu_mean_util_pct": 95.3,
+      "gpu_samples": 569,
+      "gpu_wh_total": 4.1823,
+      "gpu_wh_above_idle": 3.6504,
+      "this_process_cpu_s_above_baseline": 59.13,
+      "cpu_wh": 0.1955,
+      "cpu_method": "RAPL not readable without root; this process's CPU seconds above baseline x 11.9 W per busy core (95 W TDP / 8 cores, stated, not metered)",
+      "wh_above_idle": 3.8458,
+      "wh_per_item": 0.0032048,
+      "items_per_reference_server_hour": 312027,
+      "wh_per_1000_images": 3.205
+    }
+  ]
+}
