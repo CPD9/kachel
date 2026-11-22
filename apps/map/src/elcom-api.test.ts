@@ -16,7 +16,9 @@ describe("the /api/elcom function", () => {
   });
 
   it("asks ElCom with the fixed query and lets the answer be cached for a day", async () => {
-    const post = vi.fn<typeof fetch>(() => Promise.resolve(Response.json({ data: {} })));
+    const post = vi.fn<typeof fetch>(() =>
+      Promise.resolve(Response.json({ data: { observations: [] } })),
+    );
     const res = await elcomHandler(post)(ask("?bfs=351"));
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toContain("s-maxage=86400");
@@ -30,6 +32,15 @@ describe("the /api/elcom function", () => {
     const post = vi.fn<typeof fetch>(() => Promise.reject(new Error("down")));
     expect((await elcomHandler(post)(ask("?query=x"))).status).toBe(400);
     expect(post).not.toHaveBeenCalled();
+    const res = await elcomHandler(post)(ask("?bfs=351"));
+    expect(res.status).toBe(502);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("does not cache a GraphQL error, which ElCom sends with status 200", async () => {
+    const post = vi.fn<typeof fetch>(() =>
+      Promise.resolve(Response.json({ errors: [{ message: "bad" }] })),
+    );
     const res = await elcomHandler(post)(ask("?bfs=351"));
     expect(res.status).toBe(502);
     expect(res.headers.get("cache-control")).toBe("no-store");

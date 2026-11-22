@@ -50,9 +50,13 @@ export const elcomHandler =
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!res.ok) return json({ error: "ElCom did not answer" }, 502, "no-store");
+      // GraphQL answers 200 with { errors } too: only a list of observations is kept
+      const body = (await res.json()) as { data?: { observations?: unknown } } | null;
+      if (!Array.isArray(body?.data?.observations))
+        return json({ error: "ElCom did not answer" }, 502, "no-store");
       // Cached by the browser and Vercel's edge for a day; the card falls back on its saved tariff
       return json(
-        await res.json(),
+        body,
         200,
         `public, max-age=${DAY_S}, s-maxage=${DAY_S}, stale-while-revalidate=${DAY_S}`,
       );
