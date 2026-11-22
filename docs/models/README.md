@@ -6,6 +6,14 @@ The basement plant room from the pitch film: server rack, pump, plate heat excha
 backup heater. Exported by `scripts/video/export_glb.py` from `scripts/video/assets/plantroom.blend`,
 Draco-compressed (2.9 MB). The map's **Inside** view shows it with three.js.
 
+## orc-concept.glb
+
+The heat pump and ORC turbine concept from the film's shot 12, 1.7 MB, for the operator's
+**The device** page. Exported by `scripts/video/export_orc_glb.py` from `orc_skid.blend`, with the
+rack and plate heat exchanger from `plantroom.blend` and a stand-in heat pump. One named node per
+part (Rack, HeatExchanger, HeatPump, Evaporator, Turbine, Generator, Condenser, Skid); `Flow_*`
+pipes carry U = metres for the flow dashes. A concept, not a design: no figures.
+
 ## fhnw-campus.glb
 
 FHNW Campus Dreispitz, Dornacherstrasse 394, Basel (EGID 243058419), as our own block model,

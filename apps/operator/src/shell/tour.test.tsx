@@ -26,15 +26,11 @@ const pressed = () =>
 const hint = () => document.querySelector("[data-tour-hint]")?.textContent ?? null;
 
 describe("the A-key tour", () => {
-  it("tells the story in order: Today, buildings, the quote, settlement, the year, July, January", () => {
+  it("tells the short story in order: Today, settlement, the device", () => {
     expect(TOUR.map((s) => `${s.route}:${s.month}`)).toEqual([
       "today:10",
-      "buildings:10",
-      "quotes:10",
       "billing:10",
-      "billing/year:10",
-      "billing/year:6",
-      "billing/year:0",
+      "device:10",
     ]);
   });
 
@@ -45,38 +41,32 @@ describe("the A-key tour", () => {
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
     expect(page()).toBe("#/today");
-    expect(hint()).toBe("1 / 7 · A next");
+    expect(hint()).toBe("1 / 3 · A next");
     press("a");
-    expect(page()).toBe("#/buildings");
-    press("a");
-    expect(page()).toBe("#/quotes");
-    expect(screen.getByDisplayValue("Rail operator")).toBeTruthy();
-    press("a");
+    expect(page()).toBe("#/billing");
     expect(screen.getByRole("heading", { name: "Settlement for November" })).toBeTruthy();
-    press("a");
-    expect(page()).toBe("#/billing/year");
-    press("a");
-    expect(pressed()).toBe("July");
-    press("a");
-    expect(pressed()).toBe("January");
-    expect(hint()).toBe("7 / 7 · Esc ends");
-    press("a");
-    expect(hint()).toBe("7 / 7 · Esc ends");
-    press("A", { shiftKey: true });
-    expect(pressed()).toBe("July");
-    press("Backspace");
     expect(pressed()).toBe("November");
+    press("a");
+    expect(page()).toBe("#/device");
+    expect(screen.getByRole("heading", { name: "The device" })).toBeTruthy();
+    expect(hint()).toBe("3 / 3 · Esc ends");
+    press("a");
+    expect(hint()).toBe("3 / 3 · Esc ends");
+    press("A", { shiftKey: true });
+    expect(page()).toBe("#/billing");
+    press("Backspace");
+    expect(page()).toBe("#/today");
     press("Escape");
     expect(hint()).toBeNull();
     expect(window.location.search).toBe("");
-  }, 20_000); // walks every page, dashboards included: slow on CI runners
+  }, 30_000); // walks the dashboards and the device page: slow on CI runners
 
   it("leaves the month to the operator between steps", () => {
     window.history.replaceState(null, "", "/?tour=1");
     render(<App />);
-    for (let i = 0; i < 4; i++) press("a");
+    press("a");
     fireEvent.click(screen.getByRole("button", { name: "March" }));
-    expect(screen.getByRole("heading", { name: "The year" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Settlement for March" })).toBeTruthy();
     expect(pressed()).toBe("March");
   });
 
@@ -89,14 +79,16 @@ describe("the A-key tour", () => {
     expect(page()).toBe("#/billing");
     press("a");
     expect(page()).toBe("#/today");
-    expect(hint()).toBe("1 / 7 · A next");
+    expect(hint()).toBe("1 / 3 · A next");
   });
 
   it("never fires while typing, nor with a modifier key", () => {
-    window.history.replaceState(null, "", "/?tour=1#/quotes");
+    window.history.replaceState(null, "", "/?tour=1");
     render(<App />);
-    press("a");
-    press("a");
+    act(() => {
+      window.location.hash = "#/quotes";
+    });
+    press("Shift");
     expect(page()).toBe("#/quotes");
     const buyer = screen.getByDisplayValue("Rail operator");
     press("a", {}, buyer);
@@ -105,7 +97,7 @@ describe("the A-key tour", () => {
     press("a", { ctrlKey: true });
     press("a", { altKey: true });
     expect(page()).toBe("#/quotes");
-    expect(hint()).toBe("3 / 7 · A next");
+    expect(hint()).toBe("1 / 3 · A next");
     // A radio takes no typing: A still moves on
     press("a", {}, screen.getByRole("radio", { name: "Bern only" }));
     expect(page()).toBe("#/billing");

@@ -116,7 +116,8 @@ writes a signal file: the scheduler does.
   same code as our yearly figures."
 - 3:20 The host app stays up; see the next block. The loop ends by itself after July.
 - After the pitch's last A, the operator console opens with `?tour=1`: Peter keeps pressing A
-  (Today, Buildings, the rail quote, November's settlement, the year, July, January), no mouse.
+  (Today, November's settlement, the device), no mouse.
+- The device ends the tour: the heat pump and ORC turbine in 3D, labelled "Concept, not built".
 
 If the stack is not up, Duc plays
 [live-demo.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)

@@ -1,17 +1,18 @@
 import type { ReactNode } from "react";
 import { href, type Route } from "./route";
 
-/** The five places of the console; second-level things are tabs inside a page. */
-export const NAV: { label: string; route: Route; section: Route[] }[] = [
+/** The places of the console, the device concept last; second-level things are tabs inside a page. */
+export const NAV: { label: string; short?: string; route: Route; section: Route[] }[] = [
   { label: "Today", route: "today", section: ["today"] },
   { label: "Buildings", route: "buildings", section: ["buildings", "buildings/new"] },
   { label: "Jobs", route: "jobs", section: ["jobs"] },
   { label: "Quotes", route: "quotes", section: ["quotes"] },
   { label: "Billing", route: "billing", section: ["billing", "billing/year"] },
+  { label: "The device", short: "Device", route: "device", section: ["device"] },
 ];
 
 /**
- * The console's frame: one light top bar (Kachel, the five places, the balance and the org),
+ * The console's frame: one light top bar (Kachel, the places, the balance and the org),
  * then the breadcrumb and the model's label, then the page. On a phone the places wrap to a row
  * of their own under the bar.
  */
@@ -35,9 +36,16 @@ export function Shell({
         key={n.route}
         href={href(n.route)}
         aria-current={on ? "page" : undefined}
-        className={`rounded-lg px-2.5 py-1.5 text-[15px] whitespace-nowrap sm:px-3 ${on ? "bg-black/[0.06] font-semibold text-label" : "text-label-2 hover:text-label"}`}
+        className={`rounded-lg px-2 py-1.5 text-[15px] whitespace-nowrap sm:px-3 ${on ? "bg-black/[0.06] font-semibold text-label" : "text-label-2 hover:text-label"}`}
       >
-        {n.label}
+        {n.short ? (
+          <>
+            <span className="sm:hidden">{n.short}</span>
+            <span className="hidden sm:inline">{n.label}</span>
+          </>
+        ) : (
+          n.label
+        )}
       </a>
     );
   });
