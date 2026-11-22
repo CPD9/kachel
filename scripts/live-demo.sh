@@ -22,6 +22,9 @@ SIGNAL=$WORK/heat
 PACE=${LIVE_PACE:-2.5}
 DAYS=${LIVE_DAYS:-2025-01-13 2025-07-15}
 mkdir -p "$WORK"
+# One run at a time: a second one would start another job and agent on the same signal file.
+exec 9> "$WORK/lock"
+flock -n 9 || { echo "make live-demo is already running (lock $WORK/lock); stop it with Ctrl-C first." >&2; exit 1; }
 rm -f "$WORK/progress.json"
 
 # The job and the agent run on their own venvs' Python, so $! is the process itself and not a
