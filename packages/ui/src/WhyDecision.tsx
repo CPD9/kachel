@@ -14,6 +14,8 @@ export interface Decision {
   reason: string;
   run: string[];
   placed: number;
+  /** When the loop wrote it. A decision for an hour far from that is a replayed one. */
+  written_at?: string;
 }
 
 const TONES = {
@@ -56,6 +58,12 @@ const HOUR = new Intl.DateTimeFormat("en-GB", {
 });
 
 const servers = (n: number) => (n === 1 ? "1 server" : `${n} servers`);
+
+/** True when the decision is for a stored day the loop replayed, not for the hour it was made. */
+export function replayed(d: Decision): boolean {
+  if (!d.written_at) return false;
+  return Math.abs(Date.parse(d.written_at) - Date.parse(d.time)) > 36 * 3600 * 1000;
+}
 const short = (hash: string) => hash.slice(0, 12);
 
 /** What the decision did with the backlog, and with sessions and batch when it ran any. */
@@ -123,7 +131,10 @@ export function WhyDecision({
       {latest && (
         <div data-decision={latest.hash} className="mt-4">
           <p className="text-sm">
-            <span className={t.muted}>{WHEN.format(new Date(latest.time))} · </span>
+            <span className={t.muted}>
+              {replayed(latest) && "Replayed hour: "}
+              {WHEN.format(new Date(latest.time))} ·{" "}
+            </span>
             <span className="font-semibold">{verdict(latest)}</span>
           </p>
           <p className="mt-1 text-sm">

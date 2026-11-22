@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { verdict, WhyDecision, type Decision } from "./WhyDecision";
+import { replayed, verdict, WhyDecision, type Decision } from "./WhyDecision";
 
 const paused: Decision = {
   hash: "5ec7b4868fd0" + "1".repeat(52),
@@ -58,5 +58,14 @@ describe("WhyDecision", () => {
     expect(verdict({ ...paused, interactive: 1, batch: 2 })).toBe(
       "Backlog paused; 1 session, 2 batch too",
     );
+  });
+
+  it("marks a replayed day's hour, so 2025 is not read as a stale row", () => {
+    const replay = { ...running, written_at: "2026-11-22T02:00:00Z" };
+    expect(replayed(replay)).toBe(true);
+    expect(replayed({ ...running, written_at: "2025-07-15T01:00:05+02:00" })).toBe(false);
+    expect(replayed(running)).toBe(false);
+    render(<WhyDecision decisions={[replay]} status="live" />);
+    expect(screen.getByText(/Replayed hour: 15 Jul 2025, 01:00/)).toBeTruthy();
   });
 });
