@@ -733,7 +733,7 @@ export function Assessment({
         <Question
           n={4}
           title="What needs hot water?"
-          hint="Server heat makes hot water all year, in summer too."
+          hint="Server heat makes hot water all year. Our factors, to check."
         >
           <Choice
             options={HOT_WATER}
