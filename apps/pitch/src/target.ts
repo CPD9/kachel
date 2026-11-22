@@ -26,6 +26,8 @@ export type Target = {
 export type Published = {
   /** GWR building number: the map (apps/map) opens at it with its card. */
   egid: number;
+  /** A home, or a school such as the campus: the questions follow it. */
+  kind: "home" | "school";
   /** Heated floor area, m² (GWR gebf). */
   areaM2: number;
   built: number;
@@ -46,6 +48,7 @@ export type Published = {
  */
 const BYFANGWEG_18: Published = {
   egid: 442141,
+  kind: "home",
   areaM2: 330,
   built: 1894,
   heating: "district",
@@ -64,6 +67,7 @@ const FHNW_AREA_M2 = 14_436;
 const fhnwHeat = heatDemand(FHNW_AREA_M2, "after_2015", false, "school");
 const FHNW_CAMPUS: Published = {
   egid: 243058419,
+  kind: "school",
   areaM2: FHNW_AREA_M2,
   built: 2026,
   heating: "district",

@@ -20,6 +20,10 @@ export type Windows = "single" | "double" | "triple";
 export type Emitters = "radiators" | "underfloor" | "mixed";
 export type Fuel = "oil" | "gas" | "heatpump" | "electric" | "district";
 export type Insulation = "bare" | "attic" | "facade" | "thermos";
+/** A school's hours: in term on weekdays, also evenings and weekends, or all year. */
+export type Use = "term" | "evenings" | "allYear";
+/** What a school uses hot water for: washbasins, a canteen, or a canteen and showers. */
+export type HotWater = "basins" | "canteen" | "showers";
 
 export type Answers = {
   windows: Windows;
@@ -27,6 +31,9 @@ export type Answers = {
   fuel: Fuel;
   adults: number;
   children: number;
+  /** Only asked for a school (the campus); a home leaves them out. */
+  use?: Use;
+  hotWater?: HotWater;
 };
 
 /** Where the questions start: a typical home, heated as the register says (district heating). */
@@ -37,6 +44,8 @@ export const answersFor = (b: Published): Answers => ({
   fuel: b.heating,
   adults: 2,
   children: 2,
+  // A school's figures are SIA 2024 means: term-time use and a canteen are taken as the mean
+  ...(b.kind === "school" && { use: "term", hotWater: "canteen" }),
 });
 export const DEFAULT_ANSWERS: Answers = answersFor(TARGET.building);
 
@@ -49,6 +58,10 @@ const EMITTER_FACTOR: Record<Emitters, number> = { radiators: 1, mixed: 0.97, un
 /** Hot water per person and year (kWh): children use a bit less than adults. */
 const HOT_WATER_PER_ADULT = 800;
 const HOT_WATER_PER_CHILD = 500;
+/** A school's space heating against term-time use (the SIA mean). Assumptions, to check. */
+export const USE_FACTOR: Record<Use, number> = { term: 1, evenings: 1.15, allYear: 1.3 };
+/** A school's hot water against one with a canteen (the SIA mean). Assumptions, to check. */
+export const HOT_WATER_FACTOR: Record<HotWater, number> = { basins: 0.5, canteen: 1, showers: 1.8 };
 /** How much of the heat insulation keeps in: roof, outer walls, or both. */
 export const INSULATION: Record<Insulation, { name: string; hint: string; factor: number }> = {
   bare: { name: "Bare", hint: "Heat slips out through roof and walls", factor: 1 },
@@ -157,8 +170,11 @@ export function size(
     (DEMAND_PER_M2[a.windows] / DEMAND_PER_M2[da.windows]) *
     (EMITTER_FACTOR[a.emitters] / EMITTER_FACTOR[da.emitters]) *
     (periodFactor(periodAt(p.age), p.renovated) / periodFactor(periodAt(dp.age), dp.renovated)) *
-    (INSULATION[p.insulation].factor / INSULATION[dp.insulation].factor);
-  const hotWater = (b.hotWaterKwh * people(a)) / people(da);
+    (INSULATION[p.insulation].factor / INSULATION[dp.insulation].factor) *
+    (USE_FACTOR[a.use ?? "term"] / USE_FACTOR[da.use ?? "term"]);
+  const hotWater =
+    ((b.hotWaterKwh * people(a)) / people(da)) *
+    (HOT_WATER_FACTOR[a.hotWater ?? "canteen"] / HOT_WATER_FACTOR[da.hotWater ?? "canteen"]);
   const demand = spaceHeat + hotWater;
   const peakKw = demand / FULL_LOAD_HOURS;
   const bestFit = RACKS.find((r) => r.kw >= peakKw) ?? TWIN_XL;

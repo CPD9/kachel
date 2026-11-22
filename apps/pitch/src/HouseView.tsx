@@ -1,19 +1,22 @@
 import { ChevronLeft, ChevronRight, Home, Layers, Minus, Plus, Thermometer } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { Assessment, STEPS } from "./Assessment";
+import { Assessment, STEPS, type Step } from "./Assessment";
+import { CAMPUS_FOCUS, CampusLevels, CampusScene, type Level, levelName } from "./Campus";
 import { useCompact } from "./compact";
 import { FLOORS, type FloorId, type Focus, HouseScene } from "./House";
 import { DEFAULT_ANSWERS } from "./sizing";
+import { TARGET } from "./target";
 import { lightCard as card, lightLabel as label } from "./ui";
 
 /** The part of the house each question is about: the camera goes there. */
-const FOCUS: Record<(typeof STEPS)[number], Focus | null> = {
+const FOCUS: Partial<Record<Step, Focus>> = {
   Windows: "windows",
   Heating: "heating",
   Energy: "energy",
   People: "people",
-  Result: null,
 };
+/** FHNW Campus Dreispitz shows our Blender campus and plant room instead of the house (Campus.tsx). */
+const campus = TARGET.building.kind === "school";
 
 const row = "flex w-full items-center gap-2.5 rounded-2xl px-2 py-2 text-left transition-colors";
 
@@ -98,7 +101,18 @@ export function HouseView({
     setOpen(id);
     setHover(null);
   }, []);
-  const back = useCallback(() => (open ? openFloor(null) : onExit()), [open, openFloor, onExit]);
+  // The campus's levels, in place of the house's floors
+  const [level, setLevel] = useState<Level | null>(null);
+  const [levelHover, setLevelHover] = useState<Level | null>(null);
+  const openLevel = useCallback((l: Level | null) => {
+    setLevel(l);
+    setLevelHover(null);
+  }, []);
+  const [levelTemps, setLevelTemps] = useState<Record<number, number>>({});
+  const back = useCallback(
+    () => (open ? openFloor(null) : level !== null ? openLevel(null) : onExit()),
+    [open, openFloor, level, openLevel, onExit],
+  );
   const atResult = STEPS[step] === "Result";
   useEffect(() => {
     if (!visible) return;
@@ -128,14 +142,23 @@ export function HouseView({
           back();
         }}
       >
-        <HouseScene
-          open={open}
-          hover={hover}
-          onHover={setHover}
-          onOpen={openFloor}
-          answers={answers}
-          focus={FOCUS[STEPS[step] ?? "Result"]}
-        />
+        {campus ? (
+          <CampusScene
+            focus={CAMPUS_FOCUS[STEPS[step] ?? "Result"] ?? null}
+            level={level}
+            hover={levelHover}
+            compact={compact}
+          />
+        ) : (
+          <HouseScene
+            open={open}
+            hover={hover}
+            onHover={setHover}
+            onOpen={openFloor}
+            answers={answers}
+            focus={FOCUS[STEPS[step] ?? "Result"] ?? null}
+          />
+        )}
       </div>
 
       {/* Right: the floors, or the open floor's rooms (until the result takes that side) */}
@@ -146,94 +169,140 @@ export function HouseView({
         onAnswers={setAnswers}
         onNext={onNext}
         floors={
-          <>
-            <div className="px-2 pt-2 pb-1">
-              {floor ? (
-                <>
-                  <button
-                    onClick={() => openFloor(null)}
-                    className="-ml-1 flex items-center text-[11.5px] font-medium text-clay hover:underline"
-                  >
-                    <ChevronLeft size={14} /> All floors
-                  </button>
-                  <h3 className="mt-1.5 text-[17px] leading-tight font-semibold">{floor.name}</h3>
-                  <p className="mt-0.5 text-[11.5px] text-muted">
-                    ≈ {floor.area} m² · {floor.rooms.length} rooms
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className={label}>
-                    <Layers size={12} /> Floors
-                  </p>
-                  <p className="mt-1 text-[11px] text-muted">
-                    {compact
-                      ? "Tap a floor to look inside."
-                      : "Hover a floor to look inside, click to zoom in, Esc to go back."}
-                  </p>
-                </>
+          campus ? (
+            <CampusLevels
+              level={level}
+              hover={levelHover}
+              onHover={setLevelHover}
+              onOpen={openLevel}
+              temps={levelTemps}
+              compact={compact}
+              tempControl={(l) => (
+                <Setting icon={<Thermometer size={12} />} name="Room temp.">
+                  <Stepper
+                    value={levelTemps[l] ?? 21}
+                    unit="°C"
+                    min={16}
+                    max={25}
+                    onChange={(t) => setLevelTemps((all) => ({ ...all, [l]: t }))}
+                  />
+                </Setting>
               )}
-            </div>
+            />
+          ) : (
+            <>
+              <div className="px-2 pt-2 pb-1">
+                {floor ? (
+                  <>
+                    <button
+                      onClick={() => openFloor(null)}
+                      className="-ml-1 flex items-center text-[11.5px] font-medium text-clay hover:underline"
+                    >
+                      <ChevronLeft size={14} /> All floors
+                    </button>
+                    <h3 className="mt-1.5 text-[17px] leading-tight font-semibold">{floor.name}</h3>
+                    <p className="mt-0.5 text-[11.5px] text-muted">
+                      ≈ {floor.area} m² · {floor.rooms.length} rooms
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className={label}>
+                      <Layers size={12} /> Floors
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted">
+                      {compact
+                        ? "Tap a floor to look inside."
+                        : "Hover a floor to look inside, click to zoom in, Esc to go back."}
+                    </p>
+                  </>
+                )}
+              </div>
 
-            <div className="mt-2 border-t border-black/[0.06] pt-1.5">
-              {floor ? (
-                <>
-                  <Setting icon={<Thermometer size={12} />} name="Room temp.">
-                    <Stepper
-                      value={temps[floor.id]}
-                      unit="°C"
-                      min={16}
-                      max={25}
-                      onChange={(t) => setTemps((all) => ({ ...all, [floor.id]: t }))}
-                    />
-                  </Setting>
-                  <p className={`${label} px-2 pt-2 pb-1`}>Rooms</p>
+              <div className="mt-2 border-t border-black/[0.06] pt-1.5">
+                {floor ? (
+                  <>
+                    <Setting icon={<Thermometer size={12} />} name="Room temp.">
+                      <Stepper
+                        value={temps[floor.id]}
+                        unit="°C"
+                        min={16}
+                        max={25}
+                        onChange={(t) => setTemps((all) => ({ ...all, [floor.id]: t }))}
+                      />
+                    </Setting>
+                    <p className={`${label} px-2 pt-2 pb-1`}>Rooms</p>
+                    <ul>
+                      {floor.rooms.map((r) => (
+                        <li key={r.name} className={`${row} py-1.5`}>
+                          <span className="text-[11.5px] font-medium">{r.name}</span>
+                          <span className="ml-auto text-[11px] text-muted tabular-nums">
+                            ≈ {r.area} m²
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
                   <ul>
-                    {floor.rooms.map((r) => (
-                      <li key={r.name} className={`${row} py-1.5`}>
-                        <span className="text-[11.5px] font-medium">{r.name}</span>
-                        <span className="ml-auto text-[11px] text-muted tabular-nums">
-                          ≈ {r.area} m²
-                        </span>
+                    {[...FLOORS].reverse().map((f) => (
+                      <li key={f.id}>
+                        <button
+                          onMouseEnter={() => setHover(f.id)}
+                          onMouseLeave={() => setHover(null)}
+                          onClick={() => openFloor(f.id)}
+                          className={`${row} ${hover === f.id ? "bg-black/[0.05]" : "hover:bg-black/[0.03]"}`}
+                        >
+                          <span
+                            className={`grid size-8 shrink-0 place-items-center rounded-xl text-[11px] font-semibold transition-colors ${
+                              hover === f.id
+                                ? "bg-clay/20 text-clay"
+                                : "bg-black/[0.05] text-ink/70"
+                            }`}
+                          >
+                            {f.level || <Home size={14} />}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-[11.5px] font-medium">{f.name}</span>
+                            <span className="block text-[10.5px] text-muted">
+                              ≈ {f.area} m² · {temps[f.id]} °C
+                            </span>
+                          </span>
+                          <ChevronRight size={14} className="ml-auto shrink-0 text-ink/30" />
+                        </button>
                       </li>
                     ))}
                   </ul>
-                </>
-              ) : (
-                <ul>
-                  {[...FLOORS].reverse().map((f) => (
-                    <li key={f.id}>
-                      <button
-                        onMouseEnter={() => setHover(f.id)}
-                        onMouseLeave={() => setHover(null)}
-                        onClick={() => openFloor(f.id)}
-                        className={`${row} ${hover === f.id ? "bg-black/[0.05]" : "hover:bg-black/[0.03]"}`}
-                      >
-                        <span
-                          className={`grid size-8 shrink-0 place-items-center rounded-xl text-[11px] font-semibold transition-colors ${
-                            hover === f.id ? "bg-clay/20 text-clay" : "bg-black/[0.05] text-ink/70"
-                          }`}
-                        >
-                          {f.level || <Home size={14} />}
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-[11.5px] font-medium">{f.name}</span>
-                          <span className="block text-[10.5px] text-muted">
-                            ≈ {f.area} m² · {temps[f.id]} °C
-                          </span>
-                        </span>
-                        <ChevronRight size={14} className="ml-auto shrink-0 text-ink/30" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </>
+                )}
+              </div>
+            </>
+          )
         }
       />
 
       {/* On the result page the floors card is gone: a pill under the steps leads back out */}
+      {campus && level !== null && STEPS[step] === "Result" && (
+        <div
+          className={`pointer-events-none absolute inset-x-0 flex justify-center ${compact ? "" : "top-[76px]"}`}
+          style={compact ? { top: "calc(var(--compact-top) + 60px)" } : undefined}
+        >
+          <button
+            key={level}
+            onClick={() => openLevel(null)}
+            className={`${card} flex items-center gap-2 !rounded-full !py-1.5 !pr-2 !pl-3 text-[12px] font-medium hover:bg-white ${compact ? "min-h-11" : ""}`}
+          >
+            <ChevronLeft size={14} className="text-clay" />
+            Whole campus
+            <span className="text-ink/30">·</span>
+            <span className="text-muted">{levelName(level)}</span>
+            {!compact && (
+              <kbd className="rounded-md bg-black/[0.06] px-1.5 py-0.5 font-sans text-[10px] text-muted">
+                Esc
+              </kbd>
+            )}
+          </button>
+        </div>
+      )}
       {floor && STEPS[step] === "Result" && (
         <div
           className={`pointer-events-none absolute inset-x-0 flex justify-center ${compact ? "" : "top-[76px]"}`}
