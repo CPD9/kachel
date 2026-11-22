@@ -14,7 +14,10 @@ it("gives FHNW Campus Dreispitz our period estimate for its default answers", ()
   const a = answersFor(fhnw);
   const r = size(a, defaultParams(a.fuel, fhnw), null, fhnw);
   expect(r.demand).toBeCloseTo(heatDemand(14_436, "after_2015", false, "school").totalKwh);
-  expect(defaultParams(a.fuel, fhnw).age).toBe(0);
+  // Built 2026: new on the age slider, whatever year the demo runs in
+  expect(defaultParams(a.fuel, fhnw).age).toBe(
+    Math.min(150, Math.round((new Date().getFullYear() - 2026) / 5) * 5),
+  );
 });
 
 it("shows Kachel's own model in 1 kW servers at Basel's ElCom 2027 price", () => {

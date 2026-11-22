@@ -57,7 +57,7 @@ export const INSULATION: Record<Insulation, { name: string; hint: string; factor
   thermos: { name: "Thermos", hint: "Roof and walls, sealed like a thermos", factor: 0.7 },
 };
 /** The year the questions are asked in, for turning the building's age into its period. */
-const THIS_YEAR = 2026;
+const THIS_YEAR = new Date().getFullYear();
 /** The construction period for an age in years (GWR periods, packages/economics). */
 const periodAt = (age: number): PeriodId => periodOf(null, THIS_YEAR - age) ?? "after_2015";
 /** Connecting the rack to the heating and hot water, in CHF, and the cantonal subsidy for leaving fossil heating. */
