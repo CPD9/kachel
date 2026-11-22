@@ -190,15 +190,27 @@ describe("operator console", () => {
   it("prices image tagging from our measured speed, with no placeholders", () => {
     at("#/quotes");
     render(<App startMonth={10} />);
-    expect(screen.getByText("CHF 1.60")).toBeTruthy();
+    expect(document.querySelector('[data-reading="Unit price"]')?.textContent).toBe("CHF 1.60");
     expect(document.querySelector("[data-basis]")?.textContent).toBe("Speed measured on our GPU.");
     expect(document.body.textContent).not.toMatch(/\[(PRICE|N|COST)\]/);
+    // The list: synthetic buyers, labelled, priced by the same model; never a real rail company.
+    expect(document.querySelectorAll("[data-quote]").length).toBeGreaterThan(2);
+    expect(document.querySelector("[data-quote=q1]")?.textContent).toMatch(
+      /Rail operator \(synthetic\).*CHF 1\.60/,
+    );
+    expect(document.body.textContent).not.toMatch(/SBB/);
   });
 
   it("without Supabase, Jobs says what the live part needs", () => {
     at("#/jobs");
     render(<App />);
     expect(screen.getByText(/Live data needs the local stack/)).toBeTruthy();
+    // The table is still full: the seed's synthetic jobs, said not to be live.
+    expect(document.querySelector("[data-jobs-caption]")?.textContent).toMatch(
+      /synthetic rows from the seed, not live/,
+    );
+    expect(document.querySelectorAll("tr[data-job]").length).toBe(23);
+    expect(document.querySelector("tr[data-state=RUNNING]")?.textContent).toMatch(/kWh/);
   });
 
   it("asks for the operator's sign-in before it shows buyers", async () => {
@@ -216,6 +228,11 @@ describe("operator console", () => {
     });
     expect(await screen.findByText(/1 running · 0 paused · 1 queued/)).toBeTruthy();
     expect(document.querySelectorAll("[data-buyer]")).toHaveLength(2);
+    // Signed in, the table holds the live rows, not the seed's.
+    expect(document.querySelector("[data-jobs-caption]")?.textContent).toMatch(
+      /live from Supabase/,
+    );
+    expect(document.querySelectorAll("tr[data-job]")).toHaveLength(3);
     await act(async () => {
       window.location.hash = "#/today";
       window.dispatchEvent(new HashChangeEvent("hashchange"));
