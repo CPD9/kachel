@@ -27,3 +27,5 @@ services/scheduler/out/bern/*
 !services/scheduler/out/bern/kpis.json
 
 .DS_Store
+
+_site/
