@@ -5,6 +5,7 @@ import { Flame, Globe2, Plus, Zap } from "lucide-react";
 import { HOME, NEIGHBOURS } from "./neighbours";
 import type { MarketPin } from "./MarketView";
 import { REMOTE_COLOR, REMOTE_FROM, type SimView } from "./simulation";
+import { useCompact } from "./compact";
 
 /** One full turn every this many seconds. */
 const SECONDS_PER_REVOLUTION = 120;
@@ -399,12 +400,15 @@ function OnRoof({
 
 /** The picked neighbour's roof tag: "Noah · plays on your rack". */
 function Beacon({ i }: { i: number }) {
+  const compact = useCompact();
   const n = NEIGHBOURS[i];
   if (!n) return null;
   const Icon = n.icon;
   return (
     <div className="pointer-events-none flex animate-pill-in flex-col items-center font-sans">
-      <span className="flex items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/90 py-1.5 pr-3.5 pl-1.5 text-sm font-medium whitespace-nowrap text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
+      <span
+        className={`flex items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/90 py-1.5 pr-3.5 pl-1.5 font-medium whitespace-nowrap text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md ${compact ? "text-xs" : "text-sm"}`}
+      >
         <span
           className="grid size-6 place-items-center rounded-full"
           style={{ background: n.color }}
@@ -483,15 +487,21 @@ function SimChip({
 
 /** In the simulation: the rack at HOME and the heat it gives off right now. */
 function HomeTag({ kw, temp }: { kw: number; temp: number }) {
+  // On a phone the weather bar already shows the temperature: the tag stays short
+  const compact = useCompact();
   return (
     <div className="pointer-events-none flex animate-pill-in flex-col items-center font-sans">
-      <span className="flex items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/90 py-1.5 pr-3.5 pl-1.5 text-sm font-medium whitespace-nowrap text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
+      <span
+        className={`flex items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/90 py-1.5 pr-3.5 pl-1.5 font-medium whitespace-nowrap text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md ${compact ? "text-xs" : "text-sm"}`}
+      >
         <span className="grid size-6 place-items-center rounded-full bg-clay">
           <Flame size={13} />
         </span>
         Your rack
         <span className="text-clay tabular-nums">{kw.toFixed(1)} kW of heat</span>
-        <span className="text-white/45 tabular-nums">· {temp.toFixed(0)} °C outside</span>
+        {!compact && (
+          <span className="text-white/45 tabular-nums">· {temp.toFixed(0)} °C outside</span>
+        )}
       </span>
       <span className="h-5 w-px bg-gradient-to-b from-clay to-transparent" />
       <span className="relative flex size-3">
@@ -684,6 +694,15 @@ function highlightHome(map: mapboxgl.Map): boolean {
 export type Stage = "city" | "building";
 
 /**
+ * Phones and tablets: the bottom sheet covers the lower half, so the camera centres what it looks
+ * at in the part of the map above it, and keeps a little room at the sides.
+ */
+function compactPadding(): mapboxgl.PaddingOptions {
+  const h = typeof window === "undefined" ? 800 : window.innerHeight;
+  return { top: 70, bottom: Math.round(h * 0.55), left: 16, right: 16 };
+}
+
+/**
  * A dark Mapbox globe that spins for a moment, flies to Basel and dives at the presenter's
  * home, which rises as a solid orange block. onStage reports each step as it lands.
  */
@@ -722,6 +741,7 @@ export function Globe({
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const compact = useCompact();
   // Latest callback without re-running the map effect
   const onStageRef = useRef(onStage);
   const onArriveRef = useRef(onArrive);
@@ -824,6 +844,13 @@ export function Globe({
       map.remove();
     };
   }, [token]);
+
+  // On a phone every flight lands above the bottom sheet (flyTo keeps the map's padding)
+  useEffect(() => {
+    mapRef.current?.setPadding(
+      compact ? compactPadding() : { top: 0, bottom: 0, left: 0, right: 0 },
+    );
+  }, [compact, token]);
 
   // Into the building and back out again (only after we've been inside, not on first load).
   // Leaving the house for a neighbour is handled below.
@@ -942,7 +969,7 @@ export function Globe({
         zoom: 15.4,
         pitch: 58,
         bearing: map.getBearing(),
-        padding: { left: 340, right: 330, top: 90, bottom: 90 },
+        padding: compact ? compactPadding() : { left: 340, right: 330, top: 90, bottom: 90 },
         duration: 2200,
         essential: true,
       });
@@ -951,15 +978,17 @@ export function Globe({
     const bounds = new mapboxgl.LngLatBounds();
     for (const p of pinsRef.current) bounds.extend(p.at);
     map.fitBounds(bounds, {
-      padding: houses
-        ? { left: 380, right: 360, top: 120, bottom: 110 }
-        : { left: 90, right: 90, top: 110, bottom: 140 },
+      padding: compact
+        ? compactPadding()
+        : houses
+          ? { left: 380, right: 360, top: 120, bottom: 110 }
+          : { left: 90, right: 90, top: 110, bottom: 140 },
       pitch: 45,
       bearing: -15,
       duration: 2600,
       essential: true,
     });
-  }, [marketOn, houses, picked]);
+  }, [marketOn, houses, picked, compact]);
 
   // The work from far away: its line into HOME, only in the simulation
   const remoteKw = sim ? Math.round(sim.remote * 10) / 10 : null;

@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { COMPACT_TOP, useCompact } from "./compact";
 import { NEIGHBOURS } from "./neighbours";
 import {
   DEFAULT_SIM,
@@ -22,6 +23,7 @@ import {
   WEATHER,
   type Weather,
 } from "./simulation";
+import { Sheet } from "./Sheet";
 import { card, label } from "./ui";
 
 const CYAN = "#06b6d4";
@@ -95,17 +97,39 @@ function useGlide(target: number, ms = 600): number {
   return shown;
 }
 
-/** Top centre: the month, the weather, and that month's average temperature. */
-function WeatherBar({ s }: { s: Sim }) {
+/**
+ * Top centre: the month, the weather, and that month's average temperature. On a phone the months
+ * scroll sideways, keeping the picked one in view.
+ */
+function WeatherBar({ s, compact = false }: { s: Sim; compact?: boolean }) {
   const temp = s.view.temp;
+  const months = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const row = months.current;
+    const el = row?.children[s.month] as HTMLElement | undefined;
+    if (!compact || !row || !el) return;
+    row.scrollTo({
+      left: el.offsetLeft - (row.clientWidth - el.clientWidth) / 2,
+      behavior: "smooth",
+    });
+  }, [compact, s.month]);
   return (
-    <div className="pointer-events-auto flex animate-pill-in flex-col items-center gap-1.5 rounded-[22px] border border-white/10 bg-[#1b1d21]/85 p-1.5 font-sans text-white shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-      <div className="flex gap-0.5">
+    <div
+      className={`pointer-events-auto flex animate-pill-in flex-col items-center gap-1.5 rounded-[22px] border border-white/10 bg-[#1b1d21]/85 p-1.5 font-sans text-white shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl ${
+        compact ? "w-full max-w-[560px]" : ""
+      }`}
+    >
+      <div
+        ref={months}
+        className={`flex gap-0.5 ${compact ? "w-full snap-x overflow-x-auto [scrollbar-width:none]" : ""}`}
+      >
         {MONTHS.map((m, i) => (
           <button
             key={m.name}
             onClick={() => s.setMonth(i)}
-            className={`flex w-10 flex-col items-center rounded-xl py-1 transition-colors ${
+            className={`flex flex-col items-center rounded-xl transition-colors ${
+              compact ? "min-h-11 w-11 shrink-0 snap-center justify-center" : "w-10 py-1"
+            } ${
               i === s.month ? "text-white" : "text-white/45 hover:bg-white/[0.06] hover:text-white"
             }`}
             style={i === s.month ? { background: CYAN } : undefined}
@@ -122,7 +146,9 @@ function WeatherBar({ s }: { s: Sim }) {
             <button
               key={w}
               onClick={() => s.setWeather(w)}
-              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 rounded-full px-2.5 text-[11.5px] font-semibold transition-colors ${
+                compact ? "min-h-10 shrink-0 whitespace-nowrap" : "py-1"
+              } ${
                 w === s.weather
                   ? "bg-white text-black"
                   : "text-white/55 hover:bg-white/[0.06] hover:text-white"
@@ -132,14 +158,14 @@ function WeatherBar({ s }: { s: Sim }) {
             </button>
           );
         })}
-        <span className="ml-auto flex items-center gap-2 pr-1">
+        <span className="ml-auto flex shrink-0 items-center gap-2 pr-1 whitespace-nowrap">
           <span
             className="text-[15px] font-semibold tabular-nums"
             style={{ color: temp < 0 ? "#7dd3fc" : temp > 22 ? "#fb923c" : "white" }}
           >
             {temp.toFixed(1)} °C
           </span>
-          <span className="text-[10.5px] text-white/50">average</span>
+          {!compact && <span className="text-[10.5px] text-white/50">average</span>}
         </span>
       </div>
     </div>
@@ -190,11 +216,11 @@ function Slider({
 }
 
 /** Left: who's signed up and the prices. */
-function SettingsCard({ s }: { s: Sim }) {
+function SettingsCard({ s, bare = false }: { s: Sim; bare?: boolean }) {
   const set = <K extends keyof SimParams>(k: K, v: SimParams[K]) =>
     s.setParams((p) => ({ ...p, [k]: v }));
   return (
-    <article className={`${card} absolute top-[68px] left-6 w-[290px]`}>
+    <article className={bare ? "" : `${card} absolute top-[68px] left-6 w-[290px]`}>
       <div className="px-2 pt-2">
         <p className={label}>
           <Users size={12} /> Who computes on your rack
@@ -208,7 +234,7 @@ function SettingsCard({ s }: { s: Sim }) {
             <li key={n.id}>
               <button
                 onClick={() => s.toggle(i)}
-                className="flex w-full items-center gap-2 rounded-2xl px-2 py-1.5 text-left hover:bg-white/[0.05]"
+                className={`flex w-full items-center gap-2 rounded-2xl px-2 text-left hover:bg-white/[0.05] ${bare ? "min-h-11" : "py-1.5"}`}
               >
                 <span
                   className="grid size-6 shrink-0 place-items-center rounded-full"
@@ -306,10 +332,10 @@ function SettingsCard({ s }: { s: Sim }) {
 }
 
 /** Bottom right: net earnings month by month; click a month to simulate it. */
-function YearCard({ s }: { s: Sim }) {
+function YearCard({ s, bare = false }: { s: Sim; bare?: boolean }) {
   const max = Math.max(1, ...s.year.map((m) => Math.abs(m.net)));
   return (
-    <article className={`${card} mt-auto`} style={{ animationDelay: "150ms" }}>
+    <article className={bare ? "" : `${card} mt-auto`} style={{ animationDelay: "150ms" }}>
       <div className="px-2 pt-2 pb-1.5">
         <p className={label}>
           <Coins size={12} /> Your year, month by month
@@ -382,7 +408,7 @@ function Row({ k, v, tone }: { k: ReactNode; v: number; tone?: "plus" | "minus" 
 }
 
 /** Right top: what it all earns, for the year and the simulated month. */
-function EarningsCard({ s }: { s: Sim }) {
+function EarningsCard({ s, bare = false }: { s: Sim; bare?: boolean }) {
   const total = s.year.reduce((sum, m) => sum + m.net, 0);
   const shown = useGlide(total);
   const m = s.year[s.month];
@@ -390,7 +416,7 @@ function EarningsCard({ s }: { s: Sim }) {
   const perDay = (m?.net ?? 0) / (MONTHS[s.month]?.days ?? 30);
   if (!m) return null;
   return (
-    <article className={card} style={{ animationDelay: "250ms" }}>
+    <article className={bare ? "" : card} style={{ animationDelay: "250ms" }}>
       <div className="px-2 pt-2 pb-1.5">
         <p className={label}>
           <Coins size={12} /> What your rack earns
@@ -442,12 +468,40 @@ function EarningsCard({ s }: { s: Sim }) {
  * Pressing "a" over the neighbours: a what-if over the whole block. Pick a month and the
  * weather, sign neighbours up or out, and watch what the rack earns.
  */
-export function SimulationView({ s, onBack }: { s: Sim; onBack: () => void }) {
+export function SimulationView({
+  s,
+  onBack,
+  onNext,
+}: {
+  s: Sim;
+  onBack: () => void;
+  /** The "a" key's step, as a button on a phone: on to the other side, the buyer's. */
+  onNext: () => void;
+}) {
+  const compact = useCompact();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onBack();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onBack]);
+
+  if (compact)
+    return (
+      <div className="pointer-events-none absolute inset-0 font-sans">
+        <div className="absolute inset-x-3 flex justify-center" style={COMPACT_TOP}>
+          <WeatherBar s={s} compact />
+        </div>
+        <Sheet
+          tabs={[
+            { id: "earnings", label: "Earnings", body: <EarningsCard s={s} bare /> },
+            { id: "year", label: "Year", body: <YearCard s={s} bare /> },
+            { id: "rack", label: "Who", body: <SettingsCard s={s} bare /> },
+          ]}
+          back={{ label: "Back to the neighbours", onClick: onBack }}
+          action={{ label: "Rent a house to compute in", onClick: onNext }}
+        />
+      </div>
+    );
 
   return (
     <div className="pointer-events-none absolute inset-0 font-sans">

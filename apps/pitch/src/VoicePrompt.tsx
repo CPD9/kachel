@@ -70,17 +70,17 @@ export function VoicePrompt({ onSend }: { onSend: (text: string) => void }) {
             </span>
             <span className="text-sm font-medium text-ink">Listening</span>
             <span className="text-sm text-muted tabular-nums">{formatTime(seconds)}</span>
-            <Waveform className="ml-2 h-6" />
+            <Waveform className="ml-2 h-6 min-w-0 overflow-hidden" />
             <button
               aria-label="Cancel voice input"
               onClick={() => setListening(false)}
-              className="ml-auto grid size-9 place-items-center rounded-lg border border-border text-muted hover:bg-black/5"
+              className="ml-auto grid size-9 place-items-center rounded-lg border border-border text-muted hover:bg-black/5 pointer-coarse:size-11"
             >
               <X size={16} />
             </button>
             <button
               onClick={() => onSend(heard || MOCK_TRANSCRIPT)}
-              className="flex items-center gap-2 rounded-lg bg-clay px-4 py-2 text-sm font-medium text-white hover:bg-clay-dark"
+              className="flex items-center gap-2 rounded-lg bg-clay px-4 py-2 text-sm font-medium text-white hover:bg-clay-dark pointer-coarse:min-h-11"
             >
               <span className="size-2.5 rounded-[2px] bg-white" /> Send
             </button>
@@ -94,7 +94,7 @@ export function VoicePrompt({ onSend }: { onSend: (text: string) => void }) {
               aria-label="Presentation mode"
               title="Presentation mode"
               onClick={start}
-              className="grid size-8 place-items-center rounded-lg text-muted hover:bg-black/5 hover:text-ink"
+              className="grid size-8 place-items-center rounded-lg text-muted hover:bg-black/5 hover:text-ink pointer-coarse:size-11"
             >
               <Presentation size={17} />
             </button>
@@ -105,10 +105,13 @@ export function VoicePrompt({ onSend }: { onSend: (text: string) => void }) {
         )}
       </div>
       {listening && (
-        <p className="mt-3 flex items-center justify-center gap-3 text-xs text-muted">
+        <p className="mt-3 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-muted">
           Speak naturally — sends automatically when you pause
-          <span aria-hidden>•</span>
-          <span>
+          {/* Touch screens have no Esc key: the × button cancels there */}
+          <span aria-hidden className="pointer-coarse:hidden">
+            •
+          </span>
+          <span className="pointer-coarse:hidden">
             <kbd className="rounded border border-border px-1.5 py-0.5 font-sans text-ink">Esc</kbd>{" "}
             to cancel
           </span>
@@ -160,7 +163,7 @@ export function VoiceBar({
       )}
       <button
         onClick={onEnd}
-        className="h-10 rounded-xl bg-clay px-4 text-sm font-medium text-white hover:bg-clay-dark"
+        className="h-10 rounded-xl bg-clay px-4 text-sm font-medium text-white hover:bg-clay-dark pointer-coarse:h-11"
       >
         End
       </button>

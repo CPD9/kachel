@@ -50,7 +50,7 @@ export function Layers({
   return (
     <section
       aria-label="Layers"
-      className="absolute right-4 bottom-10 w-80 space-y-2 rounded-lg bg-ink/80 p-3 text-sm backdrop-blur"
+      className="absolute right-4 bottom-10 w-80 space-y-2 rounded-lg bg-ink/80 p-3 text-sm backdrop-blur max-md:right-2 max-md:bottom-[3.75rem] max-md:left-2 max-md:w-auto max-md:group-data-card:hidden"
     >
       <label className="flex items-start gap-2">
         <input
@@ -61,7 +61,7 @@ export function Layers({
         />
         <span>
           <span className="font-medium">District heating today</span>
-          <span className="block text-xs text-paper/60">
+          <span className="block text-xs text-paper/60 max-md:hidden">
             {networks === "loading"
               ? "Loading SFOE's networks in view…"
               : typeof networks === "number"
@@ -81,7 +81,7 @@ export function Layers({
         />
         <span>
           <span className="font-medium">Kachel: heat from home servers</span>
-          <span className="block text-xs text-paper/60">
+          <span className="block text-xs text-paper/60 max-md:hidden">
             {`Our idea, as an illustration, not data: the scheduler's synthetic fleet, ${FLEET.length} houses with ${FLEET_SERVERS} servers, placed on real homes in Basel and Bern in hectares with high heat demand. Click a dot.`}
           </span>
         </span>

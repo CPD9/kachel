@@ -181,17 +181,21 @@ export function App({
   };
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-ink text-paper">
+    <main
+      // On a phone the open card takes the bottom of the screen: the layer switches make way
+      data-card={building !== null || network !== null ? "" : undefined}
+      className="group relative h-dvh w-full overflow-hidden bg-ink text-paper"
+    >
       <div ref={container} className="absolute inset-0" data-testid="map" />
 
-      <header className="pointer-events-none absolute top-4 left-4 max-w-sm rounded-lg bg-ink/70 px-4 py-3 backdrop-blur">
-        <h1 className="text-xl font-semibold">Kachel</h1>
-        <p className="text-sm text-paper/80">Where home servers could heat homes.</p>
+      <header className="pointer-events-none absolute top-4 left-4 max-w-sm rounded-lg bg-ink/70 px-4 py-3 backdrop-blur max-md:top-2 max-md:left-2 max-md:px-3 max-md:py-2">
+        <h1 className="text-xl font-semibold max-md:text-base">Kachel</h1>
+        <p className="text-sm text-paper/80 max-md:hidden">Where home servers could heat homes.</p>
       </header>
 
       <section
         aria-label="Time of day"
-        className="absolute top-4 right-4 flex items-center gap-3 rounded-lg bg-ink/70 px-4 py-2 backdrop-blur"
+        className="absolute top-4 right-4 flex items-center gap-3 rounded-lg bg-ink/70 px-4 py-2 backdrop-blur max-md:top-2 max-md:right-2 max-md:px-2 max-md:py-1"
       >
         <span className="font-mono text-lg tabular-nums" aria-live="off">
           {time === null ? "--:--" : swissTime(time)}
@@ -200,7 +204,7 @@ export function App({
           type="button"
           onClick={toggle}
           disabled={scene === null}
-          className="rounded bg-heat px-3 py-1 text-sm font-medium text-ink disabled:opacity-50"
+          className="rounded bg-heat px-3 py-1 text-sm font-medium text-ink disabled:opacity-50 max-md:min-h-10"
         >
           {playing ? "Pause" : "Play"}
         </button>
@@ -242,7 +246,7 @@ export function App({
         </p>
       )}
 
-      <footer className="absolute right-0 bottom-0 left-0 flex flex-wrap gap-x-4 bg-ink/70 px-3 py-1 text-xs text-paper/80">
+      <footer className="absolute right-0 bottom-0 left-0 flex flex-wrap gap-x-4 bg-ink/70 px-3 py-1 text-xs text-paper/80 max-md:gap-x-3 max-md:text-[10px]">
         {CREDITS.map((c) => (
           <a
             key={c.label}
@@ -256,7 +260,7 @@ export function App({
         ))}
         <span>Source: BFS GWR</span>
         <span>Source: SFOE</span>
-        <span className="ml-auto">
+        <span className="ml-auto max-md:hidden">
           Click a building. Lit windows are an illustration, not data.
         </span>
       </footer>
