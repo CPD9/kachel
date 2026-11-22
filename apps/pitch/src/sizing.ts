@@ -122,7 +122,7 @@ export const defaultParams = (fuel: Fuel, b: Published = TARGET.building): Param
 /** The biggest set-up, for homes that need more than any single rack. */
 const TWIN_XL: Rack = {
   id: "xl",
-  name: "Two racks XL, 40 servers",
+  name: "Rack XL, 40 servers",
   kw: 40,
   servers: 40,
   size: "Two racks · 1.6 m²",
