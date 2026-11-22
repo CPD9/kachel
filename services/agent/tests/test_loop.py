@@ -2,7 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from kachel_agent.loop import follow, read_signal_file
+from kachel_agent.loop import Note, follow, read_note, read_signal_file
 from kachel_agent.process import Job, State
 
 
@@ -14,6 +14,19 @@ def test_signal_file_reads_run_and_pause(tmp_path: Path) -> None:
     assert read() is True
     path.write_text("pause")
     assert read() is False
+
+
+def test_the_scheduler_s_note_follows_the_signal(tmp_path: Path) -> None:
+    path = tmp_path / "signal"
+    assert read_note(path) is None
+    path.write_text("run\n")
+    assert read_note(path) is None
+    path.write_text("pause\ntank full / no heat sink: backlog paused\n" + "ab" * 32 + "\n")
+    assert read_signal_file(path)() is False
+    assert read_note(path) == Note("tank full / no heat sink: backlog paused", "ab" * 32)
+    path.write_text("run\nheat needed\n")
+    assert read_signal_file(path)() is True
+    assert read_note(path) == Note("heat needed")
 
 
 def test_follow_pauses_and_resumes_a_real_process_on_the_signal() -> None:

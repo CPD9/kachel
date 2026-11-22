@@ -70,6 +70,75 @@ export type Database = {
         };
         Relationships: [];
       };
+      decisions: {
+        Row: {
+          batch: number;
+          demand_kwh: number;
+          entry: string;
+          hash: string;
+          interactive: number;
+          opportunistic: number;
+          placed: number;
+          prev_hash: string;
+          reason: string;
+          run: NonNullable<Json>;
+          seq: number;
+          site_id: string;
+          soc_kwh: number;
+          tank_kwh: number;
+          temp_c: number | null;
+          time: string;
+          written_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          batch: number;
+          demand_kwh: number;
+          entry: string;
+          hash: string;
+          interactive: number;
+          opportunistic: number;
+          placed?: number;
+          prev_hash: string;
+          reason: string;
+          run: NonNullable<Json>;
+          seq: number;
+          site_id: string;
+          soc_kwh: number;
+          tank_kwh: number;
+          temp_c?: number | null;
+          time: string;
+          written_at?: string;
+        };
+        Update: {
+          batch?: number;
+          demand_kwh?: number;
+          entry?: string;
+          hash?: string;
+          interactive?: number;
+          opportunistic?: number;
+          placed?: number;
+          prev_hash?: string;
+          reason?: string;
+          run?: NonNullable<Json>;
+          seq?: number;
+          site_id?: string;
+          soc_kwh?: number;
+          tank_kwh?: number;
+          temp_c?: number | null;
+          time?: string;
+          written_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "decisions_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "sites";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       heat_state: {
         Row: {
           arr_batch: number;

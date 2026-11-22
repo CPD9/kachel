@@ -56,6 +56,22 @@ houses, their servers, their heat for the day and the newest jobs, each on the h
 to a data centre. It reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the environment
 (`services/agent/.env`); `--dry-run` prints what it would write.
 
+## The live loop: `make live` and `make verify-live`
+
+`live.py` runs the same `decide()` on the house in the local Supabase, tick by tick. Each tick it reads the
+reference house's servers and jobs, takes the heat of the hour (a replayed day on the saved Basel weather, or
+`--source db` for `heat_state` at the clock's hour), decides, and carries it out: the agent's signal file for the
+job with a real process, the job and server rows for the others, and a free server for each job queued in the
+console (the fleet's `place_hour`: it lands while its heat is useful, waits while it has slack, and goes to a data
+centre once it has none). By default it replays 13 January and 15 July at 2.5 s an hour, about a minute a day.
+
+Each decision is appended to `out/decisions.jsonl` and the `decisions` table: the inputs (time, temperature, heat
+demand, tank, servers, jobs), the Signal, the decision, the jobs it ran, and a SHA-256 hash over all of it and
+the previous entry's hash. The table is append-only. `make verify-live` checks every link and hash and replays
+each entry's inputs through `decide()`; any decision that does not follow from its inputs is reported and the
+command fails (`VERIFY_ARGS=--db` checks the table). Code: `heatsched/live.py` (the pure decision),
+`heatsched/ledger.py` (the chain), `heatsched/live_loop.py` (one tick).
+
 ## The fleet month by month: `make months`
 
 `make months` runs every house of the Basel and Bern fleet (`fleet_basel_bern`, 100 synthetic houses) through the

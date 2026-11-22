@@ -92,7 +92,11 @@ export function Buyers({
           </span>
         )}
       </div>
-      {!source && <p className="mt-4 text-[15px] text-white/55">No database is set up.</p>}
+      {!source && (
+        <p className="mt-4 text-[15px] text-white/55">
+          Live data needs the local stack: run make dev. The figures above are the model&apos;s.
+        </p>
+      )}
       {source && live.email === null && <SignIn source={source} />}
       {source && live.email && live.status === "error" && (
         <p role="alert" className="mt-4 text-[15px]">

@@ -10,6 +10,15 @@ import { TARGET } from "./target";
 /** Where the map app runs: `make dev` serves it on port 5175 (VITE_MAP_URL overrides it). */
 export const DEFAULT_MAP_URL = "http://localhost:5175";
 
+/**
+ * The map's address: VITE_MAP_URL, else the local one in dev. A deployed build without
+ * VITE_MAP_URL has none (null), and the intro says so instead of opening localhost.
+ */
+export function mapBaseFor(configured: string | undefined, dev: boolean): string | null {
+  if (configured) return configured;
+  return dev ? DEFAULT_MAP_URL : null;
+}
+
 /** The map, opened at a building with its card (`?egid=…&card=1`, see apps/map/src/start.ts). */
 export function mapUrl(base: string, egid: number = TARGET.building.egid): string {
   const url = new URL(base);

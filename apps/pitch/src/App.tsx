@@ -11,7 +11,7 @@ import {
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
 import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
-import { DEFAULT_MAP_URL, FADE_MS, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
+import { FADE_MS, mapBaseFor, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
 import { HouseView } from "./HouseView";
 import { MarketHouses, MarketSetup, useMarket } from "./MarketView";
 import { NeighbourDetails, NeighbourSwitch } from "./NeighbourDetails";
@@ -79,7 +79,7 @@ const typing = (e: KeyboardEvent) =>
  */
 export function App({ go = navigate }: { go?: (url: string) => void }) {
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
-  const mapBase = import.meta.env.VITE_MAP_URL || DEFAULT_MAP_URL;
+  const mapBase = mapBaseFor(import.meta.env.VITE_MAP_URL, import.meta.env.DEV);
   // What the presenter said; null while the landing page is still showing
   const [said, setSaid] = useState<string | null>(null);
   const send = useCallback((text: string) => setSaid(text), []);
@@ -91,6 +91,9 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
   const [houseShown, setHouseShown] = useState(false);
   // Fading out to the map's background, just before the page changes
   const [leaving, setLeaving] = useState(false);
+  // A deployed build without VITE_MAP_URL: no map to hand over to, so a note instead
+  const [noMap, setNoMap] = useState(false);
+  const leave = useCallback(() => (mapBase ? setLeaving(true) : setNoMap(true)), [mapBase]);
   // The house keeps its answers once opened: it stays mounted, hidden while on the map
   const [houseMounted, setHouseMounted] = useState(false);
   useEffect(() => {
@@ -171,7 +174,7 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
 
   // The hand-over: fade to the map's background, then load the map at the building
   useEffect(() => {
-    if (!leaving) return;
+    if (!leaving || !mapBase) return;
     const t = setTimeout(() => go(mapUrl(mapBase)), FADE_MS);
     return () => clearTimeout(t);
   }, [leaving, go, mapBase]);
@@ -179,22 +182,19 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
   // Without a token: "Basel identified", a moment of "Finding your building…", then the map
   useEffect(() => {
     if (said === null || token) return;
-    const timers = [
-      setTimeout(() => setStage("city"), 300),
-      setTimeout(() => setLeaving(true), NO_GLOBE_HOLD_MS),
-    ];
+    const timers = [setTimeout(() => setStage("city"), 300), setTimeout(leave, NO_GLOBE_HOLD_MS)];
     return () => timers.forEach(clearTimeout);
-  }, [said, token]);
+  }, [said, token, leave]);
 
   // With the globe: once the building is lit, "m" opens the real map (also from inside the house)
   useEffect(() => {
     if (said === null || !token || stage !== "building") return;
     const onKey = (e: KeyboardEvent) => {
-      if (!typing(e) && e.key.toLowerCase() === "m") setLeaving(true);
+      if (!typing(e) && e.key.toLowerCase() === "m") leave();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [said, token, stage]);
+  }, [said, token, stage, leave]);
 
   if (said !== null) {
     return (
@@ -262,7 +262,7 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
                 {/* The hand-over to the real map and card (apps/map); "m" does the same */}
                 <button
                   type="button"
-                  onClick={() => setLeaving(true)}
+                  onClick={leave}
                   className="pointer-events-auto flex animate-pill-in items-center gap-2 rounded-full border border-clay/50 bg-[#1b1d21]/85 py-1.5 pr-3 pl-2 text-sm font-medium text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md hover:border-clay"
                 >
                   <span className="grid size-6 place-items-center rounded-full bg-clay text-white">
@@ -275,9 +275,18 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
                 </button>
               </>
             ) : (
-              <Pill key="finding" label="Finding your building…" loading />
+              !noMap && <Pill key="finding" label="Finding your building…" loading />
             )}
           </div>
+        )}
+        {noMap && (
+          <p
+            role="status"
+            className="absolute inset-x-0 top-20 mx-auto w-fit max-w-[calc(100%-2rem)] rounded-lg border border-white/10 bg-[#1b1d21]/85 px-4 py-2 text-center text-sm text-white/80 backdrop-blur-md"
+          >
+            The live map is not linked from this page yet. Set VITE_MAP_URL to the map&apos;s
+            address.
+          </p>
         )}
         <div className="absolute inset-x-0 bottom-6 flex justify-center px-4">
           <VoiceBar
@@ -289,6 +298,7 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
               setStage(null);
               setInside(false);
               setLeaving(false);
+              setNoMap(false);
               setGamer(false);
               setAtGamer(false);
               setSim(false);

@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months measure-ai video-charts paper pitch-graphics
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months measure-ai video-charts paper pitch-graphics live verify-live
 
 bootstrap:
 	pnpm install --frozen-lockfile
@@ -56,6 +56,23 @@ bern-days:
 	cd $(BERN_RUN) && uv run --project $(CURDIR)/$(SCHED) python $(CURDIR)/$(SCHED)/run_year.py \
 		--config $(CURDIR)/$(SCHED)/config.json --weather $(CURDIR)/$(SCHED)/tests/data/weather_bern_2025.csv --day snow=$(SNOW_DAY)
 	cp $(BERN_RUN)/out/day_january.csv $(BERN_RUN)/out/day_july.csv $(BERN_RUN)/out/day_snow.csv $(BERN_RUN)/out/kpis.json $(SCHED)/out/bern/
+
+# The live loop (#191): every tick the same decide() as `make year` reads the house, writes the
+# agent's signal file and places queued console jobs, and appends the decision to the hash-chained
+# log (out/decisions.jsonl and the decisions table). Replays 13 January and 15 July on the saved
+# Basel weather at LIVE_PACE seconds an hour; LIVE_ARGS="--source db --tick 3600" for real time.
+# Needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (services/agent/.env).
+LIVE_AGENT ?= 00000000-0000-4000-8000-000000000304=/tmp/heat
+LIVE_PACE ?= 2.5
+LIVE_ARGS ?=
+live:
+	cd $(SCHED) && set -a && . ../agent/.env && set +a && uv run python live.py \
+		--agent $(LIVE_AGENT) --seconds-per-hour $(LIVE_PACE) $(LIVE_ARGS)
+
+# Replay the decision log through decide() and report any mismatch (VERIFY_ARGS=--db for the table).
+VERIFY_ARGS ?=
+verify-live:
+	cd $(SCHED) && $(if $(VERIFY_ARGS),set -a && . ../agent/.env && set +a && ,)uv run python verify_live.py $(VERIFY_ARGS)
 
 # The row level security tests (supabase/tests) need the local stack from `make dev`. Without
 # it they are skipped here with a note; the Database CI job always runs them.
