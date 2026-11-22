@@ -38,6 +38,12 @@ pauses; a deadline job that cannot wait moves to another house or a data centre.
 their house, servers and heat in the host app; buyers submit and follow jobs in the console;
 an operator view shows the whole fleet and its revenue.
 
+The AI that runs the house runs in the house. The scheduler and the agent work on the box,
+and "Ask your house" in the host app is answered by a local model, qwen3:4b through Ollama,
+on the same computer: no cloud model, and the household's questions and data stay in the
+house. Buyers send AI work such as transcription and image and video tagging; it runs on the
+house's servers, close to where the data is made.
+
 ### How it works, and what is real
 
 One pure scheduler function drives both the yearly balance on real 2025 Basel weather and
@@ -74,6 +80,8 @@ Source: Open-Meteo archive, Basel 2025
 | Agent pausing and resuming a real process                                 | Real                                           |
 | Embedding and chat jobs, measured on our machine and scaled to 1 kW       | Real, GPU power metered; CPU share stated      |
 | Transcription job                                                         | Cited from published benchmarks, not run by us |
+| Image and video tagging jobs (MLPerf RetinaNet 5.0-0023, NVIDIA NVDEC)    | Cited from published benchmarks, not run by us |
+| Local AI: "Ask your house" on qwen3:4b through Ollama, no cloud model     | Real, on the same computer; energy metered     |
 | Building data: GWR, SFOE heat demand and Sonnendach, ElCom prices         | Real public data                               |
 | Supabase with Realtime and row level security                             | Real, local stack                              |
 | 3D map: swisstopo buildings and imagery                                   | Real                                           |
@@ -92,6 +100,9 @@ Source: Open-Meteo archive, Basel 2025
    balance on its own municipality's ElCom tariff, as the map card already does (#174).
 4. One Basel pilot building with a fitter's quote, and a summer heat sink worked out with the
    district heating operator.
+5. A pilot with a rail operator's tagging backlog (station and track images and video), run
+   overnight on the pilot building's servers, measured against the cited figures in
+   [job-types.md](job-types.md).
 
 ## Repository URL
 

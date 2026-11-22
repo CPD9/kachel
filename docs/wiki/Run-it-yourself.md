@@ -68,9 +68,10 @@ The seed makes these accounts. All exist only in your local database.
 | Demo buyer | `buyer@kachel.test`    | `kachel-demo` | Console       |
 | Operator   | `operator@kachel.test` | `kachel-demo` | Operator view |
 
-Six more buyers are synthetic, each a kind of compute the fleet sells: game streaming
+Seven more buyers are synthetic, each a kind of compute the fleet sells: game streaming
 (`play@`), 3D rendering (`render@`), an AI lab (`lab@`), a video studio (`studio@`),
-embeddings (`embed@`) and speech to text (`speech@`), all `@kachel.test` with the same password.
+embeddings (`embed@`), speech to text (`speech@`) and a rail operator tagging images and video
+of stations and track (`rail@`), all `@kachel.test` with the same password.
 Their jobs run on the synthetic fleet houses. The operator reads every house, server, job and
 buyer and changes none; that role is set in the account's app metadata, which no app can write.
 
