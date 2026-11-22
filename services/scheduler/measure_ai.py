@@ -14,7 +14,7 @@ Energy is metered, not taken from a rated TDP:
 
 The GPU is shared (Blender renders). A run starts only when the GPU is below 5 % utilisation with no
 Blender process on it; otherwise it waits and checks again, up to an hour. A run is thrown away and
-repeated when Blender appears during it.
+repeated when Blender appears at any point during it (checked every 2 s).
 
 Scaling: equal energy per item on the reference server (equal performance per watt), as in measure.py.
 Writes docs/measurements/ai-<kind>-samples.csv (raw meter samples) and docs/measurements/ai-summary.json.
@@ -139,8 +139,35 @@ def gpu_state(window_s: float = 5.0) -> tuple[float, bool]:
         ).stdout
         util = max(util, float(out.split()[0]))
         time.sleep(0.5)
+    return util, blender_on_gpu()
+
+
+def blender_on_gpu() -> bool:
     table = subprocess.run(["nvidia-smi"], capture_output=True, text=True, check=True).stdout
-    return util, "blender" in table.lower()
+    return "blender" in table.lower()
+
+
+class BlenderWatch:
+    """Looks for a Blender process on the GPU every few seconds while a run is going."""
+
+    def __init__(self, every_s: float = 2.0) -> None:
+        self.seen = False
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._loop, args=(every_s,), daemon=True)
+
+    def _loop(self, every_s: float) -> None:
+        while not self._stop.is_set():
+            self.seen = self.seen or blender_on_gpu()
+            self._stop.wait(every_s)
+
+    def __enter__(self) -> BlenderWatch:
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self._stop.set()
+        self._thread.join()
+        self.seen = self.seen or blender_on_gpu()
 
 
 def wait_for_idle_gpu(max_wait_s: float, every_s: float) -> None:
@@ -242,11 +269,12 @@ def measure(kind: str, work, meter: Meter, a: argparse.Namespace) -> tuple[dict,
             continue
         t0 = time.monotonic()
         cpu0, rapl0 = ollama_cpu_s(), rapl_uj()
-        result = work()
+        with BlenderWatch() as watch:
+            result = work()
         t1 = time.monotonic()
         cpu1, rapl1 = ollama_cpu_s(), rapl_uj()
-        if gpu_state(0.5)[1]:
-            print(f"{kind}: Blender started on the GPU during the run; discarding it", flush=True)
+        if watch.seen:
+            print(f"{kind}: Blender was on the GPU during the run; discarding it", flush=True)
             continue
         break
     else:

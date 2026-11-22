@@ -28,8 +28,8 @@ speech-to-text benchmark.
 
 ## Opportunistic backlog: embeddings
 
-Measured: nomic-embed-text through Ollama on an RTX 2080 Ti, 145.9 texts a second at 55.7 W
-above idle plus a stated CPU share: 34.8 Wh per job of 200,000 texts, about 29 jobs per 1 kW
+Measured: nomic-embed-text through Ollama on an RTX 2080 Ti, 174.4 texts a second at 68.2 W
+above idle plus a stated CPU share: 33.2 Wh per job of 200,000 texts, about 30 jobs per 1 kW
 server-hour ([measurements.md](measurements.md); raw samples and summary in
 [measurements/](measurements/)). The backlog is assumed unlimited, the single most optimistic
 assumption in the model.
@@ -37,6 +37,6 @@ assumption in the model.
 ## Interactive sessions
 
 One evening block of 4 server-hours a house (18:00 to 22:00), not interruptible: OUR scenario.
-The chat part is measured: qwen3:4b, thinking off, 135.6 tokens a second at 224.9 W above idle,
-0.137 Wh per 256-token answer, about 7,300 answers per 1 kW server-hour
+The chat part is measured: qwen3:4b, thinking off, 136.7 tokens a second at 225.3 W above idle,
+0.138 Wh per 256-token answer, about 7,200 answers per 1 kW server-hour
 ([measurements.md](measurements.md)).

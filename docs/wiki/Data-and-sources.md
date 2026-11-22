@@ -53,9 +53,9 @@ refers to.
 ## Our own measurement
 
 Two AI jobs are measured on our own machine, an RTX 2080 Ti through Ollama, on 22 Nov 2026,
-with GPU power read every 100 ms above the idle baseline: embeddings (nomic-embed-text), 145.9
-texts a second and 34.8 Wh for 200,000 texts, about 29 jobs per 1 kW server-hour; and chat
-answers (qwen3:4b), 135.6 tokens a second and 0.137 Wh an answer, about 7,300 per server-hour.
+with GPU power read every 100 ms above the idle baseline: embeddings (nomic-embed-text), 174.4
+texts a second and 33.2 Wh for 200,000 texts, about 30 jobs per 1 kW server-hour; and chat
+answers (qwen3:4b), 136.7 tokens a second and 0.138 Wh an answer, about 7,200 per server-hour.
 The CPU's share is stated from its design limit, not metered.
 Method and limits: [measurements.md](https://github.com/CPD9/kachel/blob/main/docs/measurements.md).
 

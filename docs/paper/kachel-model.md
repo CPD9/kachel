@@ -64,7 +64,7 @@ The scheduler is one pure function, `decide`, used both by the yearly simulation
 
 ### 4.1 Jobs
 
-Three kinds of job arrive, set in `config.json`. Interactive sessions (local AI chat, game streaming) cannot be paused: 4 server-hours a day, one an hour from 18:00 to 22:00; one chat answer from qwen3:4b takes 0.14 Wh, measured on our machine [4]. Deadline batch is speech-to-text transcription with Whisper large-v3 [5, 6], interruptible per recording: 8 server-hours arrive at 06:00 each day and are due within 24 hours, the completion window of a common batch API [7]. The opportunistic backlog is embedding work with no deadline, measured on our own machine at 34.8 Wh per job of 200,000 texts [4], and assumed unlimited.
+Three kinds of job arrive, set in `config.json`. Interactive sessions (local AI chat, game streaming) cannot be paused: 4 server-hours a day, one an hour from 18:00 to 22:00; one chat answer from qwen3:4b takes 0.14 Wh, measured on our machine [4]. Deadline batch is speech-to-text transcription with Whisper large-v3 [5, 6], interruptible per recording: 8 server-hours arrive at 06:00 each day and are due within 24 hours, the completion window of a common batch API [7]. The opportunistic backlog is embedding work with no deadline, measured on our own machine at 33.2 Wh per job of 200,000 texts [4], and assumed unlimited.
 
 ### 4.2 Forecast and head-room
 
