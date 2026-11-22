@@ -11,5 +11,14 @@ export const lightCard =
 export const lightLabel =
   "flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-muted uppercase";
 
-/** The pitch's clay accent (index.css --color-clay), for inline styles and map pins. */
-export const CLAY = "#ea580c";
+/**
+ * The market's green family (index.css --color-forest-*), for inline styles and map pins. 700
+ * carries white text (6.5:1), 300 is text on the dark cards (9:1), 500 is for fills without text.
+ */
+export const FOREST = {
+  900: "#0e3b2e",
+  700: "#1e6b4a",
+  500: "#2f9e6b",
+  300: "#7fd3a6",
+  100: "#d8f3e3",
+} as const;

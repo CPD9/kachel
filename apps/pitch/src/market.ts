@@ -1,13 +1,24 @@
 import { TARGET } from "./target";
+import { JOB_TYPES } from "@kachel/economics/model";
 import {
   Atom,
-  Bot,
-  BrainCircuit,
-  Clapperboard,
-  Film,
-  Gamepad2,
-  type LucideIcon,
-} from "lucide-react";
+  Baby,
+  Bed,
+  Brain,
+  BuildingApartment,
+  Buildings,
+  ChatCircleDots,
+  Cube,
+  FilmSlate,
+  GameController,
+  GraduationCap,
+  HouseLine,
+  HouseSimple,
+  type Icon,
+  ImageSquare,
+  Plant,
+  SwimmingPool,
+} from "@phosphor-icons/react";
 import { HOME } from "./neighbours";
 
 /**
@@ -15,7 +26,7 @@ import { HOME } from "./neighbours";
  * Hand-written demo data; prices, houses and hosts are made up for the pitch.
  */
 
-export type Workload = "gaming" | "render" | "train" | "infer" | "science" | "video";
+export type Workload = "tagging" | "gaming" | "render" | "train" | "infer" | "science" | "video";
 
 export type Needs = {
   workload: Workload;
@@ -35,10 +46,17 @@ export type Needs = {
   flex: boolean;
 };
 
+/** Image and video tagging as the scheduler runs it (config.json: workloads, from #200). */
+const TAGGING = JOB_TYPES;
+/** Server-hours a night of tagging: the image batch at 20:00 plus the video batch at 22:00. */
+const TAGGING_NIGHT_H = [TAGGING.image_tagging, TAGGING.video_tagging]
+  .flatMap((t) => Object.values(t.arrivals_server_h))
+  .reduce((a, b) => a + b, 0);
+
 export const WORKLOADS: Record<
   Workload,
   {
-    icon: LucideIcon;
+    icon: Icon;
     name: string;
     note: string;
     needs: Omit<Needs, "workload" | "flex" | "once">;
@@ -46,29 +64,37 @@ export const WORKLOADS: Record<
     job: number;
   }
 > = {
+  tagging: {
+    icon: ImageSquare,
+    name: "Image and video tagging",
+    note: `Overnight · ≈ ${(TAGGING.image_tagging.images_per_server_hour / 1e6).toFixed(1)} million images a server-hour`,
+    // GPU size is our pick (a detection model fits in 16 GB); the hours are the scheduler's
+    needs: { gpus: 1, vram: 16, ram: 32, hours: TAGGING_NIGHT_H * 30, interactive: false },
+    job: TAGGING_NIGHT_H,
+  },
   gaming: {
-    icon: Gamepad2,
+    icon: GameController,
     name: "Cloud gaming",
     note: "4K at 120 fps, streamed",
     needs: { gpus: 1, vram: 16, ram: 32, hours: 60, interactive: true },
     job: 4,
   },
   render: {
-    icon: Clapperboard,
+    icon: Cube,
     name: "3D rendering",
     note: "Blender, Cinema 4D, Unreal",
     needs: { gpus: 2, vram: 24, ram: 64, hours: 120, interactive: false },
     job: 12,
   },
   train: {
-    icon: BrainCircuit,
+    icon: Brain,
     name: "AI training",
     note: "Fine-tune and train models",
     needs: { gpus: 4, vram: 80, ram: 512, hours: 200, interactive: false },
     job: 48,
   },
   infer: {
-    icon: Bot,
+    icon: ChatCircleDots,
     name: "AI inference",
     note: "Serve an LLM or an API",
     needs: { gpus: 1, vram: 48, ram: 128, hours: 300, interactive: true },
@@ -82,7 +108,7 @@ export const WORKLOADS: Record<
     job: 36,
   },
   video: {
-    icon: Film,
+    icon: FilmSlate,
     name: "Video encoding",
     note: "Transcode and upscale",
     needs: { gpus: 1, vram: 12, ram: 32, hours: 80, interactive: false },
@@ -111,8 +137,34 @@ export const HEAT_LABEL: Record<HeatNeed, string> = {
   low: "Warm enough",
 };
 
+export type BuildingKind =
+  | "house"
+  | "bungalow"
+  | "flats"
+  | "coop"
+  | "hostel"
+  | "villa"
+  | "greenhouse"
+  | "school"
+  | "daycare";
+
+/** One icon per kind of building, in the lists and on the map's price pins. */
+export const BUILDING_ICON: Record<BuildingKind, Icon> = {
+  house: HouseLine,
+  bungalow: HouseSimple,
+  flats: BuildingApartment,
+  coop: Buildings,
+  hostel: Bed,
+  villa: SwimmingPool,
+  greenhouse: Plant,
+  school: GraduationCap,
+  daycare: Baby,
+};
+
 export type Offer = {
   id: string;
+  /** What kind of building it is, for its icon. */
+  kind: BuildingKind;
   at: [number, number];
   address: string;
   area: string;
@@ -138,6 +190,7 @@ export type Offer = {
 export const OFFERS: Offer[] = [
   {
     id: "byfang",
+    kind: TARGET.building.kind === "school" ? "school" : "house",
     at: HOME,
     address: TARGET.name,
     area: "Gotthelf",
@@ -155,6 +208,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: "gueter",
+    kind: "flats",
     at: [7.5915, 47.5425],
     address: "Güterstrasse 112",
     area: "Gundeldingen",
@@ -171,6 +225,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: "rheinblick",
+    kind: "coop",
     at: [7.5775, 47.5672],
     address: "Elsässerstrasse 41",
     area: "St. Johann",
@@ -187,6 +242,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: "hostel",
+    kind: "hostel",
     at: [7.5952, 47.5655],
     address: "Klybeckstrasse 77",
     area: "Kleinbasel",
@@ -203,6 +259,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: "vogt",
+    kind: "greenhouse",
     at: [7.5405, 47.5505],
     address: "Baslerstrasse 210",
     area: "Allschwil",
@@ -219,6 +276,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: "wenken",
+    kind: "villa",
     at: [7.6455, 47.5835],
     address: "Bettingerstrasse 8",
     area: "Riehen",
@@ -235,6 +293,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: "bruderholz",
+    kind: "bungalow",
     at: [7.5955, 47.5305],
     address: "Batteriestrasse 20",
     area: "Bruderholz",
@@ -251,6 +310,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: "breite",
+    kind: "school",
     at: [7.6125, 47.5535],
     address: "Zürcherstrasse 150",
     area: "Breite",
@@ -267,6 +327,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: "sunneschii",
+    kind: "daycare",
     at: [7.5705, 47.5405],
     address: "Hauptstrasse 30",
     area: "Binningen",

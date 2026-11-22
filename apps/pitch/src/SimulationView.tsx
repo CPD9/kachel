@@ -290,7 +290,7 @@ function SettingsCard({ s, bare = false }: { s: Sim; bare?: boolean }) {
           step={0.5}
           unit="kW"
           scale={1}
-          accent="accent-slate-400"
+          accent="accent-forest-500"
           onChange={(v) => set("remote", v)}
         />
       </div>
