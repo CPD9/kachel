@@ -8,6 +8,7 @@ export const ROUTES = [
   "quotes",
   "billing",
   "billing/year",
+  "device",
 ] as const;
 export type Route = (typeof ROUTES)[number];
 

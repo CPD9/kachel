@@ -121,9 +121,9 @@ describe("operator console", () => {
     expect(document.querySelector("[data-model]")?.textContent).toBe(
       "Model: 2025 weather, synthetic homes",
     );
-    // Five places in the bar, no more
+    // Six places in the bar, the device concept last, no more
     const bar = screen.getByRole("navigation", { name: "Console" });
-    expect(bar.querySelectorAll("a")).toHaveLength(5);
+    expect(bar.querySelectorAll("a")).toHaveLength(6);
     // Without Supabase nothing asks for a sign-in
     expect(screen.queryByText(/Sign in as the operator/)).toBeNull();
   });

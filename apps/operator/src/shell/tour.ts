@@ -8,22 +8,15 @@ export interface TourStep {
 }
 
 const NOVEMBER = 10;
-const JULY = 6;
-const JANUARY = 0;
 
 /**
- * The DigitalHeat story the pitch hands over to: what needs you today, every building, the rail
- * operator's tagging quote, November's settlement, the year, July's summer drop, and January's
- * winter peak to end on.
+ * The DigitalHeat story the pitch hands over to, short: what needs you today, November's
+ * settlement, and the device concept (heat pump and ORC turbine) to end on.
  */
 export const TOUR: readonly TourStep[] = [
   { route: "today", month: NOVEMBER, label: "Today" },
-  { route: "buildings", month: NOVEMBER, label: "All buildings" },
-  { route: "quotes", month: NOVEMBER, label: "Quote" },
   { route: "billing", month: NOVEMBER, label: "Settlement" },
-  { route: "billing/year", month: NOVEMBER, label: "The year" },
-  { route: "billing/year", month: JULY, label: "July" },
-  { route: "billing/year", month: JANUARY, label: "January" },
+  { route: "device", month: NOVEMBER, label: "The device" },
 ];
 
 /** Step i, clamped to the tour. */

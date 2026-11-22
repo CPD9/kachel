@@ -6,6 +6,7 @@ import { buyerRows, useLive, type OperatorSource } from "./live/live";
 import { AddBuilding } from "./pages/AddBuilding";
 import { Billing } from "./pages/Billing";
 import { Buildings, type NewBuilding } from "./pages/Buildings";
+import { Device } from "./pages/Device";
 import { Jobs } from "./pages/Jobs";
 import { Quotes } from "./pages/Quotes";
 import { Today } from "./pages/Today";
@@ -34,13 +35,14 @@ const CRUMBS: Record<Route, { label: string; route?: Route }[]> = {
   quotes: [{ label: "Quotes", route: "quotes" }, { label: "New quote" }],
   billing: [{ label: "Billing", route: "billing" }, { label: "Settlement" }],
   "billing/year": [{ label: "Billing", route: "billing" }, { label: "The year" }],
+  device: [{ label: "The device" }],
 };
 
 /**
  * The DigitalHeat operator console: Today, Buildings, Jobs, Quotes and Billing over the
  * scheduler's model of 100 synthetic homes in Basel and Bern, with the buyers and their jobs live
  * from Supabase once the operator signs in. The month and outdoor temperature chosen under
- * Billing hold for every page.
+ * Billing hold for every page. The device is the heat pump and ORC turbine concept, not built.
  */
 export function App({
   source,
@@ -83,7 +85,7 @@ export function App({
     <Shell
       route={route}
       crumbs={CRUMBS[route]}
-      model={model}
+      model={route === "device" ? "From the pitch film" : model}
       balance={
         <>
           <span className="text-label-2">Balance </span>
@@ -124,6 +126,7 @@ export function App({
           onOffset={setOffset}
         />
       )}
+      {route === "device" && <Device />}
       {tour.step !== null && (
         <TourHint step={tour.step} onNext={() => tour.go("next")} onEnd={() => tour.go("end")} />
       )}

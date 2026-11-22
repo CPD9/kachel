@@ -41,3 +41,18 @@ body {
     animation: none;
   }
 }
+
+/* The device's part labels over the dark 3D card: quiet until their step comes. */
+.device-label {
+  background: rgb(255 255 255 / 0.12);
+  color: rgb(255 255 255 / 0.78);
+  backdrop-filter: blur(6px);
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    opacity 0.2s;
+}
+.device-label[data-active="true"] {
+  background: rgb(255 255 255 / 0.94);
+  color: var(--color-label);
+}
