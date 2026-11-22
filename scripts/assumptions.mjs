@@ -284,6 +284,24 @@ const WORKLOAD_VALUES = {
     show.plain,
     `${MLPERF_RETINANET}: 3.6 MJ ÷ energy per image`,
   ],
+  "image_tagging.measured_images_per_s": [
+    "Image tagging: images a second, our RTX 2080 Ti",
+    "images/s",
+    show.plain,
+    `${MEASURED} (RetinaNet ResNet-50 FPN, synthetic frames)`,
+  ],
+  "image_tagging.measured_wh_per_1000_images": [
+    "Image tagging: energy per 1,000 images, our RTX 2080 Ti",
+    "Wh",
+    show.plain,
+    `${MEASURED}: GPU above idle plus a stated CPU share`,
+  ],
+  "image_tagging.measured_images_per_server_hour": [
+    "Image tagging: images per 1 kW server-hour, from our measurement",
+    "images",
+    show.plain,
+    `${MEASURED}: 1,000 Wh ÷ energy per image`,
+  ],
   "video_tagging.label": ["Video tagging: what it is", "", show.plain, VIDEO_AI],
   "video_tagging.runs_as": ["Video tagging: runs as", "", show.plain, "the scheduler's batch rule"],
   "video_tagging.interruptible": [

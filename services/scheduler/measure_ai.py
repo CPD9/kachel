@@ -254,25 +254,30 @@ class Phase:
     t1: float
 
 
-def measure(kind: str, work, meter: Meter, a: argparse.Namespace) -> tuple[dict, list[Phase]]:
-    """Wait for an idle GPU, sample the idle baseline, run the work, and repeat if Blender showed up."""
+def measure(
+    kind: str, work, meter: Meter, a: argparse.Namespace, cpu_s=ollama_cpu_s, cpu_who: str = "Ollama"
+) -> tuple[dict, list[Phase]]:
+    """Wait for an idle GPU, sample the idle baseline, run the work, and repeat if Blender showed up.
+
+    cpu_s counts the CPU seconds of whoever does the work (Ollama by default; measure_tagging.py counts itself).
+    """
     for _attempt in range(10):
         wait_for_idle_gpu(a.max_wait_min * 60, a.check_every_min * 60)
         b0 = time.monotonic()
-        cpu_b0, rapl_b0 = ollama_cpu_s(), rapl_uj()
+        cpu_b0, rapl_b0 = cpu_s(), rapl_uj()
         time.sleep(a.baseline_s)
         b1 = time.monotonic()
-        cpu_b1, rapl_b1 = ollama_cpu_s(), rapl_uj()
+        cpu_b1, rapl_b1 = cpu_s(), rapl_uj()
         base = meter.window(b0, b1)
         if max(s[2] for s in base) >= BUSY_UTIL_PCT:
             print(f"{kind}: GPU not idle during the baseline; trying again", flush=True)
             continue
         t0 = time.monotonic()
-        cpu0, rapl0 = ollama_cpu_s(), rapl_uj()
+        cpu0, rapl0 = cpu_s(), rapl_uj()
         with BlenderWatch() as watch:
             result = work()
         t1 = time.monotonic()
-        cpu1, rapl1 = ollama_cpu_s(), rapl_uj()
+        cpu1, rapl1 = cpu_s(), rapl_uj()
         if watch.seen:
             print(f"{kind}: Blender was on the GPU during the run; discarding it", flush=True)
             continue
@@ -296,7 +301,7 @@ def measure(kind: str, work, meter: Meter, a: argparse.Namespace) -> tuple[dict,
     else:
         cpu_wh = cpu_busy_s * a.cpu_watts_per_core / 3600
         cpu_method = (
-            f"RAPL not readable without root; Ollama's CPU seconds above baseline x {a.cpu_watts_per_core} W "
+            f"RAPL not readable without root; {cpu_who}'s CPU seconds above baseline x {a.cpu_watts_per_core} W "
             "per busy core (95 W TDP / 8 cores, stated, not metered)"
         )
     total_wh = gpu_above + cpu_wh
@@ -312,7 +317,7 @@ def measure(kind: str, work, meter: Meter, a: argparse.Namespace) -> tuple[dict,
         "gpu_samples": len(run),
         "gpu_wh_total": round(gpu_total, 4),
         "gpu_wh_above_idle": round(gpu_above, 4),
-        "ollama_cpu_s_above_baseline": round(cpu_busy_s, 2),
+        f"{cpu_who.lower().replace(' ', '_')}_cpu_s_above_baseline": round(cpu_busy_s, 2),
         "cpu_wh": round(cpu_wh, 4),
         "cpu_method": cpu_method,
         "wh_above_idle": round(total_wh, 4),

@@ -80,7 +80,8 @@ Source: Open-Meteo archive, Basel 2025
 | Agent pausing and resuming a real process                                 | Real                                           |
 | Embedding and chat jobs, measured on our machine and scaled to 1 kW       | Real, GPU power metered; CPU share stated      |
 | Transcription job                                                         | Cited from published benchmarks, not run by us |
-| Image and video tagging jobs (MLPerf RetinaNet 5.0-0023, NVIDIA NVDEC)    | Cited from published benchmarks, not run by us |
+| Image tagging, measured on our machine next to MLPerf RetinaNet 5.0-0023  | Real, GPU power metered; accuracy not measured |
+| Video tagging job (MLPerf RetinaNet 5.0-0023, NVIDIA NVDEC)               | Cited from published benchmarks, not run by us |
 | Local AI: "Ask your house" on qwen3:4b through Ollama, no cloud model     | Real, on the same computer; energy metered     |
 | Building data: GWR, SFOE heat demand and Sonnendach, ElCom prices         | Real public data                               |
 | Supabase with Realtime and row level security                             | Real, local stack                              |
