@@ -63,6 +63,10 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
    expected. With one, the globe lands on the building: `a` for the house and its questions,
    Esc to come back, `m` for the map. The map alone:
    http://localhost:5175/?egid=442141&card=1 (FHNW: `?egid=243058419&card=1`).
+   The last step: in the market, with a house picked and "Run it here" showing, `a` (on a phone
+   or tablet, "See DigitalHeat's side") opens the operator console in the same tab at Today with
+   its tour, `?tour=1`. That is http://localhost:5177 under `make dev`, otherwise
+   `VITE_OPERATOR_URL` or https://operator-omega-jade.vercel.app.
 5. Map, http://localhost:5175. Click Basel, then a building, for its energy card. **Tour** (top
    centre) stops at FHNW Campus Dreispitz, where we are: newer than swisstopo's 3D data, so an
    orange pin stands on its site.

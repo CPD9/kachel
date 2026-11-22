@@ -572,7 +572,14 @@ function HouseRow({ q, on, onPick }: { q: Quote; on: boolean; onPick: () => void
 }
 
 /** Page 2: the houses on the map, a list on the left and the picked one on the right. */
-export function MarketHouses({ m }: { m: Market }) {
+export function MarketHouses({
+  m,
+  onNext,
+}: {
+  m: Market;
+  /** The last step, as a button on a phone ("a" on a keyboard): DigitalHeat's side. */
+  onNext: () => void;
+}) {
   const compact = useCompact();
   const { needs, current: q } = m;
   const [booked, setBooked] = useState<string | null>(null);
@@ -760,6 +767,7 @@ export function MarketHouses({ m }: { m: Market }) {
             { id: "houses", label: `${m.fits.length} houses fit`, body: listBody },
             ...(q && !q.miss ? [{ id: "house", label: q.offer.area, body: houseBody }] : []),
           ]}
+          action={q && !q.miss ? { label: "See DigitalHeat's side", onClick: onNext } : undefined}
         />
       </div>
     );
