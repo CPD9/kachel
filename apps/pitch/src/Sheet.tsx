@@ -87,7 +87,7 @@ export function Sheet({
             aria-label={open ? "Fold the details down" : "Show the details"}
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
-            className="grid h-5 w-full place-items-center"
+            className="tap relative grid h-5 w-full place-items-center"
           >
             <span className="h-1 w-10 rounded-full bg-current opacity-25" />
           </button>
