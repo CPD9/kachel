@@ -130,6 +130,9 @@ Peter, after the first live demo, plain voice, host app still on screen:
   the house wants heat."
 - 3:42 Duc switches back to the slides.
 
+If Duc played live-demo.mp4 instead, it ends at about 3:02. He pauses it on its last frame and
+leaves it up for these lines.
+
 ### 3:42–4:45, slide 2
 
 - 3:42 "One Basel house, six servers, real 2025 weather. Server heat covers 79.6 percent of
