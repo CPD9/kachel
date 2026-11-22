@@ -123,7 +123,7 @@ energy per job) because the CPU tokenises the texts and the machine had other wo
 
 The two image tagging runs, each with its own gate and idle baseline, agree within 0.2 % in
 throughput and in energy per image. The second waited once at the gate (3 minutes) while the GPU's
-utilisation reading from the first fell back.
+utilisation reading from the first fell back; the script now waits 30 s between runs instead.
 
 ## Earlier stand-in
 

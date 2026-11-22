@@ -144,6 +144,8 @@ def main() -> None:
     runs, raw = [], []
     try:
         for n in range(1, a.runs + 1):
+            if n > 1:
+                time.sleep(30)  # the utilisation reading lags; without this the gate sees the last run and waits
             m, phases = measure(
                 f"tagging_run{n}",
                 lambda: run_tagging(torch, model, pixels, a.passes, a.batch),
