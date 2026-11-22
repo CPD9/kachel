@@ -13,4 +13,9 @@ describe("targetFor", () => {
     expect(t.transcript).toContain("FHNW Campus Dreispitz");
     expect(t.showBuildingCard).toBe(false);
   });
+
+  it("knows each target's building in the register, for the map's hand-over", () => {
+    expect(targetFor("").building.egid).toBe(442141);
+    expect(targetFor("?at=fhnw").building.egid).toBe(243058419);
+  });
 });

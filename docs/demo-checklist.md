@@ -18,8 +18,8 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
 
 ## 30 minutes before
 
-1. [ ] Nothing else on ports 5173, 5174, 5175 or 5177: `ss -ltnp | grep 517`. One old Vite on any of
-       them stops `make dev` and all three apps with it.
+1. [ ] Nothing else on ports 5173 to 5177: `ss -ltnp | grep 517`. One old Vite on any of them
+       stops `make dev` and all five apps with it.
 2. [ ] Start the database, then the keys, then the apps:
 
    ```sh
@@ -60,13 +60,19 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
    shows Running.
 3. Console, http://localhost:5174, signed in as `buyer@kachel.test` / `kachel-demo`. A Batch
    job needs a deadline; Backlog does not.
-4. Map, http://localhost:5175. Click Basel, then a building, for its energy card. **Tour** (top
+4. Pitch intro, http://localhost:5176 (`?at=fhnw` for FHNW Campus Dreispitz). Press the
+   presentation button in the prompt: the scripted line plays (no microphone), then the map
+   opens at the building with its card. With no Mapbox token there is no globe; that is
+   expected. With one, the globe lands on the building: `a` for the house and its questions,
+   Esc to come back, `m` for the map. The map alone:
+   http://localhost:5175/?egid=442141&card=1 (FHNW: `?egid=243058419&card=1`).
+5. Map, http://localhost:5175. Click Basel, then a building, for its energy card. **Tour** (top
    centre) stops at FHNW Campus Dreispitz, where we are: newer than swisstopo's 3D data, so an
    orange pin stands on its site.
-5. Operator, http://localhost:5177, signed in as `operator@kachel.test` / `kachel-demo`: the
+6. Operator, http://localhost:5177, signed in as `operator@kachel.test` / `kachel-demo`: the
    whole fleet, the buyers and the revenue. Click July, then slide the temperature up: heat
    demand, servers running and revenue fall.
-6. The two films, open in the video player.
+7. The two films, open in the video player.
 
 If a tab is blank, reload it once.
 

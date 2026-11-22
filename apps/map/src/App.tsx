@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BuildingCard, type NotIn3D } from "./building/BuildingCard";
-import { lookUp, type BuildingFacts } from "./building/geoadmin";
+import { locate, lookUp, type BuildingFacts, type Located } from "./building/geoadmin";
 import { latestOnly } from "./building/latest";
 import { swissTime } from "./clock";
 import { fleetHouse, type FleetHouse } from "./fleet/fleet";
@@ -11,7 +11,7 @@ import type { Network } from "./networks/thermal";
 import type { Scene } from "./scene/viewer";
 import { CREDITS } from "./sources";
 import type { InsideOf } from "./inside/stills";
-import { TOUR_BUILDING, type TourBuilding } from "./tour/steps";
+import { standIn, TOUR_BUILDING, viewOf, type TourBuilding } from "./tour/steps";
 import { TourBar } from "./tour/TourBar";
 
 // three.js and the stills load only when someone opens a building's inside.
@@ -19,15 +19,21 @@ const InsideView = lazy(() => import("./inside/InsideView"));
 
 export type StartScene = (container: HTMLElement) => Promise<Scene>;
 
+/** How long the hand-over waits for tiles before deciding what stands in for the campus. */
+const HANDOVER_TILES_MS = 8000;
+
 /** The heat map: Basel in 3D at dusk, the day passing, with the sources always on screen. */
 export function App({
   start,
   autoTour = false,
   tourCapMs,
+  startEgid,
 }: {
   start: StartScene;
   autoTour?: boolean;
   tourCapMs?: number | undefined;
+  /** Open at this building with its card (`?egid=…&card=1`, the pitch app's hand-over). */
+  startEgid?: number | undefined;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const [scene, setScene] = useState<Scene | null>(null);
@@ -99,6 +105,38 @@ export function App({
       if (picked?.kind === "network") setNetwork(picked.network);
     });
   }, [scene, openBuilding, closeCards]);
+
+  // The pitch app hands over here: find the building, fly to it, colour it and open its card. The
+  // campus we know already: once the tiles are in, its block model (or a pin) stands in, as on the
+  // tour. Any other building comes from the register and is coloured as a click colours it.
+  useEffect(() => {
+    if (scene === null || startEgid === undefined) return;
+    let gone = false;
+    // A click before the tiles are in takes over: the hand-over stops there.
+    const stop = scene.onPick(() => {
+      gone = true;
+    });
+    const campus = startEgid === TOUR_BUILDING.egid;
+    const where: Promise<(Located & { name: string }) | null> = campus
+      ? Promise.resolve(TOUR_BUILDING)
+      : locate(startEgid).then((at) => (at === null ? null : { ...at, name: `EGID ${startEgid}` }));
+    void where.then(async (b) => {
+      if (gone || b === null) return;
+      void scene.flyTo(viewOf(b, b.name), 3);
+      openBuilding(startEgid, b.lon, b.lat);
+      scene.highlightBuilding(startEgid);
+      if (!campus) return;
+      await Promise.race([
+        scene.tilesLoaded(),
+        new Promise((resolve) => setTimeout(resolve, HANDOVER_TILES_MS)),
+      ]);
+      if (!gone) setNotIn3D(standIn(scene, TOUR_BUILDING));
+    });
+    return () => {
+      gone = true;
+      stop();
+    };
+  }, [scene, startEgid, openBuilding]);
 
   useEffect(() => {
     const el = container.current;

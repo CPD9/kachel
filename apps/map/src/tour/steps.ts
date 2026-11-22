@@ -52,6 +52,21 @@ export const TOUR_BUILDING: TourBuilding = {
 const STOREY_M = 4;
 
 /**
+ * Once the tiles are in: the building is coloured if the 3D data has it; otherwise our block model,
+ * coloured too; and if that did not load, an orange pin where the register puts the building, as
+ * tall as its storeys. Returns what the card should say stands in. The tour and the pitch app's
+ * hand-over (App.tsx) both use it for the campus.
+ */
+export function standIn(scene: Scene, b: TourBuilding): NotIn3D {
+  const shown: NotIn3D =
+    scene.highlightedCount() > 0 ? false : scene.ownModel(b.egid) ? "model" : "pin";
+  scene.showMarker(
+    shown === "pin" ? { lon: b.lon, lat: b.lat, heightM: b.storeys * STOREY_M } : null,
+  );
+  return shown;
+}
+
+/**
  * Looking north at a building from about 330 m south and 270 m above it, a little west, so it
  * sits right of centre, beside the card rather than behind it, with the blocks around it in view.
  */
@@ -108,20 +123,7 @@ export function tourSteps(d: TourDeps): TourStep[] {
         d.openBuilding(building);
         d.scene.highlightBuilding(building.egid);
         await ctx.atMost(d.scene.tilesLoaded(), tilesCap);
-        // Coloured if the 3D data has it; otherwise our block model, coloured too; and if that
-        // did not load, an orange pin where the register puts the building.
-        const inTiles = d.scene.highlightedCount() > 0;
-        const shown: NotIn3D = inTiles ? false : d.scene.ownModel(building.egid) ? "model" : "pin";
-        d.scene.showMarker(
-          shown === "pin"
-            ? {
-                lon: building.lon,
-                lat: building.lat,
-                heightM: building.storeys * STOREY_M,
-              }
-            : null,
-        );
-        d.setNotIn3D(shown);
+        d.setNotIn3D(standIn(d.scene, building));
         ctx.show();
         await ctx.dwell(7000);
       },

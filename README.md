@@ -36,12 +36,13 @@ git clone https://github.com/CPD9/kachel.git && cd kachel
 make bootstrap                    # JavaScript and Python dependencies
 pnpm exec supabase start          # the local Supabase stack, in Docker
 pnpm exec supabase status -o env  # the keys for the three .env files
-make dev                          # all four apps
+make dev                          # all five apps
 make check                        # every check CI runs
 ```
 
 Before `make dev`, copy `.env.example` to `.env` in `apps/host`, `apps/console` and `services/agent`, and fill in the keys from `pnpm exec supabase status -o env`. Only the agent takes the service role key.
-`make dev` serves the host app on http://localhost:5173, the console on http://localhost:5174, the 3D heat map on http://localhost:5175 and the operator view on http://localhost:5177; the map needs internet.
+`make dev` serves the host app on http://localhost:5173, the console on http://localhost:5174, the 3D heat map on http://localhost:5175, the pitch intro on http://localhost:5176 and the operator view on http://localhost:5177; the map needs internet.
+The pitch intro (`apps/pitch`, by Duc) plays a scripted voice prompt, then opens the map at Byfangweg 18 with its card (`?egid=442141&card=1`; `?at=fhnw` targets FHNW Campus Dreispitz, EGID 243058419); with `VITE_MAPBOX_TOKEN` in `apps/pitch/.env` a Mapbox globe flies there first, `a` dives into the house and its questions, and `m` opens the map.
 Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test`, and to the console as the demo buyer, `buyer@kachel.test`, both with the password `kachel-demo` (local stack only).
 
 <p align="center"><img src="docs/media/app-host.png" width="640" alt="The host app signed in as the demo host: six servers, three running a job, one holding a paused job because the house needs no heat, two off"></p>

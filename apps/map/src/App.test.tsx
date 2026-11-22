@@ -73,6 +73,54 @@ describe("map app", () => {
     expect(await screen.findByRole("button", { name: "Pause" })).toBeTruthy();
   });
 
+  it("opens at a building with its card when handed an EGID (?egid=…&card=1)", async () => {
+    const register = {
+      egid: "442141",
+      strname_deinr: "Byfangweg 18",
+      gbauj: 1894,
+      gebf: 330,
+      gastw: 3,
+      genh1: 7582,
+      genw1: 7582,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          results: [{ geometry: { x: 7.582214, y: 47.55211 }, attributes: register }],
+        }),
+      })),
+    );
+    const scene = fakeScene();
+    render(<App start={() => Promise.resolve(scene)} startEgid={442141} />);
+    expect(await screen.findByRole("heading", { name: "Byfangweg 18" })).toBeTruthy();
+    expect(scene.flyTo).toHaveBeenCalledWith(expect.objectContaining({ name: "EGID 442141" }), 3);
+    expect(scene.highlightBuilding).toHaveBeenCalledWith(442141);
+    vi.unstubAllGlobals();
+  });
+
+  it("hands over to the FHNW campus without asking where it is", async () => {
+    const asked: string[] = [];
+    const fetcher = vi.fn(async (url: string) => {
+      asked.push(url);
+      return { ok: true, json: async () => ({ results: [] }) };
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const scene = { ...fakeScene(), ownModel: (egid: number) => egid === 243058419 };
+    render(<App start={() => Promise.resolve(scene)} startEgid={243058419} />);
+    await vi.waitFor(() =>
+      expect(scene.flyTo).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "FHNW Campus Dreispitz" }),
+        3,
+      ),
+    );
+    expect(scene.highlightBuilding).toHaveBeenCalledWith(243058419);
+    // The register is asked for the card's figures, never for where the campus is.
+    expect(asked.some((url) => url.includes("returnGeometry=true&sr"))).toBe(false);
+    vi.unstubAllGlobals();
+  });
+
   it("says so when the map cannot start", async () => {
     render(<App start={() => Promise.reject(new Error("no WebGL"))} />);
     expect((await screen.findByRole("alert")).textContent).toContain("could not start");
