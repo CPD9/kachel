@@ -165,4 +165,4 @@ Our own assumptions, with no outside source yet, are listed at the end of the
 The biggest: compute sells at 0.50 CHF a server-hour, there is always a backlog of flexible work,
 and a paused server draws nothing. The research topics that would replace them with evidence
 are listed there too, and in plain words on
-[the page for Nikolas](https://github.com/CPD9/kachel/blob/main/docs/economics/for-nikolas.md).
+[the page for Nicolas](https://github.com/CPD9/kachel/blob/main/docs/economics/for-nikolas.md).

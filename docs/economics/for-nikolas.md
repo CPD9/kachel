@@ -1,6 +1,6 @@
-# Kachel: the numbers, for Nikolas
+# Kachel: the numbers, for Nicolas
 
-Hi Nikolas. This page walks through the two files that hold Kachel's numbers: what goes in,
+Hi Nicolas. This page walks through the two files that hold Kachel's numbers: what goes in,
 and what comes out. Everything here is also on the
 [economics page](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md), with
 the full list of sources. This is the short way in, in case it's handy.
