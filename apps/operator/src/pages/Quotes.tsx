@@ -1,8 +1,15 @@
 import { useMemo, useState } from "react";
 import { chf2, count, fixed1, pct } from "../format";
 import { quote, WORKLOADS, ZONES, type Workload, type Zone } from "../fleet/quote";
-import { PageHead, Sources } from "../shell/Shell";
+import { exampleQuotes, type QuoteStatus } from "../jobs/quotes";
+import { PageHead, Pill, Sources } from "../shell/Shell";
 import { card, field, fieldLabel } from "../ui";
+
+const STATUS: Record<QuoteStatus, { label: string; tone: "blue" | "grey" | "orange" }> = {
+  accepted: { label: "Accepted", tone: "blue" },
+  sent: { label: "Sent", tone: "orange" },
+  draft: { label: "Draft", tone: "grey" },
+};
 
 const hour = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
@@ -32,6 +39,7 @@ export function Quotes({
     () => quote({ workload, perDay, zone, month, offset }),
     [workload, perDay, zone, month, offset],
   );
+  const list = useMemo(() => exampleQuotes(month, offset), [month, offset]);
   const where = zone === "Switzerland" ? "Switzerland" : zone;
   const items = workload === "image" ? "images" : "recordings";
 
@@ -156,6 +164,45 @@ export function Quotes({
           </Sources>
         </section>
       </div>
+
+      <section aria-labelledby="quotes-list" className={`${card} mt-8 overflow-hidden`}>
+        <div className="px-4 pt-4 sm:px-5">
+          <h2 id="quotes-list" className="text-[17px] font-semibold">
+            Quotes
+          </h2>
+          <p className="mt-0.5 text-[14px] text-label-2">
+            Synthetic buyers and volumes, priced by the model for {monthName}.
+          </p>
+        </div>
+        <ul className="mt-3 divide-y divide-sep/60 border-t border-sep/60">
+          {list.map((r) => (
+            <li
+              key={r.id}
+              data-quote={r.id}
+              className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-0.5 px-4 py-3 sm:px-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.3fr)_96px]"
+            >
+              <span className="font-semibold">
+                {r.buyer} <span className="font-normal text-label-2">(synthetic)</span>
+              </span>
+              <span className="justify-self-end md:order-last">
+                <Pill tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Pill>
+              </span>
+              <span className="col-span-2 text-[14px] text-label-2 md:col-span-1 md:text-[15px] md:text-label">
+                {WORKLOADS[r.workload].label}, {ZONES[r.zone]}
+              </span>
+              <span className="col-span-2 text-[14px] text-label-2 tabular-nums md:col-span-1 md:text-[15px] md:text-label">
+                {r.volume}
+              </span>
+              <span className="col-span-2 text-[14px] font-semibold tabular-nums md:col-span-1 md:text-[15px]">
+                {chf2(r.q.unitPrice)}{" "}
+                <span className="font-normal text-label-2">
+                  {WORKLOADS[r.workload].priceUnitLabel}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </>
   );
 }
