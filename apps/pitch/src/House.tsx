@@ -932,6 +932,14 @@ function Plant({ fuel, active }: { fuel: Fuel; active: boolean }) {
           <Box size={[0.8, 0.08, 0.08]} color="#5b4636" position={[1.2, 3, 0.6]} />
         </>
       )}
+      {fuel === "district" && (
+        <>
+          {/* District heating substation: a cabinet, its flow and return pipes into the ground */}
+          <Box size={[0.9, 1.1, 0.5]} color="#d9d5ce" position={[0, 0.55, 0]} />
+          <Box size={[0.1, 0.7, 0.1]} color="#c8553d" position={[-0.2, 0.35, 0.3]} />
+          <Box size={[0.1, 0.7, 0.1]} color="#3d6fc8" position={[0.2, 0.35, 0.3]} />
+        </>
+      )}
     </group>
   );
 }

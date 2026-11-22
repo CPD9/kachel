@@ -8,6 +8,7 @@ import {
   Columns2,
   Columns3,
   Droplet,
+  Factory,
   Fan,
   Flame,
   Hammer,
@@ -42,8 +43,10 @@ import {
   type Rack,
   type Result,
   type Windows,
+  ourModel,
   size,
 } from "./sizing";
+import { TARGET } from "./target";
 import { RackArt } from "./RackArt";
 import { lightCard as card, lightLabel as label } from "./ui";
 
@@ -65,12 +68,21 @@ const FUEL_OPTIONS: Option<Fuel>[] = [
   { value: "gas", icon: Flame, name: FUELS.gas.name, note: "Connected to the gas grid" },
   { value: "heatpump", icon: Fan, name: FUELS.heatpump.name, note: "Air or ground source" },
   { value: "electric", icon: Zap, name: FUELS.electric.name, note: "Night storage, panels" },
+  {
+    value: "district",
+    icon: Factory,
+    name: FUELS.district.name,
+    note: "Heat from the city's network",
+  },
 ];
 
 export const STEPS = ["Windows", "Heating", "Energy", "People", "Result"] as const;
 type Step = (typeof STEPS)[number];
 
 const chf = (x: number) => `CHF ${Math.round(x).toLocaleString("de-CH")}`;
+const kwh = (x: number) => `${Math.round(x).toLocaleString("en-GB")} kWh`;
+/** The building the questions start from (target.ts). */
+const b = TARGET.building;
 
 /** Where you are: the questions as pills across the top. */
 function StepPills({ step, onStep }: { step: number; onStep: (i: number) => void }) {
@@ -226,9 +238,12 @@ function Slider({
   step,
   format,
   onChange,
+  check = false,
 }: {
   icon: Icon;
   name: string;
+  /** No published source yet: say so under the slider. */
+  check?: boolean;
   value: number;
   min: number;
   max: number;
@@ -255,6 +270,7 @@ function Slider({
       />
       <span className="flex justify-between text-[9.5px] text-muted tabular-nums">
         <span>{format(min)}</span>
+        {check && <span className="font-medium text-rust">assumption, to check</span>}
         <span>{format(max)}</span>
       </span>
     </label>
@@ -308,6 +324,7 @@ function AssumptionsCard({
         <Slider
           icon={Flame}
           name={`Heat today (${FUELS[answers.fuel].name.toLowerCase()})`}
+          check
           value={params.heatPrice}
           min={0.05}
           max={0.4}
@@ -318,6 +335,7 @@ function AssumptionsCard({
         <Slider
           icon={Server}
           name="Kachel heat"
+          check
           value={params.kachelPrice}
           min={0}
           max={0.15}
@@ -328,6 +346,7 @@ function AssumptionsCard({
         <Slider
           icon={TrendingUp}
           name="Energy prices rise"
+          check
           value={params.priceRise}
           min={0}
           max={0.08}
@@ -460,6 +479,9 @@ function ProjectionCard({ r }: { r: Result }) {
         <Stat icon={Timer} value={payback} name="payback" />
         <Stat icon={Leaf} value={`${r.co2Tonnes.toFixed(1)} t`} name="CO₂ / yr" />
       </div>
+      <p className="px-2 pb-1.5 text-[9.5px] leading-snug text-muted">
+        {`Heat ${kwh(r.demand)} a year: ${TARGET.name} has ${kwh(b.spaceHeatingKwh + b.hotWaterKwh)} from ${b.heatSource}, ${b.areaM2.toLocaleString("en-GB")} m² built ${b.built} (BFS GWR, EGID ${b.egid}); your answers scale it. Prices, install cost, subsidy and CO₂: assumptions, to check.`}
+      </p>
     </article>
   );
 }
@@ -559,8 +581,20 @@ function ProductCard({
               ? `Smaller than your ${r.peakKw.toFixed(1)} kW peak: your ${FUELS[answers.fuel].name.toLowerCase()} does more of the work.`
               : "More than you need: the extra heat has nowhere to go."}
         </p>
+        <OurModelNote demandKwh={r.demand} />
       </div>
     </article>
+  );
+}
+
+/** Kachel's own model beside the racks, as on the map's card (packages/economics). */
+function OurModelNote({ demandKwh }: { demandKwh: number }) {
+  const { kachel: k, price, lifeYears, resaleChf } = ourModel(demandKwh);
+  if (k === null) return null;
+  return (
+    <p className="mb-1 rounded-xl bg-black/[0.04] px-2 py-1.5 text-[10px] leading-snug text-muted">
+      {`Kachel's model: ${k.servers} servers of 1 kW, ${Math.round(k.sharePct)}% of the heat, ${chf(k.beforeHardwareChf)} a year before hardware, ${chf(k.afterHardwareChf.mid)} after (${lifeYears}-year life, ${chf(resaleChf)} resale; electricity ${(price.chfPerKwh * 100).toFixed(1)} Rp/kWh, ${price.source}).`}
+    </p>
   );
 }
 
