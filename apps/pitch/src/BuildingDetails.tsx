@@ -14,7 +14,7 @@ import { card, label } from "./ui";
 const BUILDING = {
   name: "Byfangweg 18",
   address: "4051 Basel",
-  image: "/byfangweg-18-aerial.jpg",
+  image: `${import.meta.env.BASE_URL}byfangweg-18-aerial.jpg`,
   kind: "House · 3 storeys · 1 dwelling",
   facts: [
     { k: "Built", v: "1894" },

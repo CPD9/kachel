@@ -54,3 +54,12 @@ buyers panel says live data needs the local stack. No Supabase values are set on
 
 The host app with its local model chat, the console, the agent and the scheduler, and the
 Supabase stack run on the demo machine only (`make dev`, see [Run it yourself](wiki/Run-it-yourself.md)).
+
+## GitHub Pages
+
+The same three apps also go online on GitHub Pages, with no daily deployment cap:
+https://cpd9.github.io/kachel/pitch/, https://cpd9.github.io/kachel/map/ and
+https://cpd9.github.io/kachel/operator/. `.github/workflows/pages.yml` builds them on every push to
+`main` with the base path `/kachel/<app>/` and links them to each other. The Mapbox public token
+comes from the `VITE_MAPBOX_TOKEN` Actions secret; add the Pages address to the token's URL
+restrictions. There is no ElCom function on Pages, so the map card shows the saved tariff.

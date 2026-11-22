@@ -1,0 +1,67 @@
+name: Pages
+
+# The pitch, the map and the operator console as one static site on GitHub Pages:
+# https://cpd9.github.io/kachel/pitch/, …/map/ and …/operator/. No daily deployment cap, unlike
+# Vercel's free plan. The Mapbox public token comes from the VITE_MAPBOX_TOKEN Actions secret;
+# without it the pitch skips the globe and goes straight to the map.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  SITE: https://cpd9.github.io/kachel
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the three apps under /kachel/<app>/
+        env:
+          VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
+          VITE_MAP_URL: ${{ env.SITE }}/map/
+          VITE_OPERATOR_URL: ${{ env.SITE }}/operator/
+        run: |
+          for app in pitch map operator; do
+            pnpm --filter "@kachel/$app" exec vite build --base "/kachel/$app/" --outDir "$GITHUB_WORKSPACE/_site/$app" --emptyOutDir
+          done
+          cat > _site/index.html <<'EOF'
+          <!doctype html>
+          <meta charset="utf-8">
+          <meta http-equiv="refresh" content="0; url=pitch/">
+          <title>Kachel</title>
+          <a href="pitch/">Kachel</a>
+          EOF
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
