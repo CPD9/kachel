@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 /** Calm tints for the bars: system blue, teal and grey; ember only for heat. */
 export const TONE = {
@@ -80,18 +80,39 @@ export function SegmentBar({ segments, thin }: { segments: Segment[]; thin?: boo
   );
 }
 
-/** The small title with its info dot: the dot's tooltip says what the figure is. */
-function Title({ id, children, info }: { id: string; children: ReactNode; info: string }) {
+/**
+ * A small title with its info dot. Hover shows the note; a tap or click opens it under the title,
+ * so it works on a phone too.
+ */
+export function InfoTitle({
+  id,
+  children,
+  info,
+}: {
+  id: string;
+  children: ReactNode;
+  info: string;
+}) {
+  const [open, setOpen] = useState(false);
   return (
-    <h3 id={id} className="flex items-center gap-1.5 text-[14px] font-semibold">
-      {children}
-      <span
-        tabIndex={0}
-        title={info}
-        aria-label={info}
-        className="inline-block size-1.5 rounded-full bg-label outline-none focus-visible:ring-2 focus-visible:ring-blue"
-      />
-    </h3>
+    <>
+      <h3 id={id} className="flex items-center gap-1.5 text-[14px] font-semibold">
+        {children}
+        <button
+          type="button"
+          title={info}
+          aria-label={`About ${typeof children === "string" ? children : "this figure"}`}
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="-m-2 inline-flex size-[22px] items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue"
+        >
+          <span className="inline-block size-1.5 rounded-full bg-label" />
+        </button>
+      </h3>
+      {open && (
+        <p className="mt-1 rounded-lg bg-surface px-2.5 py-1.5 text-[12px] text-label">{info}</p>
+      )}
+    </>
   );
 }
 
@@ -123,9 +144,9 @@ export function Kpi({
 }) {
   return (
     <div aria-labelledby={id} role="group" data-kpi={id}>
-      <Title id={id} info={info}>
+      <InfoTitle id={id} info={info}>
         {title}
-      </Title>
+      </InfoTitle>
       <p className="mt-0.5 text-[13px] leading-snug text-label-2">{explain}</p>
       <p className="mt-2 flex items-baseline">
         <span

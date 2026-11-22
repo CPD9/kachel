@@ -3,7 +3,7 @@ import { chf, count, mwh, pct, pct1 } from "../format";
 import { energy, moneyKpis, previousName, withPrevious } from "../fleet/kpis";
 import type { MonthsFile } from "../fleet/months";
 import { Flow } from "../kpi/Flow";
-import { Delta, Kpi, KpiCard, relative } from "../kpi/Kpi";
+import { Delta, InfoTitle, Kpi, KpiCard, relative } from "../kpi/Kpi";
 import { card } from "../ui";
 
 /**
@@ -164,15 +164,12 @@ export function SettlementDash({
       </div>
 
       <section aria-labelledby="flow-energy" className={`${card} mt-4 p-5 sm:p-6`}>
-        <h3 id="flow-energy" className="flex items-center gap-1.5 text-[14px] font-semibold">
+        <InfoTitle
+          id="flow-energy"
+          info={`The model captures ${recovery} of a server's electricity as heat (config.json: heat_recovery).`}
+        >
           Where the electricity went
-          <span
-            tabIndex={0}
-            title={`The model captures ${recovery} of a server's electricity as heat (config.json: heat_recovery).`}
-            aria-label={`The model captures ${recovery} of a server's electricity as heat.`}
-            className="inline-block size-1.5 rounded-full bg-label"
-          />
-        </h3>
+        </InfoTitle>
         <p className="mt-0.5 text-[13px] text-label-2">
           {mwh(e.electricityKwh)} MWh into the servers in {monthName}: {mwh(e.homesKwh)} MWh reached
           the homes as heat. The tanks carry a little heat from one month into the next.
@@ -239,15 +236,14 @@ export function SettlementDash({
       </section>
 
       <section aria-labelledby="flow-money" className={`${card} mt-4 p-5 sm:p-6`}>
-        <h3 id="flow-money" className="flex items-center gap-1.5 text-[14px] font-semibold">
+        <InfoTitle
+          id="flow-money"
+          info={
+            "As the scheduler's kpis count it: margin = paid − electricity + heat credit, before hardware."
+          }
+        >
           Where the money went
-          <span
-            tabIndex={0}
-            title="As the scheduler's kpis count it: margin = paid − electricity + heat credit, before hardware."
-            aria-label="Margin is paid minus electricity plus heat credit, before hardware."
-            className="inline-block size-1.5 rounded-full bg-label"
-          />
-        </h3>
+        </InfoTitle>
         <p className="mt-0.5 text-[13px] text-label-2">
           Buyers paid {chf(k.revenue)}; the heat the homes used is worth {chf(k.heatCredit)} more.
         </p>
