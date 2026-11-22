@@ -89,7 +89,7 @@ describe("host app", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(await screen.findByText(/Your servers/)).toBeTruthy();
-    expect(screen.getByText(DEMO_HOST.email)).toBeTruthy();
+    expect(screen.queryByText(DEMO_HOST.email)).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     expect(await screen.findByRole("heading", { name: /Sign in/ })).toBeTruthy();

@@ -56,7 +56,7 @@ export function check(fields: Fields, now: Date): { job: NewJob } | { errors: Er
 const EMPTY_FIELDS: Fields = { label: "", kind: "batch", size: "", deadline: "" };
 
 const input =
-  "mt-1 block h-9 w-full rounded border border-idle/60 bg-paper px-2 py-1.5 text-sm focus:outline-2 focus:outline-heat aria-[invalid=true]:border-heat";
+  "mt-1.5 block h-11 w-full rounded-lg border border-field bg-white px-3 text-[15px] text-label focus:border-action focus:outline-2 focus:outline-action/30 aria-[invalid=true]:border-[#ff3b30]";
 
 /** Submit a job: it is written as QUEUED and appears in the table below. */
 export function JobForm({
@@ -103,7 +103,7 @@ export function JobForm({
 
   const error = (key: keyof Fields) =>
     errors[key] && (
-      <span id={`${key}-error`} className="mt-1 block text-xs text-heat">
+      <span id={`${key}-error`} className="mt-1 block text-xs text-label">
         {errors[key]}
       </span>
     );
@@ -111,85 +111,87 @@ export function JobForm({
     errors[key] ? { "aria-invalid": true, "aria-describedby": `${key}-error` } : {};
 
   return (
-    <section aria-labelledby="submit-job" className="border-b border-idle/40 px-6 py-4">
-      <h2 id="submit-job" className="text-lg font-semibold">
+    <section aria-labelledby="submit-job" className="rounded-2xl bg-white p-5 sm:p-6">
+      <h2 id="submit-job" className="text-2xl font-semibold tracking-tight">
         Submit a job
       </h2>
-      <form
-        noValidate
-        onSubmit={onSubmit}
-        className="mt-3 grid gap-4 sm:grid-cols-[2fr_1fr_1fr_1.4fr_auto] sm:items-start"
-      >
-        <div className="text-sm">
-          <label htmlFor="job-label">Name</label>
-          <input
-            id="job-label"
-            className={input}
-            value={fields.label}
-            onChange={(e) => set("label")(e.target.value)}
-            {...described("label")}
-          />
-          {error("label")}
+      <form noValidate onSubmit={onSubmit} className="mt-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-start">
+          <div className="text-sm text-secondary">
+            <label htmlFor="job-label">Name</label>
+            <input
+              id="job-label"
+              className={input}
+              value={fields.label}
+              onChange={(e) => set("label")(e.target.value)}
+              {...described("label")}
+            />
+            {error("label")}
+          </div>
+          <div className="text-sm text-secondary">
+            <label htmlFor="job-kind">What is it?</label>
+            <select
+              id="job-kind"
+              className={input}
+              value={fields.kind}
+              onChange={(e) => set("kind")(e.target.value)}
+            >
+              {(Object.keys(KINDS) as JobKind[]).map((kind) => (
+                <option key={kind} value={kind}>
+                  {KINDS[kind]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="text-sm text-secondary">
+            <label htmlFor="job-size">Size, server-hours</label>
+            <input
+              id="job-size"
+              className={input}
+              inputMode="decimal"
+              value={fields.size}
+              onChange={(e) => set("size")(e.target.value)}
+              {...described("size")}
+            />
+            {error("size")}
+          </div>
+          <div className="text-sm text-secondary">
+            {fields.kind === "batch" ? (
+              <>
+                <label htmlFor="job-deadline">Deadline</label>
+                <input
+                  id="job-deadline"
+                  type="datetime-local"
+                  className={input}
+                  value={fields.deadline}
+                  onChange={(e) => set("deadline")(e.target.value)}
+                  {...described("deadline")}
+                />
+                {error("deadline")}
+              </>
+            ) : (
+              <>
+                <span>Deadline</span>
+                <span className="mt-1.5 flex h-11 items-center text-[15px] text-label">
+                  None for this kind
+                </span>
+              </>
+            )}
+          </div>
         </div>
-        <div className="text-sm">
-          <label htmlFor="job-kind">Type</label>
-          <select
-            id="job-kind"
-            className={input}
-            value={fields.kind}
-            onChange={(e) => set("kind")(e.target.value)}
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <button
+            type="submit"
+            disabled={busy}
+            className="h-11 rounded-lg bg-action px-5 text-[15px] font-semibold text-white hover:bg-action-hover disabled:opacity-60"
           >
-            {(Object.keys(KINDS) as JobKind[]).map((kind) => (
-              <option key={kind} value={kind}>
-                {KINDS[kind]}
-              </option>
-            ))}
-          </select>
+            {busy ? "Submitting…" : "Submit job"}
+          </button>
+          <p className="min-w-0 flex-1 basis-60 text-sm text-secondary">{HINTS[fields.kind]}</p>
         </div>
-        <div className="text-sm">
-          <label htmlFor="job-size">Size, server-hours</label>
-          <input
-            id="job-size"
-            className={input}
-            inputMode="decimal"
-            value={fields.size}
-            onChange={(e) => set("size")(e.target.value)}
-            {...described("size")}
-          />
-          {error("size")}
-        </div>
-        <div className="text-sm">
-          {fields.kind === "batch" ? (
-            <>
-              <label htmlFor="job-deadline">Deadline</label>
-              <input
-                id="job-deadline"
-                type="datetime-local"
-                className={input}
-                value={fields.deadline}
-                onChange={(e) => set("deadline")(e.target.value)}
-                {...described("deadline")}
-              />
-              {error("deadline")}
-            </>
-          ) : (
-            <>
-              <span>Deadline</span>
-              <span className="mt-1 block py-1.5 text-idle">None for this type</span>
-            </>
-          )}
-        </div>
-        <button
-          type="submit"
-          disabled={busy}
-          className="mt-6 h-9 rounded bg-heat px-4 text-sm font-semibold text-paper disabled:opacity-60"
-        >
-          {busy ? "Submitting…" : "Submit job"}
-        </button>
       </form>
-      <p className="mt-2 text-xs text-idle">{HINTS[fields.kind]}</p>
       {status && (
-        <p role="status" className={`mt-2 text-sm ${status.ok ? "" : "text-heat"}`}>
+        <p role="status" className="mt-3 text-sm text-label">
           {status.text}
         </p>
       )}

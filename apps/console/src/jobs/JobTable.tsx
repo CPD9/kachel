@@ -69,22 +69,26 @@ function House({ job, site }: Row) {
     return (
       <>
         Data centre
-        <span className="block text-xs text-idle">No house could use its heat in time</span>
+        <span className="block text-xs text-secondary">No house could use its heat in time</span>
       </>
     );
   }
-  return site ? `${site.name}, ${site.city}` : <span className="text-idle">Not placed yet</span>;
+  return site ? (
+    `${site.name}, ${site.city}`
+  ) : (
+    <span className="text-secondary">Not placed yet</span>
+  );
 }
 
 function Heat({ heat }: Row) {
-  return heat === undefined ? <span className="text-idle">–</span> : `${kwh.format(heat)} kWh`;
+  return heat === undefined ? <span className="text-secondary">–</span> : `${kwh.format(heat)} kWh`;
 }
 
 function Deadline({ job }: Row) {
   return job.deadline_at ? (
     when.format(new Date(job.deadline_at))
   ) : (
-    <span className="text-idle">None</span>
+    <span className="text-secondary">None</span>
   );
 }
 
@@ -93,42 +97,42 @@ function JobRows({ rows, empty }: { rows: Row[]; empty: boolean }) {
   return (
     <div className="mt-3 overflow-x-auto">
       <table className="w-full text-left text-sm">
-        <thead className="text-idle">
-          <tr className="border-b border-idle/40">
-            <th className="py-2 pr-4 font-medium">Job</th>
-            <th className="py-2 pr-4 font-medium">Kind</th>
-            <th className="py-2 pr-4 font-medium">State</th>
-            <th className="py-2 pr-4 font-medium">House</th>
-            <th className="py-2 pr-4 font-medium">Server</th>
-            <th className="py-2 pr-4 text-right font-medium">Heat delivered</th>
-            <th className="py-2 font-medium">Deadline</th>
+        <thead className="text-xs text-secondary">
+          <tr className="border-b border-separator">
+            <th className="py-2.5 pr-4 pl-5 font-normal sm:pl-6">Job</th>
+            <th className="py-2.5 pr-4 font-normal">Kind</th>
+            <th className="py-2.5 pr-4 font-normal">State</th>
+            <th className="py-2.5 pr-4 font-normal">House</th>
+            <th className="py-2.5 pr-4 font-normal">Server</th>
+            <th className="py-2.5 pr-4 text-right font-normal">Heat delivered</th>
+            <th className="py-2.5 pr-5 font-normal sm:pr-6">Deadline</th>
           </tr>
         </thead>
-        <tbody aria-live="polite" className="divide-y divide-idle/30">
+        <tbody aria-live="polite" className="divide-y divide-separator">
           {empty && (
             <tr>
-              <td colSpan={7} className="py-3 text-idle">
+              <td colSpan={7} className="px-5 py-4 text-secondary sm:px-6">
                 No jobs yet. Submit one above.
               </td>
             </tr>
           )}
           {rows.map((row) => (
             <tr key={row.job.id}>
-              <td className="py-2 pr-4 font-medium">{row.job.label}</td>
-              <td className="py-2 pr-4">{KINDS[row.job.kind]}</td>
-              <td className="py-2 pr-4">
+              <td className="py-3.5 pr-4 pl-5 font-semibold sm:pl-6">{row.job.label}</td>
+              <td className="py-3.5 pr-4">{KINDS[row.job.kind]}</td>
+              <td className="py-3.5 pr-4">
                 <StatePill state={PILL[row.job.state]} />
               </td>
-              <td className="py-2 pr-4">
+              <td className="py-3.5 pr-4">
                 <House {...row} />
               </td>
-              <td className="py-2 pr-4">
-                {row.server ? row.server.name : <span className="text-idle">–</span>}
+              <td className="py-3.5 pr-4">
+                {row.server ? row.server.name : <span className="text-secondary">–</span>}
               </td>
-              <td className="py-2 pr-4 text-right tabular-nums">
+              <td className="py-3.5 pr-4 text-right tabular-nums">
                 <Heat {...row} />
               </td>
-              <td className="py-2">
+              <td className="py-3.5 pr-5 whitespace-nowrap sm:pr-6">
                 <Deadline {...row} />
               </td>
             </tr>
@@ -142,29 +146,33 @@ function JobRows({ rows, empty }: { rows: Row[]; empty: boolean }) {
 /** The same jobs as a list of small cards: name and state first, then labelled lines. */
 function JobCards({ rows, empty }: { rows: Row[]; empty: boolean }) {
   return (
-    <ul aria-labelledby="jobs" aria-live="polite" className="mt-3 divide-y divide-idle/30 text-sm">
-      {empty && <li className="py-3 text-idle">No jobs yet. Submit one above.</li>}
+    <ul
+      aria-labelledby="jobs"
+      aria-live="polite"
+      className="mt-2 divide-y divide-separator text-sm"
+    >
+      {empty && <li className="px-5 py-4 text-secondary">No jobs yet. Submit one above.</li>}
       {rows.map((row) => (
-        <li key={row.job.id} className="py-3">
+        <li key={row.job.id} className="px-5 py-3.5">
           <div className="flex items-start justify-between gap-3">
-            <p className="min-w-0 font-medium break-words">{row.job.label}</p>
+            <p className="min-w-0 font-semibold break-words">{row.job.label}</p>
             <span className="shrink-0">
               <StatePill state={PILL[row.job.state]} />
             </span>
           </div>
-          <dl className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs">
-            <dt className="text-idle">Kind</dt>
+          <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[13px]">
+            <dt className="text-secondary">Kind</dt>
             <dd>{KINDS[row.job.kind]}</dd>
-            <dt className="text-idle">House and server</dt>
+            <dt className="text-secondary">House and server</dt>
             <dd className="break-words">
               <House {...row} />
               {row.server && !row.job.moved_offsite && ` · ${row.server.name}`}
             </dd>
-            <dt className="text-idle">Heat delivered</dt>
+            <dt className="text-secondary">Heat delivered</dt>
             <dd className="tabular-nums">
               <Heat {...row} />
             </dd>
-            <dt className="text-idle">Deadline</dt>
+            <dt className="text-secondary">Deadline</dt>
             <dd>
               <Deadline {...row} />
             </dd>
@@ -186,7 +194,7 @@ export function JobTable({ feed }: { feed: JobFeed }) {
 
   if (status === "error") {
     return (
-      <p role="alert" className="px-6 py-4 text-sm">
+      <p role="alert" className="rounded-2xl bg-white px-5 py-4 text-sm">
         The jobs cannot be reached right now. Is the local database running? Start it with make dev.
       </p>
     );
@@ -204,16 +212,30 @@ export function JobTable({ feed }: { feed: JobFeed }) {
   const empty = status === "live" && rows.length === 0;
   const Jobs = narrow ? JobCards : JobRows;
   return (
-    <section aria-labelledby="jobs" className="px-6 py-4">
-      <h2 id="jobs" className="text-lg font-semibold">
-        Your jobs {status === "live" && <span className="text-sm text-heat">· live</span>}
+    <section aria-labelledby="jobs" className="overflow-hidden rounded-2xl bg-white pt-5">
+      <h2
+        id="jobs"
+        className="flex items-center gap-2 px-5 text-xl font-semibold tracking-tight sm:px-6"
+      >
+        Your jobs
+        {status === "live" && (
+          <span className="inline-flex items-center gap-1.5 text-sm font-normal text-secondary">
+            <span aria-hidden className="size-2 rounded-full bg-[#34c759]" />
+            Live
+          </span>
+        )}
       </h2>
       <Jobs rows={rows} empty={empty} />
-      <p className="mt-3 text-xs text-idle">
-        Heat delivered is the job&apos;s run time on its server, times the server&apos;s power and
-        the share of that power recovered as heat. A job goes to a data centre only when no house
-        can use its heat before its deadline.
-      </p>
+      <details className="border-t border-separator px-5 py-4 text-sm sm:px-6">
+        <summary className="cursor-pointer text-action marker:text-action">
+          How heat delivered is counted
+        </summary>
+        <p className="mt-2 text-xs leading-relaxed text-secondary">
+          Heat delivered is the job&apos;s run time on its server, times the server&apos;s power and
+          the share of that power recovered as heat. A job goes to a data centre only when no house
+          can use its heat before its deadline.
+        </p>
+      </details>
     </section>
   );
 }

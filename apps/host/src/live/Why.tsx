@@ -6,5 +6,9 @@ import { useEffect, useState } from "react";
 export function Why({ feed }: { feed: DecisionFeed }) {
   const [state, setState] = useState(NO_DECISIONS);
   useEffect(() => watchDecisions(feed, setState), [feed]);
-  return <WhyDecision decisions={state.decisions} status={state.status} />;
+  return (
+    <div className="[&>section]:rounded-2xl [&>section]:border-separator [&>section]:bg-white [&>section]:p-6">
+      <WhyDecision decisions={state.decisions} status={state.status} />
+    </div>
+  );
 }

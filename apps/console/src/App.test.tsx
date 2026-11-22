@@ -15,7 +15,7 @@ afterEach(cleanup);
 describe("console app", () => {
   it("shows the form and the jobs table to a signed-in buyer", async () => {
     render(<App feed={quiet} submit={never} auth={fakeAuth(DEMO_BUYER.email)} local={false} />);
-    expect(screen.getByRole("heading", { name: "Kachel console" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Kachel" })).toBeTruthy();
     expect(await screen.findByRole("table")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Submit job" })).toBeTruthy();
   });
@@ -37,7 +37,7 @@ describe("console app", () => {
       fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     });
     expect(await screen.findByRole("table")).toBeTruthy();
-    expect(screen.getByText(DEMO_BUYER.email)).toBeTruthy();
+    expect(screen.queryByText(DEMO_BUYER.email)).toBeNull();
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
