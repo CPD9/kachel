@@ -1,7 +1,7 @@
 # The product
 
 Four apps, one for each person who meets Kachel: the **host app** for the homeowner, the
-**console** for the buyer of compute, the **operator view** for the business that runs the fleet,
+**console** for the buyer of compute, the **operator console** for the business that runs the fleet,
 and the **heat map** for anyone asking where home servers could heat homes. All four run on your
 laptop today; none is deployed.
 
@@ -58,27 +58,29 @@ What is not built yet: nothing places a newly submitted job on a house live. It 
 The jobs that show a house come from the seed or from one hour of a fleet run
 (`fleet_write.py`).
 
-## The operator view: the whole fleet and its revenue
+## The operator console: the whole fleet and its money
 
 `apps/operator`, on http://localhost:5177 in development.
 
-![The operator view in November, signed in as the operator: the year's revenue top right, the month's figures, Basel and Bern with every home and the buyers between them, and the year month by month](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/app-operator.webp)
+![The operator console's Today page: 95 of 100 homes warm on server heat, servers running and heat covered as cards, the five Bern homes that need a server added, and the fleet on maps of Basel and Bern](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/operator-today.webp)
 
-One screen, laid out for 1920 × 1080 in the dark look of the pitch app.
+The DigitalHeat console: Today, Buildings, Jobs, Quotes, Billing and The device. The model pages
+need no sign-in; the month and outdoor temperature chosen under Billing hold for every page.
 
-- **The headline.** Revenue this year, top right, and the margin before hardware.
-- **A month bar and a temperature slider.** Pick a month of 2025, or make every hour warmer or
-  colder by up to 6 °C. Heat demand, the servers it can use and the revenue follow.
-- **The month in figures.** Revenue a day and an hour, servers running, heat delivered, backup
-  heat and the month's margin.
-- **The map.** Basel and Bern on swisstopo's grey map, darkened. Every home of the fleet is an
-  orange dot that glows with the heat its servers give that month; the homes in the database
-  are racks.
-- **Compute buyers, live.** Signed in as `operator@kachel.test`, every buyer with what they buy
-  and their jobs: running, paused, queued, done. A cyan line runs from each buyer to every rack
-  holding one of their jobs now (dashed: paused).
-- **The year and every home.** The fleet's heat each month, and each home's servers, size, tank,
-  demand, server heat and backup in kW.
+- **Today.** How many homes ran warm on server heat this month, servers running and heat
+  covered, the homes that need attention with an "Add a server" action, the scheduler's latest
+  decision, and the fleet on swisstopo maps of Basel and Bern.
+- **Buildings, Jobs and Quotes.** Every home of the fleet; the jobs as a full table, with the
+  buyers live from Supabase once you sign in as `operator@kachel.test`; and quotes as a list.
+- **Billing → Settlement.** A month bar and an outdoor temperature slider, then heat used by
+  homes, the margin, and where the electricity and the money went. **The year** shows every
+  month.
+- **The device.** The heat pump and ORC turbine from the pitch film in 3D, marked concept, not
+  built, with how it would work and the Carnot limit.
+
+![Billing, Settlement for November: a month bar with an outdoor temperature slider, heat used by homes and the margin as cards, and where the electricity and the money went as flows](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/operator-settlement.webp)
+
+![The device page, marked concept, not built: a 3D model of the server rack, heat exchanger, heat pump and ORC turbine with generator, beside five steps of how it would work and the Carnot limit](https://raw.githubusercontent.com/CPD9/kachel/main/docs/media/operator-device.webp)
 
 The home figures come from `make months` (`services/scheduler/out/fleet_months.json`): the 100
 synthetic Basel and Bern homes of the fleet, each run through the scheduler for the year on its

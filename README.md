@@ -46,11 +46,19 @@ Before `make dev`, copy `.env.example` to `.env` in `apps/host`, `apps/console` 
 The pitch intro (`apps/pitch`, by Duc) plays a scripted voice prompt, then opens the map at Byfangweg 18 with its card (`?egid=442141&card=1`; `?at=fhnw` targets FHNW Campus Dreispitz, EGID 243058419); with `VITE_MAPBOX_TOKEN` in `apps/pitch/.env` a Mapbox globe flies there first, `a` dives into the house and its questions, and `m` opens the map.
 Row level security shows each person only their own rows, so sign in to the host app as the seeded demo host, `host@kachel.test`, and to the console as the demo buyer, `buyer@kachel.test`, both with the password `kachel-demo` (local stack only).
 
-<p align="center"><img src="docs/media/app-host.png" width="640" alt="The host app signed in as the demo host: six servers, three running a job, one holding a paused job because the house needs no heat, two off"></p>
+<p align="center"><img src="docs/media/app-host.png" width="640" alt="The host app signed in as the demo host: the reference house in Basel, its servers' share of the year's heat and money, today's heat hour by hour from servers and backup heater, the money for the day and the year, and the six servers with their jobs, running, paused or done"></p>
 
-<p align="center"><img src="docs/media/app-console.png" width="640" alt="The console signed in as the demo buyer: a form to submit a job, and a live table of jobs with their state, the house and server each runs on, and the heat it has delivered"></p>
+<p align="center"><img src="docs/media/app-console.png" width="640" alt="The console signed in as the demo buyer: a form to submit a job, and a live table of the buyer's jobs with their kind, state, house, server, heat delivered and deadline"></p>
 
-With both apps running, `pnpm screenshots` retakes these two images with headless Chromium.
+<p align="center"><img src="docs/media/operator-today.webp" width="640" alt="The operator console's Today page: 95 of 100 homes warm on server heat, servers running and heat covered as cards, the five Bern homes that need a server added, and the fleet on maps of Basel and Bern"></p>
+
+<p align="center"><img src="docs/media/operator-settlement.webp" width="640" alt="Billing, Settlement for November: a month bar with an outdoor temperature slider, heat used by homes and the margin as cards, and where the electricity and the money went as flows"></p>
+
+<p align="center"><img src="docs/media/operator-device.webp" width="640" alt="The device page, marked concept, not built: a 3D model of the server rack, heat exchanger, heat pump and ORC turbine with generator, beside five steps of how it would work and the Carnot limit"></p>
+
+<p align="center"><em>The operator console (DigitalHeat), no sign-in needed for the model pages: Today, Billing → Settlement and the device.</em></p>
+
+With the host app and the console running, `pnpm screenshots` retakes their two images with headless Chromium.
 
 To pause and resume a real job from the heat signal, as on stage, follow [the demo checklist](docs/demo-checklist.md). Everything else, the model commands included, is in [Run it yourself](docs/wiki/Run-it-yourself.md). What we hand in for the hackathon is in [docs/submission.md](docs/submission.md). The map, the pitch and the operator view go online as described in [docs/deploy.md](docs/deploy.md).
 

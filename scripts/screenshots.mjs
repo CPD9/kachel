@@ -15,7 +15,8 @@ import { chromium } from "playwright-core";
 const SEED_PASSWORD = "kachel-demo";
 
 export const SHOTS = [
-  { name: "app-host", url: process.env.HOST_URL ?? "http://localhost:5173/" },
+  // The host page runs to about 2,500 px; the README shows its first screens only.
+  { name: "app-host", url: process.env.HOST_URL ?? "http://localhost:5173/", height: 1590 },
   { name: "app-console", url: process.env.CONSOLE_URL ?? "http://localhost:5174/" },
 ];
 
@@ -31,7 +32,7 @@ async function shoot(page, shot) {
   // Each app prefills the demo account's email on the local stack; give it the seed password.
   // The app first asks Supabase for a session and shows neither; wait for the form or the data.
   const signIn = page.getByRole("button", { name: "Sign in" });
-  const live = page.getByText("· live").first();
+  const live = page.getByText("Live", { exact: true }).first();
   await signIn.or(live).first().waitFor({ timeout: 15_000 });
   if (await signIn.isVisible()) {
     await page.getByLabel("Password").fill(SEED_PASSWORD);
@@ -41,7 +42,8 @@ async function shoot(page, shot) {
   await live.waitFor({ timeout: 15_000 });
   await page.waitForLoadState("networkidle");
   const path = `${OUT}/${shot.name}.png`;
-  await page.screenshot({ path, fullPage: true });
+  const clip = shot.height ? { clip: { x: 0, y: 0, width: 1280, height: shot.height } } : {};
+  await page.screenshot({ path, fullPage: true, ...clip });
   console.log(`${path} from ${shot.url}`);
 }
 
