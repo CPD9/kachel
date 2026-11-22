@@ -61,7 +61,7 @@ To pause and resume a real job from the heat signal, as on stage, follow [the de
 | `apps/host`          | React app for hosts: their house, their heat, their servers     |
 | `apps/console`       | React app for compute buyers: jobs and their state              |
 | `apps/map`           | 3D map of Basel and Switzerland: buildings, heat, day and night |
-| `apps/operator`      | The business view: every house, the servers, heat and revenue   |
+| `apps/operator`      | The operator console: today, buildings, jobs, quotes, billing   |
 | `packages/ui`        | Shared components and design tokens                             |
 | `packages/db`        | Typed Supabase client and the generated database types          |
 | `packages/config`    | Shared ESLint and TypeScript settings                           |

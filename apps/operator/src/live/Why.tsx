@@ -10,5 +10,5 @@ export function Why({ feed, signedIn }: { feed: DecisionFeed; signedIn: boolean 
   const [state, setState] = useState(NO_DECISIONS);
   useEffect(() => (signedIn ? watchDecisions(feed, setState) : undefined), [feed, signedIn]);
   if (!signedIn) return null;
-  return <WhyDecision decisions={state.decisions} status={state.status} tone="dark" />;
+  return <WhyDecision decisions={state.decisions} status={state.status} tone="light" />;
 }

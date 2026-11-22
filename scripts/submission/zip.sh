@@ -14,7 +14,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT="${OUT:-$HOME/.cache/kachel/submission}"
 EDIT="${EDIT:-$HOME/.cache/kachel/pitch/edit}"
-RELEASE_FILM="https://github.com/CPD9/kachel/releases/download/media-v1/kachel-pitch-draft.mp4"
+RELEASE_FILM="https://github.com/CPD9/kachel/releases/download/media-v1/kachel-pitch-film.mp4"
 LIMIT=$((500 * 1000 * 1000))
 
 stage="$OUT/kachel-submission"
@@ -26,7 +26,7 @@ if [ -z "$film" ]; then
   film="$(ls -t "$EDIT"/rough-cut-*.mp4 2>/dev/null | grep -v -- '-720p\.mp4$' | head -n 1 || true)"
 fi
 if [ -z "$film" ]; then
-  film="$OUT/kachel-pitch-draft.mp4"
+  film="$OUT/kachel-pitch-film.mp4"
   curl -fsSL -o "$film" "$RELEASE_FILM"
 fi
 

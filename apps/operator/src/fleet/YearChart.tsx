@@ -2,8 +2,8 @@ import { mwh } from "../format";
 import { MONTH_NAMES, type FleetMonth } from "./months";
 
 const LEGEND = [
-  { label: "Heat from the servers", mark: "h-3 rounded-sm bg-[#ff5a1f]" },
-  { label: "Backup heaters", mark: "h-3 rounded-sm bg-[#3b82f6]" },
+  { label: "Heat from the servers", mark: "h-3 rounded-sm bg-ember" },
+  { label: "Backup heaters", mark: "h-3 rounded-sm bg-grey/60" },
 ];
 
 /**
@@ -23,7 +23,7 @@ export function YearChart({
   const pct = (v: number) => `${(v / top) * 100}%`;
   return (
     <figure>
-      <ul className="mb-2 flex flex-wrap gap-x-5 gap-y-1 text-[14px] text-white/60">
+      <ul className="mb-2 flex flex-wrap gap-x-5 gap-y-1 text-[14px] text-label-2">
         {LEGEND.map((l) => (
           <li key={l.label} className="flex items-center gap-1.5">
             <span className={`inline-block w-3 ${l.mark}`} />
@@ -31,7 +31,7 @@ export function YearChart({
           </li>
         ))}
       </ul>
-      <ol className="flex h-[96px] items-end gap-2" aria-label="Month by month">
+      <ol className="flex h-[140px] items-end gap-2" aria-label="Month by month">
         {months.map((m, i) => (
           <li key={MONTH_NAMES[i]} className="flex h-full flex-1 flex-col justify-end">
             <button
@@ -39,23 +39,20 @@ export function YearChart({
               aria-pressed={i === month}
               aria-label={`${MONTH_NAMES[i]}: ${mwh(m.servedKwh)} MWh from the servers, ${mwh(m.backupKwh)} MWh backup`}
               onClick={() => onPick(i)}
-              className={`group flex h-full w-full flex-col justify-end rounded-md px-0.5 outline-none focus-visible:ring-2 focus-visible:ring-glacier ${i === month ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"}`}
+              className={`group flex h-full w-full flex-col justify-end rounded-md px-0.5 outline-none focus-visible:ring-2 focus-visible:ring-blue ${i === month ? "bg-blue/10" : "hover:bg-surface"}`}
             >
               <span
-                className="block w-full rounded-t-[3px] bg-[#3b82f6]"
+                className="block w-full rounded-t-[3px] bg-grey/60"
                 style={{ height: pct(m.backupKwh) }}
               />
-              <span
-                className="mt-0.5 block w-full bg-[#ff5a1f]"
-                style={{ height: pct(m.servedKwh) }}
-              />
+              <span className="mt-0.5 block w-full bg-ember" style={{ height: pct(m.servedKwh) }} />
             </button>
           </li>
         ))}
       </ol>
-      <ol className="mt-1.5 flex gap-2 text-center text-[13px] text-white/50" aria-hidden>
+      <ol className="mt-1.5 flex gap-2 text-center text-[13px] text-label-2" aria-hidden>
         {MONTH_NAMES.map((name, i) => (
-          <li key={name} className={`flex-1 ${i === month ? "font-semibold text-white" : ""}`}>
+          <li key={name} className={`flex-1 ${i === month ? "font-semibold text-label" : ""}`}>
             {name.slice(0, 3)}
           </li>
         ))}

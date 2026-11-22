@@ -5,10 +5,12 @@ import type { BuyerRow, PlacedSite } from "../live/live";
 import { fit, place, tiles, tileUrl, type Frame } from "./project";
 
 export const ORANGE = "#ff5a1f";
-export const CYAN = "#06b6d4";
+/** System blue as on a dark surface: the buyers and their live jobs. */
+export const BLUE = "#0a84ff";
+const ATTENTION = "#ff9500";
 
 const W = 1120;
-const H = 640;
+const H = 540;
 const MAP_W = 440;
 const CITY = { Basel: 0, Bern: W - MAP_W } as const;
 type City = keyof typeof CITY;
@@ -32,24 +34,25 @@ function CityTiles({ frame, left, clip }: { frame: Frame; left: number; clip: st
           />
         ))}
       </g>
-      <rect width={MAP_W} height={H} fill="url(#vignette)" />
-      <rect width={MAP_W} height={120} fill="url(#shade)" />
     </g>
   );
 }
 
 /**
  * Basel and Bern side by side on swisstopo's map, darkened: every house of the model fleet as an
- * orange dot that glows with the heat its servers give in the chosen month, the houses in the
- * database as racks, and the buyers in cyan between the cities, a line to each house where one
- * of their jobs runs now (dashed: paused).
+ * ember dot, fuller with the heat its servers give in the chosen month, the houses that need the
+ * operator marked with their name, the houses in the database as racks, and the buyers in blue
+ * between the cities, a line to each house where one of their jobs runs now (dashed: paused).
  */
 export function FleetMap({
   houses,
   places,
   buyers,
   brightest,
+  marked = new Map(),
 }: {
+  /** Houses to mark, by id, with the name to show. */
+  marked?: Map<string, string>;
   /** The most heat one house gets from its servers in any month, kW: the brightest a dot gets. */
   brightest: number;
   houses: HouseMonth[];
@@ -87,6 +90,23 @@ export function FleetMap({
     if (s) racks.set(p.id, s);
   }
 
+  // Name tags above each marked house, or below it when that would cover another tag.
+  const labels: { id: string; name: string; at: Spot; x: number; y: number; w: number }[] = [];
+  for (const h of houses) {
+    const spot = marked.has(h.house.id)
+      ? at(h.house.city, h.house.latitude, h.house.longitude)
+      : null;
+    if (!spot) continue;
+    const name = marked.get(h.house.id) ?? "";
+    const w = 34 + name.length * 8.4;
+    const x = Math.min(Math.max(spot.x - w / 2, 8), W - w - 8);
+    const hits = (y: number) =>
+      labels.some((o) => Math.abs(o.y - y) < 32 && o.x < x + w && x < o.x + o.w);
+    const options = [spot.y - 44, spot.y + 16, spot.y - 78, spot.y + 50];
+    const y = options.find((v) => !hits(v)) ?? options[0] ?? spot.y;
+    labels.push({ id: h.house.id, name, at: spot, x, y, w });
+  }
+
   const gap = H / (buyers.length + 1);
   const nodes = buyers.map((b, i) => ({ row: b, x: W / 2, y: gap * (i + 1) }));
   const top = Math.max(0.1, brightest);
@@ -102,7 +122,7 @@ export function FleetMap({
       viewBox={`0 0 ${W} ${H}`}
       className="block h-auto w-full"
       role="img"
-      aria-label="Basel and Bern: the fleet's houses in orange, the compute buyers in cyan"
+      aria-label="Basel and Bern: the fleet's houses, the ones that need you marked, and the compute buyers"
     >
       <defs>
         {(Object.keys(CITY) as City[]).map((c) => (
@@ -110,18 +130,6 @@ export function FleetMap({
             <rect width={MAP_W} height={H} rx={22} />
           </clipPath>
         ))}
-        <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0e1013" stopOpacity={0.95} />
-          <stop offset="100%" stopColor="#0e1013" stopOpacity={0} />
-        </linearGradient>
-        <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
-          <stop offset="55%" stopColor="#0e1013" stopOpacity={0} />
-          <stop offset="100%" stopColor="#0e1013" stopOpacity={0.85} />
-        </radialGradient>
-        <radialGradient id={`${id}-glow`}>
-          <stop offset="0%" stopColor={ORANGE} stopOpacity={0.9} />
-          <stop offset="100%" stopColor={ORANGE} stopOpacity={0} />
-        </radialGradient>
       </defs>
 
       {(Object.keys(CITY) as City[]).map((c) => (
@@ -137,10 +145,19 @@ export function FleetMap({
             stroke="white"
             strokeOpacity={0.1}
           />
+          <rect
+            x={CITY[c] + 12}
+            y={12}
+            width={236}
+            height={72}
+            rx={14}
+            fill="#000"
+            fillOpacity={0.72}
+          />
           <text x={CITY[c] + 24} y={44} fill="white" fontSize={26} fontWeight={600}>
             {c}
           </text>
-          <text x={CITY[c] + 24} y={70} fill="white" fillOpacity={0.55} fontSize={15}>
+          <text x={CITY[c] + 24} y={70} fill="white" fillOpacity={0.75} fontSize={15}>
             {houses.filter((h) => h.house.city === c).length} houses ·{" "}
             {houses.filter((h) => h.house.city === c).reduce((s, h) => s + h.house.servers, 0)}{" "}
             servers
@@ -158,7 +175,7 @@ export function FleetMap({
         </g>
       ))}
 
-      {/* The model fleet: glow and dot grow with the heat the servers give this month. */}
+      {/* The model fleet: a dot fuller with the heat the servers give this month. */}
       {houses.map((h) => {
         const s = at(h.house.city, h.house.latitude, h.house.longitude);
         if (!s) return null;
@@ -168,7 +185,6 @@ export function FleetMap({
             <title>
               {`${h.house.name}: ${h.servedKw.toFixed(1)} kW from ${h.running.toFixed(1)} of ${h.house.servers} servers`}
             </title>
-            <circle cx={s.x} cy={s.y} r={6 + 18 * share} fill={`url(#${id}-glow)`} />
             <circle
               cx={s.x}
               cy={s.y}
@@ -191,7 +207,7 @@ export function FleetMap({
               key={j.id}
               d={link(from, to)}
               fill="none"
-              stroke={CYAN}
+              stroke={BLUE}
               strokeWidth={j.state === "RUNNING" ? 2 : 1.5}
               strokeOpacity={j.state === "RUNNING" ? 0.8 : 0.45}
               strokeDasharray={j.state === "RUNNING" ? "6 6" : "2 6"}
@@ -222,11 +238,23 @@ export function FleetMap({
         );
       })}
 
+      {/* The houses that need the operator, named. */}
+      {labels.map((l) => (
+        <g key={`mark-${l.id}`} data-marked={l.id}>
+          <circle cx={l.at.x} cy={l.at.y} r={9} fill="none" stroke={ATTENTION} strokeWidth={2.5} />
+          <rect x={l.x} y={l.y} width={l.w} height={28} rx={14} fill="#000" />
+          <circle cx={l.x + 15} cy={l.y + 14} r={5} fill={ATTENTION} />
+          <text x={l.x + 26} y={l.y + 19} fill="white" fontSize={14} fontWeight={600}>
+            {l.name}
+          </text>
+        </g>
+      ))}
+
       {/* The buyers, between the two cities. */}
       {nodes.map((n) => (
         <g key={n.row.buyer.id}>
-          <circle cx={n.x} cy={n.y} r={14} fill="#0e1013" stroke={CYAN} strokeWidth={2.5} />
-          <circle cx={n.x} cy={n.y} r={5} fill={CYAN} fillOpacity={n.row.running ? 1 : 0.35} />
+          <circle cx={n.x} cy={n.y} r={14} fill="#0e1013" stroke={BLUE} strokeWidth={2.5} />
+          <circle cx={n.x} cy={n.y} r={5} fill={BLUE} fillOpacity={n.row.running ? 1 : 0.35} />
           <text
             x={n.x}
             y={n.y + 32}
@@ -240,7 +268,7 @@ export function FleetMap({
           <text
             x={n.x}
             y={n.y + 49}
-            fill={CYAN}
+            fill={BLUE}
             fontSize={12}
             textAnchor="middle"
             className="tabular-nums"

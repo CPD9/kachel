@@ -2,10 +2,16 @@ import type { AppAuth, DecisionFeed, JobFeed, LiveDecision, LiveJob } from "@kac
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App";
-import { Dashboard } from "./fleet/Dashboard";
 import type { OperatorSource } from "./live/live";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.location.hash = "";
+});
+
+const at = (route: string) => {
+  window.location.hash = route;
+};
 
 const reading = (name: string) => {
   const el = document.querySelector(`[data-reading="${name}"] [data-value]`);
@@ -95,61 +101,133 @@ const signedOut: OperatorSource = {
   auth: { ...signedIn, current: () => Promise.resolve(null) },
 };
 
-describe("operator view", () => {
-  it("shows the headline revenue, the month's figures and every home", () => {
-    render(<App />);
-    expect(screen.getByRole("heading", { name: "Operator view" })).toBeTruthy();
-    expect(reading("Revenue this year")).toBeGreaterThan(0);
-    expect(document.querySelectorAll("tbody tr[data-house]")).toHaveLength(100);
-    expect(document.querySelectorAll("li[data-house-card]")).toHaveLength(100);
-    // Every house says its AI runs on its own server
-    expect(screen.getAllByText("Runs locally")).toHaveLength(100);
+describe("operator console", () => {
+  it("opens on Today: one headline, the houses that need you, and the two cities", () => {
+    render(<App startMonth={10} />);
+    const headline = document.querySelector("[data-headline]")?.textContent ?? "";
+    const marked = document.querySelectorAll("tr[data-attention]").length;
+    expect(marked).toBeGreaterThan(0);
+    expect(headline).toMatch(
+      new RegExp(`${100 - marked} homes warm on server heat, ${marked} need`),
+    );
+    expect(document.querySelectorAll("[data-marked]")).toHaveLength(marked);
     expect(screen.getByRole("img", { name: /Basel and Bern/ })).toBeTruthy();
-    // Without Supabase (a deployed build): the model shows, and the live part says what it needs
-    expect(screen.getByText(/Live data needs the local stack/)).toBeTruthy();
+    expect(reading("Balance")).toBeGreaterThan(0);
+    expect(document.querySelector("[data-model]")?.textContent).toBe(
+      "Model: 2025 weather, synthetic homes",
+    );
+    // Five places in the bar, no more
+    const bar = screen.getByRole("navigation", { name: "Console" });
+    expect(bar.querySelectorAll("a")).toHaveLength(5);
+    // Without Supabase nothing asks for a sign-in
     expect(screen.queryByText(/Sign in as the operator/)).toBeNull();
   });
 
-  it("follows the month: less heat and revenue in July than in January", () => {
-    render(<Dashboard startMonth={0} />);
-    const [heat, revenue] = [reading("Heat delivered"), reading("Revenue today")];
-    fireEvent.click(screen.getByRole("button", { name: "July" }));
-    expect(screen.getByRole("button", { name: "July" }).getAttribute("aria-pressed")).toBe("true");
-    expect(reading("Heat delivered")).toBeLessThan(heat);
-    expect(reading("Revenue today")).toBeLessThan(revenue);
+  it("marks on the map only the houses the list shows, even in a cold what-if", () => {
+    at("#/billing");
+    render(<App startMonth={10} />);
+    fireEvent.change(screen.getByRole("slider", { name: "Outdoor temperature" }), {
+      target: { value: "-6" },
+    });
+    act(() => {
+      window.location.hash = "#/today";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    const rows = document.querySelectorAll("tr[data-attention]").length;
+    expect(screen.getByText(/more in/)).toBeTruthy();
+    expect(document.querySelectorAll("[data-marked]")).toHaveLength(rows);
   });
 
-  it("follows the temperature, and says when it shows a what-if", () => {
-    render(<Dashboard startMonth={0} />);
-    const [backup, year] = [reading("Backup"), reading("Revenue this year")];
+  it("says nothing needs you in a month when every home's servers keep up", () => {
+    render(<App startMonth={6} />);
+    expect(document.querySelector("[data-headline]")?.textContent).toMatch(/Nothing needs you/);
+    expect(document.querySelectorAll("tr[data-attention]")).toHaveLength(0);
+  });
+
+  it("lists every building and filters them by state and name", () => {
+    at("#/buildings");
+    render(<App startMonth={10} />);
+    expect(document.querySelectorAll("tr[data-building]")).toHaveLength(100);
+    expect(document.querySelectorAll("li[data-building-card]")).toHaveLength(100);
+    fireEvent.change(screen.getByRole("combobox", { name: "State" }), {
+      target: { value: "attention" },
+    });
+    const few = document.querySelectorAll("tr[data-building]").length;
+    expect(few).toBeGreaterThan(0);
+    expect(few).toBeLessThan(100);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search" }), {
+      target: { value: "nowhere" },
+    });
+    expect(screen.getByText(/No building matches/)).toBeTruthy();
+  });
+
+  it("settles the month and follows the month picker: less in July than in January", () => {
+    at("#/billing");
+    render(<App startMonth={0} />);
+    expect(screen.getByRole("heading", { name: "Settlement for January" })).toBeTruthy();
+    const [invoiced, margin] = [reading("Invoiced"), reading("Margin")];
+    expect(document.querySelector("[data-reconcile]")?.textContent).toContain(
+      "margin before hardware",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "July" }));
+    expect(screen.getByRole("button", { name: "July" }).getAttribute("aria-pressed")).toBe("true");
+    expect(reading("Invoiced")).toBeLessThan(invoiced);
+    expect(reading("Margin")).toBeLessThan(margin);
+  });
+
+  it("follows the temperature in the year's revenue, and says when it shows a what-if", () => {
+    at("#/billing/year");
+    render(<App startMonth={0} />);
+    const year = reading("Revenue this year");
+    expect(year).toBeGreaterThan(0);
     fireEvent.change(screen.getByRole("slider", { name: "Outdoor temperature" }), {
       target: { value: "4" },
     });
     expect(document.querySelector("[data-model]")?.textContent).toContain("+4 °C");
-    expect(reading("Backup")).toBeLessThan(backup);
     expect(reading("Revenue this year")).toBeLessThan(year);
   });
 
+  it("prices image tagging from our measured speed, with no placeholders", () => {
+    at("#/quotes");
+    render(<App startMonth={10} />);
+    expect(screen.getByText("CHF 1.60")).toBeTruthy();
+    expect(document.querySelector("[data-basis]")?.textContent).toBe("Speed measured on our GPU.");
+    expect(document.body.textContent).not.toMatch(/\[(PRICE|N|COST)\]/);
+  });
+
+  it("without Supabase, Jobs says what the live part needs", () => {
+    at("#/jobs");
+    render(<App />);
+    expect(screen.getByText(/Live data needs the local stack/)).toBeTruthy();
+  });
+
   it("asks for the operator's sign-in before it shows buyers", async () => {
-    render(<Dashboard startMonth={0} source={signedOut} />);
+    at("#/jobs");
+    render(<App startMonth={0} source={signedOut} />);
     expect(await screen.findByRole("button", { name: "Sign in" })).toBeTruthy();
     expect(screen.getByText(/operator@kachel.test, password kachel-demo/)).toBeTruthy();
     expect(document.querySelector("[data-buyer]")).toBeNull();
   });
 
   it("lists every buyer with their jobs, and draws a line to each running or paused one", async () => {
+    at("#/jobs");
     await act(async () => {
-      render(<Dashboard startMonth={0} source={source} />);
+      render(<App startMonth={0} source={source} />);
     });
     expect(await screen.findByText(/1 running · 0 paused · 1 queued/)).toBeTruthy();
     expect(document.querySelectorAll("[data-buyer]")).toHaveLength(2);
+    await act(async () => {
+      window.location.hash = "#/today";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
     expect(document.querySelectorAll("path.flow")).toHaveLength(1);
     expect(document.querySelectorAll('path[stroke-dasharray="2 6"]')).toHaveLength(1);
   });
 
   it("shows the scheduler's newest decision with its hash once signed in", async () => {
+    at("#/jobs");
     await act(async () => {
-      render(<Dashboard startMonth={0} source={{ ...source, decisions }} />);
+      render(<App startMonth={0} source={{ ...source, decisions }} />);
     });
     expect(await screen.findByRole("heading", { name: /Why this decision/ })).toBeTruthy();
     expect(screen.getByText("Backlog runs on 1 server")).toBeTruthy();
@@ -157,7 +235,8 @@ describe("operator view", () => {
   });
 
   it("keeps the decisions to the signed-in operator", async () => {
-    render(<Dashboard startMonth={0} source={{ ...signedOut, decisions }} />);
+    at("#/jobs");
+    render(<App startMonth={0} source={{ ...signedOut, decisions }} />);
     expect(await screen.findByRole("button", { name: "Sign in" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: /Why this decision/ })).toBeNull();
   });
