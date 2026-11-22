@@ -69,8 +69,9 @@ export const WORKLOADS: Record<
     name: "Image and video tagging",
     // Our own measured speed on an RTX 2080 Ti (#211), as the operator's quote uses (#214)
     note: `≈ ${TAGGING.image_tagging.measured_images_per_server_hour.toLocaleString("en-GB")} images a server-hour, measured`,
-    // GPU size is our pick (a detection model fits in 16 GB); the hours are the scheduler's
-    needs: { gpus: 1, vram: 16, ram: 32, hours: TAGGING_NIGHT_H * 30, interactive: false },
+    // 8 GB: the measured speed comes from our 11 GB card, so a card like it must fit; the
+    // hours are the scheduler's
+    needs: { gpus: 1, vram: 8, ram: 32, hours: TAGGING_NIGHT_H * 30, interactive: false },
     job: TAGGING_NIGHT_H,
   },
   gaming: {
