@@ -9,6 +9,16 @@ export {
 export { supabaseBuyers, type LiveBuyer } from "./buyers";
 export { createKachelClient, type KachelClient } from "./client";
 export {
+  keepNewest,
+  NO_DECISIONS,
+  SHOWN,
+  supabaseDecisions,
+  watchDecisions,
+  type DecisionFeed,
+  type DecisionState,
+  type LiveDecision,
+} from "./decisions";
+export {
   EMPTY,
   heatKwh,
   newest,

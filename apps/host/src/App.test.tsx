@@ -1,7 +1,15 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App";
-import { DEMO_HOST, isLocalStack, type AppAuth, type HouseFeed, type JobFeed } from "@kachel/db";
+import {
+  DEMO_HOST,
+  isLocalStack,
+  type AppAuth,
+  type DecisionFeed,
+  type HouseFeed,
+  type JobFeed,
+  type LiveDecision,
+} from "@kachel/db";
 
 const quiet: JobFeed = {
   load: () => new Promise(() => undefined),
@@ -9,6 +17,29 @@ const quiet: JobFeed = {
 };
 const quietHouse: HouseFeed = {
   load: () => new Promise(() => undefined),
+  subscribe: () => () => undefined,
+};
+
+const decision: LiveDecision = {
+  hash: "91156f8a4342" + "3".repeat(52),
+  prev_hash: "5ec7b4868fd0" + "1".repeat(52),
+  seq: 25,
+  site_id: "00000000-0000-4000-8000-000000000100",
+  time: "2025-07-15T01:00:00+02:00",
+  temp_c: 19.8,
+  demand_kwh: 0.5,
+  soc_kwh: 34.3,
+  tank_kwh: 35,
+  interactive: 0,
+  batch: 0,
+  opportunistic: 1,
+  reason: "heat needed",
+  run: ["00000000-0000-4000-8000-000000000304"],
+  placed: 0,
+  written_at: "2026-11-22T01:00:00Z",
+};
+const decisions: DecisionFeed = {
+  load: () => Promise.resolve([decision]),
   subscribe: () => () => undefined,
 };
 
@@ -75,6 +106,21 @@ describe("host app", () => {
     render(<App feed={quiet} house={quietHouse} auth={fakeAuth(DEMO_HOST.email)} local={false} />);
     expect(await screen.findByText(/Your servers/)).toBeTruthy();
     expect(screen.getByText(/Reading the house/)).toBeTruthy();
+  });
+
+  it("shows why the scheduler decided what it did, with the decision's hash", async () => {
+    render(
+      <App
+        feed={quiet}
+        house={quietHouse}
+        auth={fakeAuth(DEMO_HOST.email)}
+        local={false}
+        decisions={decisions}
+      />,
+    );
+    expect(await screen.findByText("Backlog runs on 1 server")).toBeTruthy();
+    expect(screen.getByText("heat needed")).toBeTruthy();
+    expect(screen.getByText(decision.hash)).toBeTruthy();
   });
 });
 

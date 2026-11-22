@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { celsius, chf, count, fixed1, mwh, offsetLabel } from "../format";
 import { buyerRows, useLive, type OperatorSource } from "../live/live";
 import { Buyers } from "../live/Buyers";
+import { Why } from "../live/Why";
 import { FleetMap } from "../map/FleetMap";
 import { panel } from "../ui";
 import { HouseTable } from "./HouseTable";
@@ -287,6 +288,8 @@ export function Dashboard({
 
         <Buyers live={live} rows={rows} source={source} />
       </div>
+
+      {source?.decisions && <Why feed={source.decisions} signedIn={Boolean(live.email)} />}
 
       <section
         aria-labelledby="year"

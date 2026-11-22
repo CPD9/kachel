@@ -1,4 +1,10 @@
-import { createKachelClient, isLocalStack, supabaseAuth, supabaseFeed } from "@kachel/db";
+import {
+  createKachelClient,
+  isLocalStack,
+  supabaseAuth,
+  supabaseDecisions,
+  supabaseFeed,
+} from "@kachel/db";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
@@ -25,6 +31,7 @@ function connect(): OperatorSource | undefined {
       return data;
     },
     local: isLocalStack(url),
+    decisions: supabaseDecisions(db),
   };
 }
 
