@@ -30,6 +30,11 @@ of its city. Every hour each waiting job goes, least slack first, to the house w
 It waits while its deadline allows and goes to an ordinary data centre only when no house can use its heat in time.
 Each day also runs with every job kept at the house it was sent to, for comparison.
 
+Each job also has a privacy tier (`jobs.privacy`, rule 6 in `fleet.py`). `any` may go anywhere, as above. `swiss`
+stays on Kachel's houses and never goes to the data centre, which may be abroad. `site` stays in the building it
+names, like a hospital's embeddings that must not leave it, and heats that building. Out of slack, a `swiss` or `site`
+job runs where it may and dumps its heat, or misses its deadline; it never leaves. The fleet runs above are all `any`.
+
 | Fleet, day                  | Jobs  | Compute heat used | House heat covered | Moved to a data centre | Kept at its house: moved | Deadline misses |
 | --------------------------- | ----- | ----------------- | ------------------ | ---------------------- | ------------------------ | --------------- |
 | Basel, 13 January (coldest) | 1,000 | 100 %             | 19 %               | 0                      | 1                        | 0               |
@@ -45,7 +50,9 @@ smaller than what the houses could absorb. Each run takes its first city's colde
 14 January in Bern, so the combined run uses Basel's.
 
 In July the houses can only take what hot water and the tanks absorb, so routing cannot raise the heat used much;
-it sends about a third fewer jobs off-site by putting each where there is room. Outputs in `out/`, with `<run>` =
+it sends about a third fewer jobs off-site by putting each where there is room. Outlook, not modelled: a site that
+needs heat all year, such as an indoor pool or a hotel's hot water, as one more place for these summer jobs instead
+of a data centre. Outputs in `out/`, with `<run>` =
 `fleet` (Basel), `fleet_bern` or `fleet_basel_bern`: `<run>_sites.csv`, `<run>_jobs_<day>.csv` (where each job was
 sent, where it ran, when it moved), `<run>_hourly_<day>.csv` (each house's heat by the hour),
 `<run>_placements_<day>.csv` (each job's house, hour by hour) and `<run>_kpis.json`. Every house is made up.
@@ -128,3 +135,16 @@ mean temperature, and the prices with their source. The operator view (`apps/ope
   more than that to amortise does not pay off, whatever the heat is worth.
 - Without a steady backlog of interruptible work, utilisation falls toward the deadline jobs only.
 - Each server beyond the recommended count adds coverage but runs under 40% of the year.
+
+## Related work
+
+Antal et al. schedule work on server heaters in homes the same way in two steps: first the heat a room needs, then
+the tasks that make it, keeping task migrations low [1]. `decide()` does the first step for a house and its tank,
+and the fleet places the jobs, keeping a running job on its house. Where they solve the second step as a multiple
+knapsack and learn the heat a room needs with gradient boosting, from 10-second sensor data in rooms heated by
+Qarnot's QRad heaters, Kachel uses simple rules on an hourly energy balance. Their tasks have resource limits only;
+Kachel's jobs also have a privacy tier.
+
+1. M. Antal, A.-A. Cristea, V.-A. Pădurean, T. Cioara, I. Anghel, C. Antal, I. Salomie and N. Saintherant,
+   "Heating Homes with Servers: Workload Scheduling for Heat Reuse in Distributed Data Centers", _Sensors_ 21(8),
+   2879, 2021. <https://doi.org/10.3390/s21082879>

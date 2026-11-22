@@ -49,9 +49,11 @@ def place(inputs):
         return placed
     site = Site(id=inputs["site"], n_servers=len(free), tank_kwh=inputs["tank_kwh"],
                 heat_per_server=inputs["heat_per_server"], demand=(inputs["demand_kwh"],))
+    # A "site" job may only run on the house it names; logged inputs without a tier read as "any".
     waiting = [Waiting(Job(id=q["id"], kind=q["kind"], arrival=0,
                            hours=max(1, ceil(q["left_h"])) if q.get("left_h") else 1,
-                           deadline=None if q.get("deadline_h") is None else max(0, floor(q["deadline_h"]))),
+                           deadline=None if q.get("deadline_h") is None else max(0, floor(q["deadline_h"])),
+                           home=q.get("site") or "", privacy=q.get("privacy", "any")),
                        max(1, ceil(q["left_h"])) if q.get("left_h") else 1)
                for q in rest]
     placements, _, _ = place_hour([site], {site.id: inputs["soc_kwh"]}, waiting, 0)
@@ -105,7 +107,8 @@ def job_inputs(job, now_iso):
     if job.get("server_hours") is not None:
         left = round(max(0.0, job["server_hours"] - (job.get("active_cpu_s") or 0.0) / 3600), 4)
     due = None if not job.get("deadline_at") else hours_between(now_iso, job["deadline_at"])
-    return dict(id=job["id"], kind=job["kind"], left_h=left, deadline_h=due)
+    return dict(id=job["id"], kind=job["kind"], left_h=left, deadline_h=due,
+                privacy=job.get("privacy") or "any", site=job.get("site_id"))
 
 
 def tank_after(soc, running, heat_per_server, demand, tank):

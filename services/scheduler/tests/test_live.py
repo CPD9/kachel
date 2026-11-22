@@ -94,6 +94,18 @@ def test_a_queued_job_out_of_slack_goes_to_a_data_centre():
     assert out["placed"] == [dict(job="q", server=None, to="datacentre", reason="no house can use its heat in time")]
 
 
+def test_a_private_job_out_of_slack_stays_on_the_house():
+    for tier in ("swiss", "site"):
+        queue = [dict(id="q", kind="batch", left_h=3.0, deadline_h=2.0, privacy=tier, site="house")]
+        out = plan(inputs(demand=0.5, soc=35.0, queue=queue))
+        assert out["placed"] == [dict(job="q", server="s1", to="house", reason="deadline: run and dump heat")]
+
+
+def test_a_site_job_for_another_house_is_not_placed_here():
+    queue = [dict(id="q", kind="batch", left_h=1.0, deadline_h=10.0, privacy="site", site="elsewhere")]
+    assert plan(inputs(queue=queue))["placed"] == []
+
+
 def test_no_free_server_no_placement():
     jobs = [job(f"j{n}", server=s) for n, s in enumerate(SERVERS)]
     out = plan(inputs(jobs=jobs, queue=[dict(id="q", kind="interactive", left_h=1.0, deadline_h=None)]))
@@ -102,7 +114,10 @@ def test_no_free_server_no_placement():
 
 def test_job_inputs_reads_what_is_left_and_the_deadline():
     row = dict(id="j", kind="batch", server_hours=8.0, active_cpu_s=3 * 3600.0, deadline_at="2025-01-13T20:00:00+01:00")
-    assert job_inputs(row, "2025-01-13T08:00:00+01:00") == dict(id="j", kind="batch", left_h=5.0, deadline_h=12.0)
+    assert job_inputs(row, "2025-01-13T08:00:00+01:00") == dict(
+        id="j", kind="batch", left_h=5.0, deadline_h=12.0, privacy="any", site=None
+    )
+    assert job_inputs(dict(row, privacy="site", site_id="h"), "2025-01-13T08:00:00+01:00")["privacy"] == "site"
     assert job_inputs(dict(id="b", kind="opportunistic"), "2025-01-13T08:00:00+01:00")["left_h"] is None
     assert hours_between("2025-07-15T00:00:00+02:00", "2025-07-14T23:00:00+01:00") == 0.0
 

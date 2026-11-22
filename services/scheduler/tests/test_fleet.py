@@ -85,6 +85,41 @@ def test_home_routing_keeps_a_job_on_the_house_it_was_sent_to() -> None:
     assert home[0].site_id == DATACENTRE
 
 
+def private(jid: str, privacy: str, home: str = "", deadline: int = 1) -> Waiting:
+    return Waiting(Job(jid, "batch", 0, 1, deadline, home, privacy), 1)
+
+
+def test_a_swiss_job_stays_on_the_houses_and_never_goes_to_the_data_centre() -> None:
+    full = site("full", 0.0, n=1)
+    placed, _, missed = place_hour([full], {}, [private("a", "swiss"), private("b", "swiss")], 0)
+    assert [(p.job_id, p.site_id, p.reason) for p in placed] == [("a", "full", "deadline: run and dump heat")]
+    assert missed == ["b"]
+
+
+def test_a_swiss_job_still_goes_where_its_heat_is_needed() -> None:
+    sites = [site("cold", 3.0), site("mild", 1.0)]
+    placed, _, _ = place_hour(sites, {}, [private("a", "swiss", deadline=10)], 0)
+    assert placed[0].site_id == "cold"
+
+
+def test_a_site_job_runs_only_on_its_own_house() -> None:
+    sites = [site("cold", 3.0), site("own", 0.0, n=1)]
+    placed, _, _ = place_hour(sites, {}, [private("a", "site", home="own")], 0)
+    assert [(p.site_id, p.reason) for p in placed] == [("own", "deadline: run and dump heat")]
+
+
+def test_a_site_job_with_slack_waits_for_its_own_house() -> None:
+    sites = [site("cold", 3.0), site("own", 0.0)]
+    placed, waiting, _ = place_hour(sites, {}, [private("a", "site", home="own", deadline=10)], 0)
+    assert placed == [] and [w.job.id for w in waiting] == ["a"]
+
+
+def test_a_site_job_on_a_full_house_misses_rather_than_leaves() -> None:
+    sites = [site("cold", 3.0), site("own", 0.0, n=0)]
+    placed, _, missed = place_hour(sites, {}, [private("a", "site", home="own")], 0)
+    assert placed == [] and missed == ["a"]
+
+
 def test_the_heat_books_balance() -> None:
     s = site("a", 1.0, tank=1.0, n=4)
     soc, rows = apply_hour([s], {"a": 0.5}, [_p("x", "a"), _p("y", "a"), _p("z", "a")], 0)

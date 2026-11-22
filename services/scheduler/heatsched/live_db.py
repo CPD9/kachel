@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 
 LIVE = ("RUNNING", "PAUSED")
-JOB_COLUMNS = "id,kind,state,label,site_id,server_id,server_hours,deadline_at,active_cpu_s"
+JOB_COLUMNS = "id,kind,state,label,site_id,server_id,server_hours,deadline_at,active_cpu_s,privacy"
 
 
 class SupabaseError(RuntimeError):

@@ -283,6 +283,7 @@ export type Database = {
           label: string;
           moved_offsite: boolean;
           pid: number | null;
+          privacy: string;
           server_hours: number | null;
           server_id: string | null;
           site_id: string | null;
@@ -304,6 +305,7 @@ export type Database = {
           label: string;
           moved_offsite?: boolean;
           pid?: number | null;
+          privacy?: string;
           server_hours?: number | null;
           server_id?: string | null;
           site_id?: string | null;
@@ -324,6 +326,7 @@ export type Database = {
           label?: string;
           moved_offsite?: boolean;
           pid?: number | null;
+          privacy?: string;
           server_hours?: number | null;
           server_id?: string | null;
           site_id?: string | null;

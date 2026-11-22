@@ -13,6 +13,11 @@ the jobs waiting, and places each job where its heat is most useful right now:
      goes to an ordinary data centre and finishes there. Its heat is lost; it counts as moved.
   5. With no data centre (`datacentre=False`) such a job runs on any free server and its heat
      is dumped; with no free server it misses its deadline.
+  6. A job's privacy tier limits where it may go. "any" may go anywhere, as above. "swiss" stays
+     on the fleet's houses and never goes to the data centre, which may be abroad. "site" stays
+     on its own house (`home`), like a hospital's embeddings that must not leave the building.
+     Out of slack, both run on a free server where they may and dump the heat, as in rule 5,
+     or miss their deadline.
 
 Every function is pure: state goes in, new state comes out. One job uses one server at a time
 and runs in whole server-hours, as the agent pauses and resumes it (services/agent).
@@ -22,6 +27,7 @@ from math import inf
 
 DATACENTRE = "datacentre"
 EPS = 1e-9
+PRIVACY = ("any", "swiss", "site")   # where a job may run: anywhere, the fleet's houses, its own house
 
 
 @dataclass(frozen=True)
@@ -47,7 +53,8 @@ class Job:
     arrival: int
     hours: int
     deadline: int | None
-    home: str = ""                   # the house it was sent to (used by routing="home")
+    home: str = ""                   # the house it was sent to (used by routing="home" and privacy="site")
+    privacy: str = "any"             # one of PRIVACY (rule 6)
 
 
 @dataclass(frozen=True)
@@ -91,7 +98,7 @@ def place_hour(sites, soc, queue, t, routing="fleet", datacentre=True):
         return free[sid] > 0 and left_room[sid] + EPS >= by_id[sid].heat_per_server
 
     def candidates(w):
-        ids = [w.job.home] if routing == "home" else list(by_id)
+        ids = [w.job.home] if routing == "home" or w.job.privacy == "site" else list(by_id)
         return [sid for sid in ids if sid in by_id]
 
     def take(sid):
@@ -114,7 +121,7 @@ def place_hour(sites, soc, queue, t, routing="fleet", datacentre=True):
             continue
         if slack(w, t) > 0:
             waiting.append(w)
-        elif datacentre:
+        elif datacentre and w.job.privacy == "any":
             placements.append(Placement(w.job.id, DATACENTRE, w.left, "no house can use its heat in time"))
         else:
             spare = [sid for sid in ids if free[sid] > 0]
