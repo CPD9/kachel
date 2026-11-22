@@ -39,15 +39,15 @@ export function tourRequested(search: string, hash: string): boolean {
   );
 }
 
+/** Inputs that take no typed text: a slider, a radio or a button keeps A for the tour. */
+const NOT_TEXT = new Set(["range", "radio", "checkbox", "button", "submit", "reset", "color"]);
+
 /** Fields that take typed text; a key pressed in one belongs to the field, not the tour. */
 export function isTyping(target: EventTarget | null): boolean {
   if (typeof HTMLElement === "undefined" || !(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
-  return (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
-  );
+  if (target instanceof HTMLInputElement) return !NOT_TEXT.has(target.type);
+  return target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
 }
 
 export type TourKey = "next" | "back" | "end";

@@ -106,6 +106,9 @@ describe("the A-key tour", () => {
     press("a", { altKey: true });
     expect(page()).toBe("#/quotes");
     expect(hint()).toBe("3 / 7 · A next");
+    // A radio takes no typing: A still moves on
+    press("a", {}, screen.getByRole("radio", { name: "Bern only" }));
+    expect(page()).toBe("#/billing");
   });
 
   it("reads the keys and the address", () => {
@@ -128,6 +131,8 @@ describe("the A-key tour", () => {
     const select = document.createElement("select");
     expect(k("a", { target: area })).toBeNull();
     expect(k("a", { target: select })).toBeNull();
+    const slider = Object.assign(document.createElement("input"), { type: "range" });
+    expect(k("a", { target: slider })).toBe("next");
     expect(tourRequested("?tour=1", "")).toBe(true);
     expect(tourRequested("", "#/today?tour=1")).toBe(true);
     expect(tourRequested("?tour=0", "#/today")).toBe(false);
