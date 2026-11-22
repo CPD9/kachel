@@ -196,6 +196,11 @@ def values():
     v["batch_at"] = f"{int(bh):02d}:00"
     v["batch_sh"] = num(bsh)
     v["batch_deadline_h"] = num(jobs["batch"]["deadline_h"])
+    ai = load_json(ROOT / "docs/measurements/ai-summary.json")
+    v["chat_model"] = ai["inference"]["model"]
+    v["chat_wh"] = num(ai["inference"]["wh_per_job"], 2)
+    v["embed_wh"] = num(ai["embeddings"]["wh_per_job"], 1)
+    v["embed_items"] = num(int(ai["embeddings"]["job"].split()[0]))
 
     # profile
     days = len(daily)

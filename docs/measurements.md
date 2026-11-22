@@ -1,42 +1,93 @@
 # Measurements
 
-One job type measured on our own machine and scaled to the 1 kW reference server (#12).
-The second job type is cited, not measured: see [job-types.md](job-types.md).
+Two real AI jobs run on our own machine, their GPU power metered, and scaled to the 1 kW
+reference server (#194). The third job type, transcription, is cited, not measured: see
+[job-types.md](job-types.md).
+
+Raw meter samples and the summary are in [measurements/](measurements/):
+`ai-embeddings-samples.csv` and `ai-inference-samples.csv` (every 100 ms reading, with its phase:
+idle baseline or run) and `ai-summary.json` (every figure below). `make measure-ai` repeats the run.
 
 ## The opportunistic backlog: embeddings
 
-| What                            | Value                                                                    |
-| ------------------------------- | ------------------------------------------------------------------------ |
-| Job                             | `services/scheduler/jobs/embed_job.py`, 200,000 texts of 40 words        |
-| Workload                        | numpy hashing-embedding, 384 dimensions (the fallback, not a neural net) |
-| Runtime per job, this machine   | 34.2 CPU seconds (two runs: 34.19 s and 34.27 s)                         |
-| Throughput, this machine        | about 5,840 items a CPU second                                           |
-| Energy per job                  | 0.113 Wh (34.2 s × 11.9 W)                                               |
-| Jobs per reference server-hour  | about 8,840                                                              |
-| Runtime per job, 1 kW reference | 0.41 s                                                                   |
-| Interruptible                   | yes: it checkpoints after every batch of 64 and resumes from the file    |
+| What                            | Value                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| Model                           | nomic-embed-text (768 dimensions) through the local Ollama 0.33.3, fully on the GPU  |
+| Input                           | 20,000 synthetic texts of 40 words (862,836 tokens), fixed seed, batches of 64       |
+| Wall time, this machine         | 137.1 s                                                                              |
+| Throughput, this machine        | 145.9 texts a second                                                                 |
+| GPU power                       | 87.6 W mean against a 31.8 W idle baseline: 55.7 W above idle, 31 % utilisation      |
+| GPU energy above idle           | 2.123 Wh (1,261 samples)                                                             |
+| CPU share (stated)              | 1.355 Wh: Ollama's 409.9 CPU seconds above baseline × 11.9 W                         |
+| Energy per text                 | 0.174 mWh (3.478 Wh ÷ 20,000)                                                        |
+| One job                         | 200,000 texts, the size of `embed_job.py`: 34.8 Wh, about 23 minutes on this machine |
+| Jobs per reference server-hour  | about 29 (5.75 million texts)                                                        |
+| Runtime per job, 1 kW reference | 125 s                                                                                |
+| Interruptible                   | yes: each batch of 64 stands on its own                                              |
+
+## Interactive sessions: a local AI chat
+
+| What                      | Value                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------ |
+| Model                     | qwen3:4b through the local Ollama, fully on the GPU, thinking off                          |
+| Input                     | 24 fixed questions × 2 rounds = 48 answers, temperature 0, seed 7, up to 256 tokens each   |
+| Wall time, this machine   | 91.8 s, one request at a time                                                              |
+| Throughput, this machine  | 135.6 tokens a second decoding (133.9 over the wall time); every answer reached 256 tokens |
+| GPU power                 | 257.0 W mean against a 32.1 W idle baseline: 224.9 W above idle, 89 % utilisation          |
+| GPU energy above idle     | 5.733 Wh (840 samples)                                                                     |
+| CPU share (stated)        | 0.853 Wh: Ollama's 258.1 CPU seconds above baseline × 11.9 W                               |
+| Energy per answer         | 0.137 Wh, or 0.536 Wh per 1,000 tokens                                                     |
+| Per reference server-hour | about 7,300 answers, 1.87 million tokens                                                   |
+| Interruptible             | no: someone is waiting for the answer                                                      |
 
 ## Machine
 
-- Intel Core i7-9700K, 8 cores, 8 threads, 3.6 GHz base, 95 W TDP (Intel ARK); Linux 7.2, Python 3.12.15, numpy 2.5.5 with OpenBLAS.
-- Measured 21 November 2026, 12:32 to 12:37 UTC, on CPU only.
-- The machine was busy with other work (load average 8 to 15 on 8 cores), so the job had a share of the CPU, not all of it. CPU seconds, not wall time, are what we count.
+- NVIDIA GeForce RTX 2080 Ti (260 W power limit, driver 610.57.04); Intel Core i7-9700K, 8 cores,
+  95 W TDP (Intel ARK); Linux 7.2; Ollama 0.33.3 with models pulled earlier (nothing downloaded).
+- Measured 22 November 2026, from 00:40 UTC.
 
 ## Method
 
 ```sh
-cd services/scheduler
-OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
-  uv run python measure.py --seconds 60 --device-watts 11.9 --items-per-job 200000
+make measure-ai        # cd services/scheduler && uv run python measure_ai.py
 ```
 
-1. `measure.py` starts the real job, waits, reads its checkpoint and stops it. The job counts its own CPU time (`time.process_time`), which does not advance while it is paused.
-2. BLAS runs on one thread, so one CPU second is one core busy for one second.
-3. **Power is stated, not metered.** The package energy counter (RAPL) is root-only on this machine, so we take the TDP split evenly over the cores: 95 W ÷ 8 = 11.9 W per busy core. TDP is a design limit, not a reading; a plug meter would replace it.
-4. **Scaling** to the reference server assumes equal energy per item (equal performance per watt), as in `measure.py`. A 1 kW server then does 1,000 ÷ 0.113 ≈ 8,840 of these jobs an hour and gives 0.8 kWh of heat for it (`config.json: server`).
+1. **Inputs are fixed.** The texts are synthetic, drawn with a fixed seed from a small English
+   word list (`measure_ai.texts`), so nothing is copied and every run sees the same words. The
+   questions are 8 topics in 3 forms (`measure_ai.prompts`).
+2. **Both models are loaded before metering**, so reading them from disk is not counted, and
+   Ollama reports them fully on the GPU.
+3. **The GPU is shared** with Blender film renders. A run starts only when the GPU stays below
+   5 % utilisation for 5 s with no Blender process on it; otherwise the script checks again every
+   3 minutes, up to an hour (it waited once). A run is thrown away if Blender appears during it.
+4. **GPU power is metered**: `nvidia-smi --query-gpu=power.draw,utilization.gpu -lms 100`, board
+   power, an instantaneous reading on this Turing card, ± 5 W by NVIDIA's own spec. Before each
+   run, 15 s of the idle GPU with the models loaded give the baseline; the run's energy is the
+   trapezoid sum of its samples minus that baseline times its duration.
+5. **CPU power is not metered.** The package counter (RAPL,
+   `/sys/class/powercap/intel-rapl:0/energy_uj`) is root-only here. The script counts the CPU
+   seconds of the Ollama processes from `/proc` above their idle rate and prices them at the TDP
+   split over the cores, 95 W ÷ 8 = 11.9 W per busy core. Where RAPL is readable, the script uses
+   it instead.
+6. **Scaling** to the reference server assumes equal energy per item (equal performance per
+   watt), as `measure.py` did: items per server-hour = 1,000 Wh ÷ Wh per item. The server gives
+   0.8 kWh of heat for it whatever runs (`config.json: server`).
 
 ## What this does not show
 
-- It is not neural inference. With `sentence-transformers` installed the job runs all-MiniLM-L6-v2; that needs a model download of about 90 MB, which we have not made.
-- A GPU server does far more items per watt than a desktop CPU, so equal performance per watt is cautious for throughput and says nothing about the heat, which is 0.8 kWh per server-hour whatever runs.
-- The scheduler's yearly balance does not use the job size: the backlog is assumed unlimited (`config.json: jobs.opportunistic`).
+- **The CPU share is a stated figure, probably high.** Ollama's threads spin while they wait for
+  the GPU, so they log CPU seconds at less than full power. It is 39 % of the embedding energy
+  and 13 % of the chat energy.
+- **One consumer GPU.** The embedding run keeps the GPU at 31 % utilisation (small model, CPU
+  tokenising); a data-centre GPU with larger batches would embed more texts per watt. Equal
+  performance per watt is therefore cautious for throughput, and says nothing about the heat.
+- **The rest of the machine** (fans, memory, disk, power supply losses) is not counted, nor the
+  idle draw: the figures are energy above idle. A plug meter would give the wall figure.
+- **The scheduler's yearly balance does not use the job size.** It counts server-hours, and the
+  backlog is assumed unlimited (`config.json: jobs.opportunistic`), so the economics do not change.
+
+## Earlier stand-in
+
+`measure.py` (#77) timed the numpy hashing fallback of `jobs/embed_job.py` on the CPU and priced
+it at 11.9 W per core from the TDP: 0.113 Wh for 200,000 texts. That was not a neural model and
+not a meter reading; the figures above replace it.

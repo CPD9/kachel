@@ -75,7 +75,7 @@
       "deadline_h": 0,
       "arrivals_server_h": { "18": 1, "19": 1, "20": 1, "21": 1 },
       "when_heat_not_needed": "run_and_dump",
-      "source": "OUR scenario: one evening session block of 4 h per house and day."
+      "source": "OUR scenario: one evening session block of 4 h per house and day. Size of the local AI chat, measured on our machine (docs/measurements.md; raw: docs/measurements/ai-summary.json, ai-inference-samples.csv): qwen3:4b through Ollama on an RTX 2080 Ti, thinking off, 135.6 tokens/s, 224.9 W GPU above idle plus a stated CPU share, 0.13721 Wh per 256-token answer, about 7,300 answers per 1 kW server-hour."
     },
     "batch": {
       "label": "Batch with deadline (transcription)",
@@ -91,7 +91,7 @@
       "deadline_h": null,
       "unlimited": true,
       "when_heat_not_needed": "pause",
-      "source": "ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model. Job size measured on our machine: 0.113 Wh and 34.2 CPU-s per 200,000 items, about 8,840 jobs per 1 kW server-hour (docs/measurements.md)."
+      "source": "ASSUMES AN UNLIMITED BACKLOG of deadline-free work (fleet-level queue). This is the single most optimistic assumption in the model. Job size measured on our machine (docs/measurements.md; raw: docs/measurements/ai-summary.json, ai-embeddings-samples.csv): nomic-embed-text through Ollama on an RTX 2080 Ti, 145.9 texts/s, 55.7 W GPU above idle plus a stated CPU share, 34.782 Wh per job of 200,000 texts, about 29 jobs per 1 kW server-hour."
     }
   },
   "fleet": {

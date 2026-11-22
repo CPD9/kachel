@@ -63,7 +63,7 @@ The scheduler is one pure function, `decide`, used both by the yearly simulation
 
 ### 4.1 Jobs
 
-Three kinds of job arrive, set in `config.json`. Interactive sessions (local AI chat, game streaming) cannot be paused: {interactive_sh} server-hours a day, one an hour from {interactive_from} to {interactive_to}. Deadline batch is speech-to-text transcription with Whisper large-v3 [@econ19; @econ21], interruptible per recording: {batch_sh} server-hours arrive at {batch_at} each day and are due within {batch_deadline_h} hours, the completion window of a common batch API [@econ22]. The opportunistic backlog is embedding work with no deadline, measured on our own machine [@econ24], and assumed unlimited.
+Three kinds of job arrive, set in `config.json`. Interactive sessions (local AI chat, game streaming) cannot be paused: {interactive_sh} server-hours a day, one an hour from {interactive_from} to {interactive_to}; one chat answer from {chat_model} takes {chat_wh} Wh, measured on our machine [@econ24]. Deadline batch is speech-to-text transcription with Whisper large-v3 [@econ19; @econ21], interruptible per recording: {batch_sh} server-hours arrive at {batch_at} each day and are due within {batch_deadline_h} hours, the completion window of a common batch API [@econ22]. The opportunistic backlog is embedding work with no deadline, measured on our own machine at {embed_wh} Wh per job of {embed_items} texts [@econ24], and assumed unlimited.
 
 ### 4.2 Forecast and head-room
 
