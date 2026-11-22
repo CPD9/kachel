@@ -1,7 +1,17 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { App } from "./App";
-import { DEFAULT_MAP_URL, FADE_MS, mapBaseFor, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
+import {
+  DEFAULT_MAP_URL,
+  DEFAULT_OPERATOR_URL,
+  FADE_MS,
+  mapBaseFor,
+  mapUrl,
+  NO_GLOBE_HOLD_MS,
+  operatorBaseFor,
+  operatorUrl,
+  PUBLIC_OPERATOR_URL,
+} from "./handoff";
 import { targetFor } from "./target";
 
 beforeEach(() => vi.useFakeTimers());
@@ -61,5 +71,18 @@ it("builds the map's address from VITE_MAP_URL, at the demo target's building", 
   // ?at=fhnw hands over at FHNW Campus Dreispitz
   expect(mapUrl("http://localhost:5175", targetFor("?at=fhnw").building.egid)).toBe(
     "http://localhost:5175/?egid=243058419&card=1",
+  );
+});
+
+it("uses VITE_OPERATOR_URL, else localhost in dev, else the public operator console", () => {
+  expect(operatorBaseFor("https://ops.example", false)).toBe("https://ops.example");
+  expect(operatorBaseFor(undefined, true)).toBe(DEFAULT_OPERATOR_URL);
+  expect(operatorBaseFor("", false)).toBe(PUBLIC_OPERATOR_URL);
+});
+
+it("opens the operator console at Today with its tour on", () => {
+  expect(operatorUrl("http://localhost:5177")).toBe("http://localhost:5177/?tour=1#/today?tour=1");
+  expect(operatorUrl(PUBLIC_OPERATOR_URL)).toBe(
+    "https://operator-omega-jade.vercel.app/?tour=1#/today?tour=1",
   );
 });

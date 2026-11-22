@@ -22,6 +22,9 @@ Each app has a `vercel.json` that sends every page address to `index.html`, so l
 strings like `?egid=`, `?tour=1` and `?at=fhnw` load, and caches the hashed files in `assets/`
 for a year.
 
+Each `vercel.json` also builds only `main`: other branches are skipped, so pull requests do not use
+up the free plan's 100 deployments a day.
+
 ## Map
 
 CesiumJS's workers, assets and widgets, and three.js's Draco decoder, are copied into the build
