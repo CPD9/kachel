@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { chf, offsetLabel } from "./format";
 import { fleetMonth, fleetYear, MONTH_NAMES, MONTHS, type MonthsFile } from "./fleet/months";
+import { previous } from "./fleet/kpis";
 import { buyerRows, useLive, type OperatorSource } from "./live/live";
 import { AddBuilding } from "./pages/AddBuilding";
 import { Billing } from "./pages/Billing";
@@ -57,6 +58,10 @@ export function App({
   const live = useLive(source);
 
   const m = useMemo(() => fleetMonth(file, { month, offset }), [file, month, offset]);
+  const before = useMemo(
+    () => fleetMonth(file, previous({ month, offset })),
+    [file, month, offset],
+  );
   const brightest = useMemo(
     () => Math.max(...fleetYear(file, 0).months.flatMap((mo) => mo.houses.map((h) => h.servedKw))),
     [file],
@@ -90,6 +95,8 @@ export function App({
       {route === "today" && (
         <Today
           month={m}
+          before={before}
+          monthNumber={month}
           monthName={name}
           dateLine={dateLine}
           brightest={brightest}

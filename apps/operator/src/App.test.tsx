@@ -113,6 +113,11 @@ describe("operator console", () => {
     expect(document.querySelectorAll("[data-marked]")).toHaveLength(marked);
     expect(screen.getByRole("img", { name: /Basel and Bern/ })).toBeTruthy();
     expect(reading("Balance")).toBeGreaterThan(0);
+    // The KPI cards agree with the headline, with a delta against October.
+    expect(reading("Homes warm")).toBe(100 - marked);
+    expect(document.querySelector("[data-kpi=kpi-warm] [data-delta]")?.textContent).toMatch(
+      /against October/,
+    );
     expect(document.querySelector("[data-model]")?.textContent).toBe(
       "Model: 2025 weather, synthetic homes",
     );
@@ -173,6 +178,9 @@ describe("operator console", () => {
     expect(screen.getByRole("button", { name: "July" }).getAttribute("aria-pressed")).toBe("true");
     expect(reading("Invoiced")).toBeLessThan(invoiced);
     expect(reading("Margin")).toBeLessThan(margin);
+    // The dashboard follows too: the flow's electricity matches the server-hours sold.
+    expect(reading("Server-hours sold")).toBeGreaterThan(0);
+    expect(screen.getByRole("img", { name: /^Electricity [\d']+ kWh/ })).toBeTruthy();
   });
 
   it("follows the temperature in the year's revenue, and says when it shows a what-if", () => {

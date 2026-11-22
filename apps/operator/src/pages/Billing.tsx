@@ -6,6 +6,7 @@ import { YearChart } from "../fleet/YearChart";
 import { PageHead, Sources } from "../shell/Shell";
 import { card, primary, th } from "../ui";
 import { MonthControls } from "./MonthControls";
+import { SettlementDash } from "./SettlementDash";
 
 function download(name: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: "text/csv" }));
@@ -89,7 +90,8 @@ export function Billing({
 
       {tab === "settlement" && (
         <>
-          <p className="mt-6 max-w-[1000px] text-[20px] leading-snug font-semibold tracking-tight sm:text-[26px]">
+          <SettlementDash file={file} month={month} monthName={monthName} offset={offset} />
+          <p className="mt-8 max-w-[1000px] text-[17px] leading-snug font-semibold tracking-tight sm:text-[20px]">
             Buyers are invoiced{" "}
             <span data-reading="Invoiced">
               <span data-value>{chf(t.revenue)}</span>

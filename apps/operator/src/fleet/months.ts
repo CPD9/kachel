@@ -70,6 +70,8 @@ export interface HouseMonth {
   demandKwh: number;
   servedKwh: number;
   backupKwh: number;
+  /** Server heat with nowhere to go: tank full, house warm. */
+  dumpedKwh: number;
   serverHours: number;
   demandKw: number;
   servedKw: number;
@@ -97,6 +99,7 @@ export interface FleetMonth {
   demandKwh: number;
   servedKwh: number;
   backupKwh: number;
+  dumpedKwh: number;
   serverHours: number;
   money: Money;
   /** The month's mean outdoor temperature in each city, with the offset. */
@@ -131,12 +134,14 @@ export function fleetMonth(file: MonthsFile, { month, offset }: View, city?: str
       const demandKwh = at(house.demand_kwh, o, month);
       const servedKwh = at(house.served_kwh, o, month);
       const backupKwh = at(house.backup_kwh, o, month);
+      const dumpedKwh = at(house.dumped_kwh, o, month);
       const serverHours = at(house.server_hours, o, month);
       return {
         house,
         demandKwh,
         servedKwh,
         backupKwh,
+        dumpedKwh,
         serverHours,
         demandKw: demandKwh / hours,
         servedKw: servedKwh / hours,
@@ -157,6 +162,7 @@ export function fleetMonth(file: MonthsFile, { month, offset }: View, city?: str
     demandKwh: sum(houses.map((h) => h.demandKwh)),
     servedKwh,
     backupKwh: sum(houses.map((h) => h.backupKwh)),
+    dumpedKwh: sum(houses.map((h) => h.dumpedKwh)),
     serverHours,
     money: money(file, serverHours, servedKwh),
     temp: Object.fromEntries(cities.map(([c, v]) => [c, (v.mean_temp_c[month] ?? 0) + offset])),
