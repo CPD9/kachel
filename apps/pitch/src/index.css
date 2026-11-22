@@ -188,3 +188,26 @@
     opacity: 0.25;
   }
 }
+
+/* Phones and tablets (compact.ts): the edges the overlays keep clear of. The notch and Safari's
+   bottom bar give safe-area insets (index.html sets viewport-fit=cover); the follow-up bar sits
+   above Mapbox's logo and attribution, and the bottom sheet above the follow-up bar. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --compact-top: calc(var(--safe-top) + 12px);
+  --compact-bar: calc(var(--safe-bottom) + 36px);
+  --compact-sheet: calc(var(--compact-bar) + 68px);
+}
+
+/* A touch target of at least 44 × 44 px around a smaller control, without moving anything. The
+   control must be positioned (relative or absolute). Only for touch screens. */
+@utility tap {
+  @media (pointer: coarse) {
+    &::after {
+      content: "";
+      position: absolute;
+      inset: min(0px, calc(50% - 22px));
+    }
+  }
+}

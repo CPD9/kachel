@@ -10,12 +10,14 @@ import {
 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
+import { COMPACT_BAR, COMPACT_TOP, useCompact } from "./compact";
 import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
 import { FADE_MS, mapBaseFor, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
 import { HouseView } from "./HouseView";
 import { MarketHouses, MarketSetup, useMarket } from "./MarketView";
 import { NeighbourDetails, NeighbourSwitch } from "./NeighbourDetails";
 import { NEIGHBOURS } from "./neighbours";
+import { Sheet } from "./Sheet";
 import { SimulationView, useSimulation } from "./SimulationView";
 import { VoiceBar, VoicePrompt } from "./VoicePrompt";
 
@@ -24,13 +26,22 @@ function Pill({
   icon,
   label,
   loading = false,
+  compact = false,
 }: {
   icon?: ReactNode;
   label: string;
   loading?: boolean;
+  /** Phones: smaller, so the pills fit in one row. */
+  compact?: boolean;
 }) {
   return (
-    <span className="flex animate-pill-in items-center gap-2 rounded-full border border-white/10 bg-[#1b1d21]/85 py-1.5 pr-3 pl-2 text-sm font-medium text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
+    <span
+      className={`flex animate-pill-in items-center rounded-full border border-white/10 bg-[#1b1d21]/85 font-medium text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md ${
+        compact
+          ? "gap-1.5 py-1 pr-2.5 pl-1 text-xs whitespace-nowrap"
+          : "gap-2 py-1.5 pr-3 pl-2 text-sm"
+      }`}
+    >
       {loading ? (
         <LoaderCircle size={16} className="animate-spin text-clay" />
       ) : (
@@ -39,7 +50,7 @@ function Pill({
         </span>
       )}
       <span className={loading ? "text-white/70" : ""}>{label}</span>
-      {!loading && <Check size={14} className="text-clay" strokeWidth={3} />}
+      {!loading && <Check size={compact ? 12 : 14} className="text-clay" strokeWidth={3} />}
     </span>
   );
 }
@@ -79,6 +90,8 @@ const typing = (e: KeyboardEvent) =>
  */
 export function App({ go = navigate }: { go?: (url: string) => void }) {
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
+  // Phones and tablets: one bottom sheet, buttons instead of the presenter's keys
+  const compact = useCompact();
   const mapBase = mapBaseFor(import.meta.env.VITE_MAP_URL, import.meta.env.DEV);
   // What the presenter said; null while the landing page is still showing
   const [said, setSaid] = useState<string | null>(null);
@@ -198,7 +211,7 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
 
   if (said !== null) {
     return (
-      <main className="relative h-screen w-screen overflow-hidden bg-black font-sans">
+      <main className="relative h-dvh w-full overflow-hidden bg-black font-sans">
         {token && (
           <div className="absolute inset-0 animate-globe-in">
             <Globe
@@ -231,21 +244,37 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
           />
         )}
         {stage === "building" && !inside && !gamer && TARGET.showBuildingCard && (
-          <BuildingDetails />
+          <BuildingDetails onInside={() => setInside(true)} />
+        )}
+        {/* Without the building card (?at=fhnw), phones still get a way into the house */}
+        {compact && stage === "building" && !inside && !gamer && !TARGET.showBuildingCard && (
+          <div className="pointer-events-none absolute inset-0">
+            <Sheet tabs={[]} action={{ label: "Look inside", onClick: () => setInside(true) }} />
+          </div>
         )}
         {stage === "building" && (houseShown || houseMounted) && (
           <HouseView visible={houseShown} onExit={() => setInside(false)} onNext={toGamer} />
         )}
-        {atGamer && sim && !inMarket && <SimulationView s={simulation} onBack={endSim} />}
+        {atGamer && sim && !inMarket && (
+          <SimulationView s={simulation} onBack={endSim} onNext={openMarket} />
+        )}
         {atGamer && sim && market.page === "setup" && (
           <MarketSetup m={market} onBack={market.close} />
         )}
         {atGamer && sim && market.page === "houses" && <MarketHouses m={market} />}
         {atGamer && !sim && NEIGHBOURS[who] && (
-          <NeighbourDetails key={who} n={NEIGHBOURS[who]} onBack={backFromGamer} />
+          <NeighbourDetails
+            key={who}
+            n={NEIGHBOURS[who]}
+            onBack={backFromGamer}
+            onNext={() => setSim(true)}
+          />
         )}
         {gamer && !sim && (
-          <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
+          <div
+            className={`pointer-events-none absolute inset-x-0 flex flex-wrap justify-center gap-2 ${compact ? "px-3" : "top-6 px-4"}`}
+            style={compact ? COMPACT_TOP : undefined}
+          >
             {atGamer ? (
               <NeighbourSwitch i={who} onSwitch={setWho} />
             ) : (
@@ -254,28 +283,51 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
           </div>
         )}
         {stage && !inside && !gamer && (
-          <div className="pointer-events-none absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2 px-4">
-            <Pill icon={<MapPin size={13} />} label="Basel identified" />
+          <div
+            className={`pointer-events-none absolute inset-x-0 flex justify-center ${
+              compact ? "flex-nowrap items-center gap-1.5 px-3" : "top-6 flex-wrap gap-2 px-4"
+            }`}
+            style={compact ? COMPACT_TOP : undefined}
+          >
+            <Pill
+              icon={<MapPin size={13} />}
+              label={compact ? "Basel" : "Basel identified"}
+              compact={compact}
+            />
             {stage === "building" ? (
               <>
-                <Pill key="found" icon={<Building2 size={13} />} label="Building identified" />
+                <Pill
+                  key="found"
+                  icon={<Building2 size={13} />}
+                  label={compact ? "Building" : "Building identified"}
+                  compact={compact}
+                />
                 {/* The hand-over to the real map and card (apps/map); "m" does the same */}
                 <button
                   type="button"
                   onClick={leave}
-                  className="pointer-events-auto flex animate-pill-in items-center gap-2 rounded-full border border-clay/50 bg-[#1b1d21]/85 py-1.5 pr-3 pl-2 text-sm font-medium text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md hover:border-clay"
+                  className={`pointer-events-auto flex animate-pill-in items-center rounded-full border border-clay/50 bg-[#1b1d21]/85 font-medium text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md hover:border-clay ${
+                    compact
+                      ? "tap relative gap-1.5 py-1 pr-3 pl-1 text-xs whitespace-nowrap"
+                      : "gap-2 py-1.5 pr-3 pl-2 text-sm"
+                  }`}
                 >
                   <span className="grid size-6 place-items-center rounded-full bg-clay text-white">
                     <MapIcon size={13} />
                   </span>
-                  Real data on the map
-                  <kbd className="rounded border border-white/20 px-1.5 text-[11px] text-white/60">
-                    M
-                  </kbd>
+                  {compact ? "Open map" : "Real data on the map"}
+                  {/* Touch screens have no "m" key: the pill is the button */}
+                  {!compact && (
+                    <kbd className="rounded border border-white/20 px-1.5 text-[11px] text-white/60">
+                      M
+                    </kbd>
+                  )}
                 </button>
               </>
             ) : (
-              !noMap && <Pill key="finding" label="Finding your building…" loading />
+              !noMap && (
+                <Pill key="finding" label="Finding your building…" loading compact={compact} />
+              )
             )}
           </div>
         )}
@@ -288,7 +340,11 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
             address.
           </p>
         )}
-        <div className="absolute inset-x-0 bottom-6 flex justify-center px-4">
+        {/* On a phone: above Mapbox's logo and Safari's bottom bar */}
+        <div
+          className={`absolute inset-x-0 flex justify-center ${compact ? "px-3" : "bottom-6 px-4"}`}
+          style={compact ? COMPACT_BAR : undefined}
+        >
           <VoiceBar
             // The transcript shows only while the globe looks for the building, then it's a follow-up box
             said={stage === "building" ? undefined : said}
@@ -330,14 +386,14 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
           </nav>
           <a
             href="#"
-            className="flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink/85"
+            className="flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink/85 pointer-coarse:min-h-11"
           >
             Check my building <ArrowRight size={16} />
           </a>
         </header>
 
         {/* Three rows with equal outer rows, so the chat box sits in the middle of the screen */}
-        <section className="grid h-screen min-h-[640px] grid-rows-[1fr_auto_1fr] justify-items-center text-center">
+        <section className="grid h-screen min-h-[640px] grid-cols-[minmax(0,1fr)] grid-rows-[1fr_auto_1fr] justify-items-center text-center">
           <div className="flex flex-col items-center justify-end pt-24 pb-8">
             <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-rust uppercase">
               Server heating
@@ -355,7 +411,7 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
             {SUGGESTIONS.map((label) => (
               <button
                 key={label}
-                className="rounded-full border border-border bg-surface px-4 py-2 text-sm hover:border-clay/40 hover:text-clay"
+                className="rounded-full border border-border bg-surface px-4 py-2 text-sm hover:border-clay/40 hover:text-clay pointer-coarse:min-h-11"
               >
                 {label}
               </button>

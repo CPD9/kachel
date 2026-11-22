@@ -29,7 +29,9 @@ import {
   WORKLOADS,
   type Workload,
 } from "./market";
+import { COMPACT_TOP, useCompact } from "./compact";
 import { distanceFromHome } from "./neighbours";
+import { Sheet } from "./Sheet";
 import { REMOTE_COLOR } from "./simulation";
 import { card, label } from "./ui";
 
@@ -139,15 +141,16 @@ function Chips<T extends number>({
   format: (v: T) => string;
   onChange: (v: T) => void;
 }) {
+  const compact = useCompact();
   return (
     <div className="flex gap-1 rounded-full bg-white/[0.06] p-0.5">
       {options.map((o) => (
         <button
           key={o}
           onClick={() => onChange(o)}
-          className={`flex-1 rounded-full px-1 py-1 text-[11px] font-semibold whitespace-nowrap transition-colors ${
-            o === value ? "text-white" : "text-white/50 hover:text-white"
-          }`}
+          className={`flex-1 rounded-full px-1 text-[11px] font-semibold whitespace-nowrap transition-colors ${
+            compact ? "min-h-10" : "py-1"
+          } ${o === value ? "text-white" : "text-white/50 hover:text-white"}`}
           style={o === value ? { background: VIOLET } : undefined}
         >
           {format(o)}
@@ -219,8 +222,25 @@ function Toggle({
   );
 }
 
+/** Phones: the back button and the steps in one row under the notch. */
+function CompactTop({ back, at, onBack }: { back: string; at: 1 | 2; onBack: () => void }) {
+  return (
+    <div className="absolute inset-x-3 flex items-center justify-center gap-2" style={COMPACT_TOP}>
+      <button
+        onClick={onBack}
+        aria-label={back}
+        className="pointer-events-auto grid size-11 shrink-0 animate-pill-in place-items-center rounded-full border border-white/10 bg-[#1b1d21]/85 text-white backdrop-blur-md hover:text-clay"
+      >
+        <ArrowLeft size={18} />
+      </button>
+      <Steps at={at} />
+    </div>
+  );
+}
+
 /** Page 1: what they want to run. The houses that fit light up on the map behind as they go. */
 export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
+  const compact = useCompact();
   const { needs, setNeeds, fits } = m;
   const set = (patch: Partial<Needs>) => setNeeds((n) => ({ ...n, ...patch }));
   const cheapest = fits.length ? Math.min(...fits.map((q) => q.total)) : null;
@@ -234,20 +254,42 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
     <div className="pointer-events-none absolute inset-0 font-sans">
       {/* Dim the map a little, the houses stay visible behind */}
       <div className="absolute inset-0 animate-card-in bg-gradient-to-b from-black/55 via-black/25 to-black/55" />
-      <button
-        onClick={onBack}
-        className="pointer-events-auto absolute top-6 left-6 flex animate-pill-in items-center gap-1.5 rounded-full border border-white/10 bg-[#1b1d21]/85 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:text-clay"
-      >
-        <ArrowLeft size={14} /> Back to the simulation
-      </button>
-      <div className="absolute inset-x-0 top-6 flex justify-center">
-        <Steps at={1} />
-      </div>
+      {compact ? (
+        <CompactTop back="Back to the simulation" at={1} onBack={onBack} />
+      ) : (
+        <>
+          <button
+            onClick={onBack}
+            className="pointer-events-auto absolute top-6 left-6 flex animate-pill-in items-center gap-1.5 rounded-full border border-white/10 bg-[#1b1d21]/85 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:text-clay"
+          >
+            <ArrowLeft size={14} /> Back to the simulation
+          </button>
+          <div className="absolute inset-x-0 top-6 flex justify-center">
+            <Steps at={1} />
+          </div>
+        </>
+      )}
 
-      <div className="absolute inset-x-0 top-[72px] bottom-28 flex items-center justify-center px-6">
-        <article className={`${card} flex max-h-full w-[880px] gap-2 overflow-hidden`}>
+      {/* On a phone: one column that scrolls, between the steps and the follow-up bar */}
+      <div
+        className={`absolute inset-x-0 flex items-center justify-center ${compact ? "px-3" : "top-[72px] bottom-28 px-6"}`}
+        style={
+          compact
+            ? { top: "calc(var(--compact-top) + 56px)", bottom: "var(--compact-sheet)" }
+            : undefined
+        }
+      >
+        <article
+          className={`${card} flex max-h-full gap-2 ${
+            compact
+              ? "w-full max-w-[560px] flex-col overflow-y-auto [scrollbar-width:none]"
+              : "w-[880px] overflow-hidden"
+          }`}
+        >
           {/* Left: the workload and what it needs */}
-          <div className="min-w-0 flex-1 overflow-y-auto px-3 pt-3 pb-2 [scrollbar-width:none]">
+          <div
+            className={`min-w-0 px-3 pt-3 pb-2 ${compact ? "" : "flex-1 overflow-y-auto [scrollbar-width:none]"}`}
+          >
             <p className={label} style={{ color: VIOLET }}>
               <Sparkles size={12} /> Kachel Compute
             </p>
@@ -258,7 +300,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
               It runs in a house in Basel, and its heat warms the people who live there.
             </p>
 
-            <div className="mt-4 grid grid-cols-3 gap-1.5">
+            <div className={`mt-4 grid gap-1.5 ${compact ? "grid-cols-1" : "grid-cols-3"}`}>
               {(Object.keys(WORKLOADS) as Workload[]).map((w) => {
                 const { icon: Icon, name, note } = WORKLOADS[w];
                 const on = needs.workload === w;
@@ -290,7 +332,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
               })}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className={`mt-4 grid gap-x-4 gap-y-3 ${compact ? "grid-cols-1" : "grid-cols-2"}`}>
               <Field name="GPUs at once">
                 <Chips
                   options={GPU_COUNTS}
@@ -342,9 +384,9 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
                               : { ...n, once, hours: needsFor(n.workload, n.flex, once).hours },
                           )
                         }
-                        className={`rounded-full px-2 py-px text-[10.5px] font-semibold transition-colors ${
-                          needs.once === once ? "text-white" : "text-white/50 hover:text-white"
-                        }`}
+                        className={`rounded-full px-2 text-[10.5px] font-semibold transition-colors ${
+                          compact ? "min-h-9" : "py-px"
+                        } ${needs.once === once ? "text-white" : "text-white/50 hover:text-white"}`}
                         style={needs.once === once ? { background: VIOLET } : undefined}
                       >
                         {text}
@@ -367,7 +409,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
               </div>
             </div>
 
-            <div className="mt-3.5 grid grid-cols-2 gap-1.5">
+            <div className={`mt-3.5 grid gap-1.5 ${compact ? "grid-cols-1" : "grid-cols-2"}`}>
               <Toggle
                 on={needs.interactive}
                 icon={<Radio size={13} />}
@@ -386,7 +428,9 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
           </div>
 
           {/* Right: the houses that fit, live */}
-          <aside className="flex w-[270px] shrink-0 flex-col rounded-[20px] bg-white/[0.05] p-3">
+          <aside
+            className={`flex shrink-0 flex-col rounded-[20px] bg-white/[0.05] p-3 ${compact ? "w-full" : "w-[270px]"}`}
+          >
             <p className={label}>Houses that fit</p>
             <p className="mt-1 flex items-baseline gap-1.5">
               <span
@@ -433,7 +477,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
             <button
               onClick={m.toHouses}
               disabled={!fits.length}
-              className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40"
+              className={`mt-auto flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40 ${compact ? "min-h-11" : ""}`}
               style={{ background: VIOLET }}
             >
               {fits.length ? (
@@ -522,13 +566,203 @@ function HouseRow({ q, on, onPick }: { q: Quote; on: boolean; onPick: () => void
 
 /** Page 2: the houses on the map, a list on the left and the picked one on the right. */
 export function MarketHouses({ m }: { m: Market }) {
+  const compact = useCompact();
   const { needs, current: q } = m;
   const [booked, setBooked] = useState<string | null>(null);
+  // On a phone, picking a house in the list opens its tab
+  const [tab, setTab] = useState("houses");
   useKey((e) => {
     if (e.key === "Escape") m.toSetup();
   });
   const w = WORKLOADS[needs.workload];
   const WIcon = w.icon;
+  const asked = (
+    <div className="flex animate-pill-in items-center gap-1.5 rounded-full bg-black/50 px-3 py-1 text-[11px] text-white/75 backdrop-blur-md">
+      <WIcon size={12} style={{ color: VIOLET }} /> {w.name}
+      <span className="text-white/30">·</span>
+      {needs.gpus ? `${needs.gpus}× GPU · ${needs.vram} GB` : "CPU only"}
+      <span className="text-white/30">·</span>
+      {needs.ram} GB RAM
+      <span className="text-white/30">·</span>
+      {needs.once ? `One-time · ${needs.hours} h` : `${needs.hours} h/mo`}
+      {needs.flex && (
+        <>
+          <span className="text-white/30">·</span>
+          <Snowflake size={11} className="text-sky-300" /> Heat-flex
+        </>
+      )}
+    </div>
+  );
+  const listBody = (
+    <>
+      <div className="px-2 pt-2">
+        <p className={label}>
+          {m.fits.length} houses fit · {m.list.length - m.fits.length} don't
+        </p>
+        <div className="mt-2 grid grid-cols-3 gap-1 rounded-full bg-white/[0.06] p-0.5">
+          {(
+            [
+              ["match", "Best match"],
+              ["price", "Cheapest"],
+              ["heat", "Coldest"],
+            ] as const
+          ).map(([s, text]) => (
+            <button
+              key={s}
+              onClick={() => m.setSort(s)}
+              className={`rounded-full ${compact ? "min-h-10" : "py-1"} text-[11px] font-semibold transition-colors ${
+                m.sort === s ? "text-white" : "text-white/50 hover:text-white"
+              }`}
+              style={m.sort === s ? { background: VIOLET } : undefined}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+      </div>
+      <ul className="mt-2 flex-1 space-y-0.5 overflow-y-auto pr-0.5 [scrollbar-width:none]">
+        {m.list.map((x) => (
+          <li key={x.offer.id}>
+            <HouseRow
+              q={x}
+              on={x.offer.id === q?.offer.id}
+              onPick={() => {
+                m.pick(x.offer.id);
+                if (!x.miss) setTab("house");
+              }}
+            />
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+  const houseBody = q && (
+    <>
+      <div
+        className="relative h-28 overflow-hidden rounded-[20px]"
+        style={{
+          background: `radial-gradient(90% 130% at 80% 100%, ${HEAT_COLOR[q.offer.heat]}aa, transparent 60%), radial-gradient(90% 120% at 10% 0%, ${VIOLET}, #120a24 70%)`,
+        }}
+      >
+        <span className="absolute right-5 bottom-2 text-[56px] drop-shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
+          {q.offer.emoji}
+        </span>
+        <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-black">
+          <span
+            className={`size-1.5 rounded-full ${q.offer.freeFrom ? "bg-amber-500" : "animate-pulse bg-emerald-500"}`}
+          />
+          {q.offer.freeFrom ? `Free ${q.offer.freeFrom}` : "Free now"}
+        </span>
+        <span className="absolute bottom-2 left-3 flex items-center gap-1 text-[11px] font-semibold text-white/85">
+          <Star size={11} className="fill-amber-300 text-amber-300" /> {q.offer.rating.toFixed(1)}
+        </span>
+      </div>
+      <div className="px-2 pt-3 pb-1.5">
+        <HeatBadge heat={q.offer.heat} />
+        <h3 className="mt-0.5 text-[17px] leading-tight font-semibold">{q.offer.address}</h3>
+        <p className="text-[11.5px] text-white/55">
+          {q.offer.area} · {q.offer.host}
+        </p>
+
+        <dl className="mt-3 space-y-1.5 text-[11.5px]">
+          {[
+            { icon: Cpu, k: "Compute", v: gpuText(q, needs) },
+            {
+              icon: MemoryStick,
+              k: "Memory",
+              v: `${q.offer.gpu ? `${q.offer.gpu.vram} GB · ` : ""}${q.offer.ram} GB RAM`,
+            },
+            {
+              icon: Cable,
+              k: "Latency",
+              v: `≈ ${(1 + distanceFromHome(q.offer.at) / 2000).toFixed(0)} ms in Basel`,
+            },
+            { icon: Timer, k: "Runs", v: needs.flex ? "When the house is cold" : "Any time" },
+          ].map(({ icon: Icon, k, v }) => (
+            <div key={k} className="flex items-center justify-between gap-2">
+              <dt className={`${label} shrink-0`}>
+                <Icon size={12} /> {k}
+              </dt>
+              <dd className="truncate text-right font-semibold tabular-nums">{v}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="mt-3 rounded-2xl bg-white/[0.05] px-2.5 py-2">
+          <div className="flex items-end justify-between">
+            <span className="text-[24px] leading-none font-semibold tabular-nums">
+              {chf(q.total)}
+            </span>
+            <span className="text-[11px] text-white/55">
+              {needs.once ? `once · ${needs.hours} h` : "a month"}
+            </span>
+          </div>
+          <div className="mt-1.5 flex justify-between text-[10.5px]">
+            <span className="text-white/45 line-through tabular-nums">
+              {chf(q.cloud)} in the cloud
+            </span>
+            <span className="font-semibold text-emerald-400 tabular-nums">
+              −{Math.round((1 - q.total / q.cloud) * 100)} %
+            </span>
+          </div>
+          {q.discount > 0 && (
+            <p className="mt-1 flex items-center gap-1 text-[10.5px] text-sky-300">
+              <Snowflake size={10} /> Heat-flex saves {Math.round(q.discount * 100)} % here
+            </p>
+          )}
+        </div>
+
+        <button
+          onClick={() => setBooked(q.offer.id)}
+          disabled={booked === q.offer.id}
+          className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold text-white transition-colors ${
+            booked === q.offer.id ? "bg-emerald-600" : "hover:brightness-110"
+          }`}
+          style={booked === q.offer.id ? undefined : { background: VIOLET }}
+        >
+          {booked === q.offer.id ? (
+            <>
+              <Check size={16} strokeWidth={3} /> Booked · starts tonight
+            </>
+          ) : (
+            <>
+              <Zap size={15} /> Run it here · {chf(q.total)}
+              {needs.once ? ` once` : `/mo`}
+            </>
+          )}
+        </button>
+        {booked === q.offer.id && (
+          <p className="mt-1.5 animate-card-in rounded-xl bg-black/40 px-2.5 py-1.5 font-mono text-[10.5px] text-white/75">
+            $ kachel run --at {q.offer.id}.bs.kachel.ch
+          </p>
+        )}
+      </div>
+    </>
+  );
+
+  if (compact)
+    return (
+      <div className="pointer-events-none absolute inset-0 font-sans">
+        <CompactTop back="Change what you run" at={2} onBack={m.toSetup} />
+        {/* What they asked for, wrapped onto two lines on a narrow screen */}
+        <div
+          className="absolute inset-x-3 flex justify-center"
+          style={{ top: "calc(var(--compact-top) + 52px)" }}
+        >
+          <div className="max-w-full [&>div]:flex-wrap [&>div]:justify-center [&>div]:rounded-2xl">
+            {asked}
+          </div>
+        </div>
+        <Sheet
+          tab={tab}
+          onTab={setTab}
+          tabs={[
+            { id: "houses", label: `${m.fits.length} houses fit`, body: listBody },
+            ...(q && !q.miss ? [{ id: "house", label: q.offer.area, body: houseBody }] : []),
+          ]}
+        />
+      </div>
+    );
 
   return (
     <div className="pointer-events-none absolute inset-0 font-sans">
@@ -541,21 +775,7 @@ export function MarketHouses({ m }: { m: Market }) {
       <div className="absolute inset-x-0 top-6 flex flex-col items-center gap-2">
         <Steps at={2} />
         {/* What they asked for, as a reminder */}
-        <div className="flex animate-pill-in items-center gap-1.5 rounded-full bg-black/50 px-3 py-1 text-[11px] text-white/75 backdrop-blur-md">
-          <WIcon size={12} style={{ color: VIOLET }} /> {w.name}
-          <span className="text-white/30">·</span>
-          {needs.gpus ? `${needs.gpus}× GPU · ${needs.vram} GB` : "CPU only"}
-          <span className="text-white/30">·</span>
-          {needs.ram} GB RAM
-          <span className="text-white/30">·</span>
-          {needs.once ? `One-time · ${needs.hours} h` : `${needs.hours} h/mo`}
-          {needs.flex && (
-            <>
-              <span className="text-white/30">·</span>
-              <Snowflake size={11} className="text-sky-300" /> Heat-flex
-            </>
-          )}
-        </div>
+        {asked}
       </div>
 
       {/* Left: every house, the ones that fit first */}
@@ -563,144 +783,14 @@ export function MarketHouses({ m }: { m: Market }) {
         className={`${card} absolute top-[68px] bottom-6 left-6 flex w-[320px] flex-col`}
         style={{ animationDelay: "100ms" }}
       >
-        <div className="px-2 pt-2">
-          <p className={label}>
-            {m.fits.length} houses fit · {m.list.length - m.fits.length} don't
-          </p>
-          <div className="mt-2 grid grid-cols-3 gap-1 rounded-full bg-white/[0.06] p-0.5">
-            {(
-              [
-                ["match", "Best match"],
-                ["price", "Cheapest"],
-                ["heat", "Coldest"],
-              ] as const
-            ).map(([s, text]) => (
-              <button
-                key={s}
-                onClick={() => m.setSort(s)}
-                className={`rounded-full py-1 text-[11px] font-semibold transition-colors ${
-                  m.sort === s ? "text-white" : "text-white/50 hover:text-white"
-                }`}
-                style={m.sort === s ? { background: VIOLET } : undefined}
-              >
-                {text}
-              </button>
-            ))}
-          </div>
-        </div>
-        <ul className="mt-2 flex-1 space-y-0.5 overflow-y-auto pr-0.5 [scrollbar-width:none]">
-          {m.list.map((x) => (
-            <li key={x.offer.id}>
-              <HouseRow q={x} on={x.offer.id === q?.offer.id} onPick={() => m.pick(x.offer.id)} />
-            </li>
-          ))}
-        </ul>
+        {listBody}
       </article>
 
       {/* Right: the picked house */}
       {q && !q.miss && (
         <div className="absolute top-6 right-6 bottom-6 flex w-[310px] flex-col gap-3 overflow-y-auto [scrollbar-width:none]">
           <article key={q.offer.id} className={card} style={{ animationDelay: "200ms" }}>
-            <div
-              className="relative h-28 overflow-hidden rounded-[20px]"
-              style={{
-                background: `radial-gradient(90% 130% at 80% 100%, ${HEAT_COLOR[q.offer.heat]}aa, transparent 60%), radial-gradient(90% 120% at 10% 0%, ${VIOLET}, #120a24 70%)`,
-              }}
-            >
-              <span className="absolute right-5 bottom-2 text-[56px] drop-shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
-                {q.offer.emoji}
-              </span>
-              <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-black">
-                <span
-                  className={`size-1.5 rounded-full ${q.offer.freeFrom ? "bg-amber-500" : "animate-pulse bg-emerald-500"}`}
-                />
-                {q.offer.freeFrom ? `Free ${q.offer.freeFrom}` : "Free now"}
-              </span>
-              <span className="absolute bottom-2 left-3 flex items-center gap-1 text-[11px] font-semibold text-white/85">
-                <Star size={11} className="fill-amber-300 text-amber-300" />{" "}
-                {q.offer.rating.toFixed(1)}
-              </span>
-            </div>
-            <div className="px-2 pt-3 pb-1.5">
-              <HeatBadge heat={q.offer.heat} />
-              <h3 className="mt-0.5 text-[17px] leading-tight font-semibold">{q.offer.address}</h3>
-              <p className="text-[11.5px] text-white/55">
-                {q.offer.area} · {q.offer.host}
-              </p>
-
-              <dl className="mt-3 space-y-1.5 text-[11.5px]">
-                {[
-                  { icon: Cpu, k: "Compute", v: gpuText(q, needs) },
-                  {
-                    icon: MemoryStick,
-                    k: "Memory",
-                    v: `${q.offer.gpu ? `${q.offer.gpu.vram} GB · ` : ""}${q.offer.ram} GB RAM`,
-                  },
-                  {
-                    icon: Cable,
-                    k: "Latency",
-                    v: `≈ ${(1 + distanceFromHome(q.offer.at) / 2000).toFixed(0)} ms in Basel`,
-                  },
-                  { icon: Timer, k: "Runs", v: needs.flex ? "When the house is cold" : "Any time" },
-                ].map(({ icon: Icon, k, v }) => (
-                  <div key={k} className="flex items-center justify-between gap-2">
-                    <dt className={`${label} shrink-0`}>
-                      <Icon size={12} /> {k}
-                    </dt>
-                    <dd className="truncate text-right font-semibold tabular-nums">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-
-              <div className="mt-3 rounded-2xl bg-white/[0.05] px-2.5 py-2">
-                <div className="flex items-end justify-between">
-                  <span className="text-[24px] leading-none font-semibold tabular-nums">
-                    {chf(q.total)}
-                  </span>
-                  <span className="text-[11px] text-white/55">
-                    {needs.once ? `once · ${needs.hours} h` : "a month"}
-                  </span>
-                </div>
-                <div className="mt-1.5 flex justify-between text-[10.5px]">
-                  <span className="text-white/45 line-through tabular-nums">
-                    {chf(q.cloud)} in the cloud
-                  </span>
-                  <span className="font-semibold text-emerald-400 tabular-nums">
-                    −{Math.round((1 - q.total / q.cloud) * 100)} %
-                  </span>
-                </div>
-                {q.discount > 0 && (
-                  <p className="mt-1 flex items-center gap-1 text-[10.5px] text-sky-300">
-                    <Snowflake size={10} /> Heat-flex saves {Math.round(q.discount * 100)} % here
-                  </p>
-                )}
-              </div>
-
-              <button
-                onClick={() => setBooked(q.offer.id)}
-                disabled={booked === q.offer.id}
-                className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold text-white transition-colors ${
-                  booked === q.offer.id ? "bg-emerald-600" : "hover:brightness-110"
-                }`}
-                style={booked === q.offer.id ? undefined : { background: VIOLET }}
-              >
-                {booked === q.offer.id ? (
-                  <>
-                    <Check size={16} strokeWidth={3} /> Booked · starts tonight
-                  </>
-                ) : (
-                  <>
-                    <Zap size={15} /> Run it here · {chf(q.total)}
-                    {needs.once ? ` once` : `/mo`}
-                  </>
-                )}
-              </button>
-              {booked === q.offer.id && (
-                <p className="mt-1.5 animate-card-in rounded-xl bg-black/40 px-2.5 py-1.5 font-mono text-[10.5px] text-white/75">
-                  $ kachel run --at {q.offer.id}.bs.kachel.ch
-                </p>
-              )}
-            </div>
+            {houseBody}
           </article>
         </div>
       )}
