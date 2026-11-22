@@ -210,9 +210,11 @@ from generate_series(1, 12) as house
 cross join lateral generate_series(1, 2 + house % 7) as slot;
 
 -- The operator and more buyers (#159), all SYNTHETIC. operator@kachel.test reads everything
--- (app_metadata kachel_role, migration 20261121160000_operator.sql). Six made-up buyers, each a
+-- (app_metadata kachel_role, migration 20261121160000_operator.sql). Seven made-up buyers, each a
 -- kind of compute the fleet sells, run jobs on the synthetic fleet houses above; the demo buyer
 -- gets a game session and a render batch there too. No buyer, job or label is a real customer.
+-- The rail operator tags images and video of stations and track (docs/job-types.md); it stands
+-- for a kind of buyer, not for any company.
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
@@ -236,6 +238,8 @@ from (values
   ('00000000-0000-4000-8000-000000000025', 'embed@kachel.test', 'Synthetic buyer: embeddings start-up',
    '{"provider": "email", "providers": ["email"]}'),
   ('00000000-0000-4000-8000-000000000026', 'speech@kachel.test', 'Synthetic buyer: speech to text',
+   '{"provider": "email", "providers": ["email"]}'),
+  ('00000000-0000-4000-8000-000000000027', 'rail@kachel.test', 'Synthetic buyer: rail operator',
    '{"provider": "email", "providers": ["email"]}')
 ) as u (id, email, name, meta);
 
@@ -246,7 +250,7 @@ select u.id, u.id::text, u.id, json_build_object('sub', u.id, 'email', u.email, 
        'email', now(), now(), now()
 from auth.users u
 where u.email in ('operator@kachel.test', 'play@kachel.test', 'render@kachel.test', 'lab@kachel.test',
-                  'studio@kachel.test', 'embed@kachel.test', 'speech@kachel.test');
+                  'studio@kachel.test', 'embed@kachel.test', 'speech@kachel.test', 'rail@kachel.test');
 
 insert into public.buyers (id, name, buys)
 values
@@ -256,7 +260,8 @@ values
   ('00000000-0000-4000-8000-000000000023', 'AI research lab', 'Model training and batch inference'),
   ('00000000-0000-4000-8000-000000000024', 'Video studio', 'Editing exports and transcodes'),
   ('00000000-0000-4000-8000-000000000025', 'Embeddings start-up', 'An embeddings backlog with no deadline'),
-  ('00000000-0000-4000-8000-000000000026', 'Speech to text', 'Transcription batches with a deadline');
+  ('00000000-0000-4000-8000-000000000026', 'Speech to text', 'Transcription batches with a deadline'),
+  ('00000000-0000-4000-8000-000000000027', 'Rail operator', 'Image and video tagging of station and track footage, overnight');
 
 -- Their jobs on the fleet houses (house HH, slot S: server id ending 2HH0S, as above). Running and
 -- paused jobs hold a server; queued ones have none yet; GONE is done, or moved to a data centre.
@@ -294,7 +299,10 @@ from (values
   ('442', '25', '08', 1, 'opportunistic', 'Embeddings backlog, shard 2 (synthetic)', null, null, 'RUNNING', 4.0, 500),
   ('443', '25', '07', 1, 'opportunistic', 'Embeddings backlog, shard 3 (synthetic)', null, null, 'PAUSED', 2.5, 500),
   ('451', '26', '12', 2, 'batch', 'Podcast archive transcription (synthetic)', 8.0, 20, 'RUNNING', 2.0, 140),
-  ('452', '26', null, null, 'batch', 'Council meetings transcription (synthetic)', 5.0, 24, 'QUEUED', 0.0, 10)
+  ('452', '26', null, null, 'batch', 'Council meetings transcription (synthetic)', 5.0, 24, 'QUEUED', 0.0, 10),
+  ('461', '27', '03', 2, 'batch', 'Image tagging: station photos (synthetic)', 2.0, 12, 'RUNNING', 0.5, 45),
+  ('462', '27', '09', 2, 'batch', 'Video tagging: track footage (synthetic)', 2.0, 24, 'PAUSED', 0.5, 95),
+  ('463', '27', null, null, 'batch', 'Video tagging: platform cameras (synthetic)', 2.0, 24, 'QUEUED', 0.0, 15)
 ) as j (id, buyer, house, slot, kind, label, hours, due_h, state, ran_h, age_min);
 
 -- A server with a running or paused job shows it.

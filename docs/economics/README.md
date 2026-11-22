@@ -415,6 +415,17 @@ price.
     2026 (Sage Sustainable Electronics benchmarking report): server resale values in 2025 at
     about 2.5 times their seven-year average
     <https://resource-recycling.com/e-scrap/2026/01/22/server-resale-values-surge-in-ai-driven-secondary-it-markets/>.
+43. MLCommons, MLPerf Inference v5.0, closed division, datacenter, result 5.0-0023: Fujitsu
+    PRIMERGY CDI with 8 NVIDIA H100 NVL 94GB (TensorRT 10.8, INT8), RetinaNet, Offline,
+    11,106.2 samples a second at 4,848.69 W for the whole system, mAP 37.31
+    (`summary_results.json`, row ID 5.0-0023, Model retinanet, Scenario Offline)
+    <https://github.com/mlcommons/inference_results_v5.0/tree/main/closed/Fujitsu/results/H100-NVL-94GBx8_TRT>.
+44. NVIDIA, NVDEC Application Note, Video Codec SDK 13.0, "NVDEC Decoding Performance
+    (Indicative)": 1920x1080 H.264 at 2,172 frames a second per NVDEC engine on Blackwell
+    <https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/nvdec-application-note/index.html>.
+45. Google Cloud, Video Intelligence API, "Analyze videos for labels", updated 10 Nov 2026:
+    frame-level labels with one frame per second sampling
+    <https://docs.cloud.google.com/video-intelligence/docs/feature-label-detection>.
 
 Our own assumptions, with no outside source yet:
 

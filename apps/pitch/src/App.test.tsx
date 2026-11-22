@@ -15,6 +15,7 @@ it("shows the landing page without a Mapbox token", () => {
   vi.stubEnv("VITE_MAPBOX_TOKEN", "");
   render(<App go={vi.fn()} />);
   expect(screen.getByText("Your heat, powered by computing.")).toBeTruthy();
+  expect(screen.getByText(/so your data stays in the house/)).toBeTruthy();
 });
 
 it("without a token, hands the scripted intro straight over to the map at Byfangweg 18", () => {
