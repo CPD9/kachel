@@ -43,6 +43,7 @@ const JOB_SOURCES = {
   "batch.label": `${MLPERF}, ${ASR}`,
   "batch.interruptible": `${MLPERF} (offline: the whole batch is there at the start)`,
   "batch.deadline_h": BATCH_API,
+  "interactive.label": `${MEASURED} (the local AI chat, qwen3:4b)`,
   "opportunistic.label": MEASURED,
   "opportunistic.interruptible": `${MEASURED}: it checkpoints every 64 items`,
 };
