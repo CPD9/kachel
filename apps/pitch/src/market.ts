@@ -67,7 +67,8 @@ export const WORKLOADS: Record<
   tagging: {
     icon: ImageSquare,
     name: "Image and video tagging",
-    note: `Overnight · ≈ ${(TAGGING.image_tagging.images_per_server_hour / 1e6).toFixed(1)} million images a server-hour`,
+    // Our own measured speed on an RTX 2080 Ti (#211), as the operator's quote uses (#214)
+    note: `≈ ${TAGGING.image_tagging.measured_images_per_server_hour.toLocaleString("en-GB")} images a server-hour, measured`,
     // GPU size is our pick (a detection model fits in 16 GB); the hours are the scheduler's
     needs: { gpus: 1, vram: 16, ram: 32, hours: TAGGING_NIGHT_H * 30, interactive: false },
     job: TAGGING_NIGHT_H,
