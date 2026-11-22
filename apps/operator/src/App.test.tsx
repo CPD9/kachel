@@ -187,10 +187,11 @@ describe("operator console", () => {
     expect(reading("Revenue this year")).toBeLessThan(year);
   });
 
-  it("prices an image tagging job from the model, with no placeholders", () => {
+  it("prices image tagging from our measured speed, with no placeholders", () => {
     at("#/quotes");
     render(<App startMonth={10} />);
-    expect(screen.getByText("CHF 0.06")).toBeTruthy();
+    expect(screen.getByText("CHF 1.60")).toBeTruthy();
+    expect(document.querySelector("[data-basis]")?.textContent).toBe("Speed measured on our GPU.");
     expect(document.body.textContent).not.toMatch(/\[(PRICE|N|COST)\]/);
   });
 

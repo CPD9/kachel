@@ -4,11 +4,13 @@ import { chf, chf2, count } from "../format";
 import { quote } from "./quote";
 
 describe("quote", () => {
-  it("prices a million images at the compute price for the server-hours they take", () => {
+  it("prices a million images from our measured speed: 3.2 server-hours, CHF 1.60", () => {
     const q = quote({ workload: "image", perDay: 1_000_000, zone: "Basel", month: 10, offset: 0 });
     const w = config.workloads.image_tagging;
-    expect(q.unitPrice).toBeCloseTo((1e6 / w.images_per_server_hour) * 0.5, 9);
-    expect(chf2(q.unitPrice)).toBe("CHF 0.06");
+    expect(q.unitPrice).toBeCloseTo((1e6 / w.measured_images_per_server_hour) * 0.5, 9);
+    expect(chf2(q.unitPrice)).toBe("CHF 1.60");
+    expect(q.serverHoursPerDay).toBeCloseTo(3.205, 3);
+    expect(q.kwhPerDay).toBeCloseTo(3.205, 3);
     expect(q.houses).toBe(50);
     expect(q.doneBy).toBe(8);
     expect(q.capacityPerDay).toBeGreaterThan(0);

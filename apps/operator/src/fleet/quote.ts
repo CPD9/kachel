@@ -17,8 +17,11 @@ export const WORKLOADS = {
   image: {
     label: "Image tagging",
     unit: "images a day",
-    /** Items one 1 kW server tags in an hour. */
-    perServerHour: W.image_tagging.images_per_server_hour,
+    /** Images one 1 kW server tags in an hour: measured on our RTX 2080 Ti (#211). */
+    perServerHour: W.image_tagging.measured_images_per_server_hour,
+    basis: "measured on our GPU",
+    /** MLPerf's data-centre figure (H100), for the Sources note. */
+    citedPerServerHour: W.image_tagging.images_per_server_hour,
     deadlineH: W.image_tagging.deadline_h,
     /** The hour the overnight batch starts. */
     startsAt: Number(Object.keys(W.image_tagging.arrivals_server_h)[0]),
@@ -31,6 +34,8 @@ export const WORKLOADS = {
     unit: "hours of footage a day",
     /** Decode sets the pace: 3,600 s ÷ decode seconds per hour of footage, per decoder engine. */
     perServerHour: 3600 / W.video_tagging.decode_s_per_footage_hour,
+    basis: "cited, not measured by us",
+    citedPerServerHour: null,
     deadlineH: W.video_tagging.deadline_h,
     startsAt: Number(Object.keys(W.video_tagging.arrivals_server_h)[0]),
     priceUnit: 1000,

@@ -117,6 +117,9 @@ export function Quotes({
           <p className="mt-3 text-[19px] leading-snug font-semibold">
             {w.priceUnitLabel}, done by {hour(q.doneBy)}. The {items} never leave {where}.
           </p>
+          <p data-basis className="mt-1 text-[14px] text-label-2">
+            Speed {w.basis}.
+          </p>
           <dl className="mt-5 divide-y divide-sep border-y border-sep text-[15px]">
             {[
               [`For ${count(perDay)} ${w.unit}`, `${chf2(q.chfPerDay)} a day`],
@@ -135,6 +138,14 @@ export function Quotes({
             ))}
           </dl>
           <Sources>
+            {w.citedPerServerHour !== null && (
+              <p>
+                Measured on our RTX 2080 Ti: {count(w.perServerHour)} images per 1 kW server-hour.
+                On data-centre GPUs (MLPerf, 8× H100) it would be about{" "}
+                {Math.round(w.citedPerServerHour / w.perServerHour)}× less:{" "}
+                {count(w.citedPerServerHour)} images per server-hour.
+              </p>
+            )}
             <p>{w.source}</p>
             <p>
               Price: the model&apos;s compute price (config.json: prices) for the server-hours the
