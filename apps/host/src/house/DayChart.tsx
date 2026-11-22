@@ -1,140 +1,98 @@
 import type { Day } from "./day";
 import { clock, kwh } from "./format";
-
-/** A round top for the axis: 2, 5 or 10 kWh steps. */
-function axisTop(peak: number) {
-  const step = peak <= 2 ? 0.5 : peak <= 6 ? 2 : peak <= 15 ? 5 : 10;
-  return Math.max(step, Math.ceil(peak / step) * step);
-}
+import { Sources } from "./Sources";
 
 const LEGEND = [
-  { label: "Heat from the servers", mark: "h-3 rounded-sm bg-ember" },
-  { label: "Backup heater", mark: "h-3 rounded-sm bg-glacier" },
-  { label: "Heat demand", mark: "h-0.5 bg-ink" },
+  { label: "Heat from your servers", mark: "bg-ember" },
+  { label: "Backup heater", mark: "bg-tertiary" },
 ];
 
 /**
- * The day hour by hour: heat the servers gave the house, the backup heater stacked on top,
- * and the house's demand as a line across each hour. One kWh axis for all three.
+ * The day hour by hour: heat the servers gave the house, with the backup heater stacked on top.
+ * Pointing at, focusing or tapping an hour picks it for the readout above the chart.
  */
-export function DayChart({ day, now }: { day: Day; now: number | undefined }) {
-  const peak = Math.max(
-    0,
-    ...day.hours.map((r) => (r ? Math.max(r.demand_kwh, r.heat_used + r.backup_kwh) : 0)),
-  );
-  const top = axisTop(peak);
-  const pct = (v: number) => `${(v / top) * 100}%`;
+export function DayChart({
+  day,
+  picked,
+  onPick,
+}: {
+  day: Day;
+  /** The hour the readout describes. */
+  picked: number | undefined;
+  onPick: (hour: number) => void;
+}) {
+  const peak = Math.max(0, ...day.hours.map((r) => (r ? r.heat_used + r.backup_kwh : 0)));
+  const pct = (v: number) => `${peak > 0 ? (v / peak) * 100 : 0}%`;
   return (
     <figure>
-      <ul className="mb-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
+      <ol className="flex h-56 items-end gap-0.5 sm:h-72 sm:gap-1.5" aria-label="Heat in each hour">
+        {day.hours.map((r, h) => (
+          <li key={h} className="flex h-full flex-1">
+            <button
+              type="button"
+              disabled={!r}
+              aria-pressed={h === picked}
+              aria-label={
+                r
+                  ? `${clock(h)}: servers ${kwh(r.heat_used)} kWh, backup ${kwh(r.backup_kwh)} kWh`
+                  : `${clock(h)}: no hour yet`
+              }
+              onMouseEnter={() => r && onPick(h)}
+              onFocus={() => r && onPick(h)}
+              onClick={() => r && onPick(h)}
+              className={`relative flex h-full w-full flex-col justify-end gap-0.5 rounded-t-[3px] outline-none focus-visible:ring-2 focus-visible:ring-action ${h === picked ? "after:absolute after:inset-x-0 after:-bottom-1.5 after:h-0.5 after:rounded-full after:bg-label" : ""}`}
+            >
+              {r && r.backup_kwh > 0 && (
+                <span
+                  className="block w-full rounded-t-[3px] bg-tertiary"
+                  style={{ height: pct(r.backup_kwh) }}
+                />
+              )}
+              {r && r.heat_used > 0 && (
+                <span
+                  className={`block w-full bg-ember ${r.backup_kwh > 0 ? "" : "rounded-t-[3px]"}`}
+                  style={{ height: pct(r.heat_used) }}
+                />
+              )}
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div className="relative mt-2 h-4 font-mono text-[11px] text-secondary tabular-nums">
+        {[0, 6, 12, 18, 23].map((h) => (
+          <span
+            key={h}
+            className={`absolute ${h === 0 ? "" : h === 23 ? "right-0" : "-translate-x-1/2"}`}
+            style={h === 23 ? {} : { left: `${((h + 0.5) / 24) * 100}%` }}
+          >
+            {clock(h).slice(0, 2)}
+          </span>
+        ))}
+      </div>
+      <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-label">
         {LEGEND.map((l) => (
-          <li key={l.label} className="flex items-center gap-1.5">
-            <span className={`inline-block w-3 ${l.mark}`} />
+          <li key={l.label} className="flex items-center gap-2">
+            <span className={`inline-block size-3 rounded-[3px] ${l.mark}`} aria-hidden />
             {l.label}
           </li>
         ))}
       </ul>
-      <div className="flex gap-2">
-        <div className="relative h-44 w-7 text-right text-[10px] text-muted tabular-nums sm:h-52">
-          {[0, 50, 100].map((t) => (
-            <span key={t} className="absolute right-0 translate-y-1/2" style={{ bottom: `${t}%` }}>
-              {kwh((top * t) / 100)}
-            </span>
-          ))}
-        </div>
-        <div className="flex-1">
-          <div className="relative h-44 sm:h-52">
-            {[0, 50, 100].map((t) => (
-              <div
-                key={t}
-                className="absolute inset-x-0 border-t border-grid"
-                style={{ bottom: `${t}%` }}
-              />
-            ))}
-            <ol className="absolute inset-0 flex gap-px sm:gap-0.5" aria-label="Hour by hour">
-              {day.hours.map((r, h) => (
-                <li
-                  key={h}
-                  tabIndex={r ? 0 : -1}
-                  className={`group relative flex-1 outline-none hover:bg-ink/[0.04] focus-visible:ring-2 focus-visible:ring-glacier ${h === now ? "bg-ink/[0.06]" : ""}`}
-                >
-                  {r && (
-                    <>
-                      {r.heat_used > 0 && (
-                        <div
-                          className={`absolute inset-x-0 bottom-0 bg-ember ${r.backup_kwh > 0 ? "" : "rounded-t-[3px]"}`}
-                          style={{ height: pct(r.heat_used) }}
-                        />
-                      )}
-                      {r.backup_kwh > 0 && (
-                        <div
-                          className="absolute inset-x-0 rounded-t-[3px] bg-glacier"
-                          style={{
-                            bottom: r.heat_used > 0 ? `calc(${pct(r.heat_used)} + 2px)` : 0,
-                            height:
-                              r.heat_used > 0
-                                ? `calc(${pct(r.backup_kwh)} - 2px)`
-                                : pct(r.backup_kwh),
-                          }}
-                        />
-                      )}
-                      <div
-                        className="absolute -inset-x-px h-0.5 bg-ink"
-                        style={{ bottom: `calc(${pct(r.demand_kwh)} - 1px)` }}
-                      />
-                      <div
-                        role="tooltip"
-                        className={`pointer-events-none absolute hidden bottom-full z-20 mb-2 w-44 rounded-md border border-grid bg-paper p-2 text-xs text-ink shadow-lg group-hover:block group-focus:block ${h >= 16 ? "right-0" : h >= 8 ? "left-1/2 -translate-x-1/2" : "left-0"}`}
-                      >
-                        <p className="font-semibold">{clock(h)}</p>
-                        <p>Servers {kwh(r.heat_used)} kWh</p>
-                        <p>Backup {kwh(r.backup_kwh)} kWh</p>
-                        <p>Demand {kwh(r.demand_kwh)} kWh</p>
-                        <p className="mt-1 text-muted">
-                          heat_state: heat_used, backup_kwh, demand_kwh
-                        </p>
-                      </div>
-                    </>
-                  )}
-                  {h === now && (
-                    <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-ink">
-                      now
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </div>
-          <div className="relative mt-1 h-3 text-[10px] text-muted tabular-nums">
-            {[0, 6, 12, 18, 24].map((h) => (
-              <span
-                key={h}
-                className={`absolute ${h === 0 ? "" : h === 24 ? "-translate-x-full" : "-translate-x-1/2"}`}
-                style={{ left: `${(h / 24) * 100}%` }}
-              >
-                {clock(h).slice(0, 2)}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-      <details className="mt-3 text-xs">
-        <summary className="cursor-pointer text-muted">The numbers, hour by hour</summary>
-        <table className="mt-2 w-full text-right tabular-nums">
-          <thead className="text-muted">
+      <Sources summary="The numbers, hour by hour">
+        <table className="w-full text-right text-xs text-label tabular-nums">
+          <thead className="text-secondary">
             <tr>
-              <th className="text-left font-medium">Hour</th>
-              <th className="font-medium">Servers</th>
-              <th className="font-medium">Backup</th>
-              <th className="font-medium">Demand</th>
-              <th className="font-medium">Tank</th>
+              <th className="text-left font-normal">Hour</th>
+              <th className="font-normal">Servers</th>
+              <th className="font-normal">Backup</th>
+              <th className="font-normal">Demand</th>
+              <th className="font-normal">Tank</th>
             </tr>
           </thead>
           <tbody>
             {day.hours.map((r, h) =>
               r ? (
-                <tr key={h} className="border-t border-grid">
-                  <td className="text-left">{clock(h)}</td>
+                <tr key={h} className="border-t border-separator">
+                  <td className="py-0.5 text-left">{clock(h)}</td>
                   <td>{kwh(r.heat_used)}</td>
                   <td>{kwh(r.backup_kwh)}</td>
                   <td>{kwh(r.demand_kwh)}</td>
@@ -144,8 +102,11 @@ export function DayChart({ day, now }: { day: Day; now: number | undefined }) {
             )}
           </tbody>
         </table>
-        <p className="mt-1 text-muted">kWh in each hour, from heat_state.</p>
-      </details>
+        <p>
+          kWh in each hour, from <code>heat_state</code>: <code>heat_used</code>,{" "}
+          <code>backup_kwh</code>, <code>demand_kwh</code> and <code>soc_kwh</code>.
+        </p>
+      </Sources>
     </figure>
   );
 }

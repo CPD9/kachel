@@ -77,7 +77,7 @@ describe("JobForm", () => {
   it("says plainly when the job cannot be saved", async () => {
     const submit = () => Promise.reject(new Error("duplicate key value violates constraint"));
     render(<JobForm submit={submit} now={() => NOW} />);
-    fill("Type", "opportunistic");
+    fill("What is it?", "opportunistic");
     fill("Name", "Embed the archive");
     fill("Size, server-hours", "12");
     fireEvent.click(screen.getByRole("button", { name: "Submit job" }));
@@ -89,7 +89,7 @@ describe("JobForm", () => {
   it("asks the buyer to sign in again when the session has ended", async () => {
     const submit = () => Promise.reject(new SignedOut());
     render(<JobForm submit={submit} now={() => NOW} />);
-    fill("Type", "opportunistic");
+    fill("What is it?", "opportunistic");
     fill("Name", "Embed the archive");
     fill("Size, server-hours", "12");
     fireEvent.click(screen.getByRole("button", { name: "Submit job" }));
@@ -118,9 +118,9 @@ describe("console", () => {
       updated_at: "2026-11-21T12:00:00+00:00",
     }));
     render(<App feed={feed} submit={submit} auth={fakeAuth("buyer@kachel.test")} local={false} />);
-    await screen.findByText("· live");
+    await screen.findByText("Live");
     expect(screen.getByText("No jobs yet. Submit one above.")).toBeTruthy();
-    fill("Type", "opportunistic");
+    fill("What is it?", "opportunistic");
     fill("Name", "Embed the archive");
     fill("Size, server-hours", "12");
     fireEvent.click(screen.getByRole("button", { name: "Submit job" }));

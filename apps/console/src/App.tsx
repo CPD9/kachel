@@ -21,32 +21,33 @@ export function App({ feed, submit, auth, local }: Props) {
     return row;
   };
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <header className="flex items-center gap-4 border-b border-idle/40 px-6 py-4">
-        <div className="flex-1">
-          <h1 className="text-xl font-semibold">Kachel console</h1>
-          <p className="text-sm text-idle">
-            Your jobs, the homes they heat and the heat they give.
-          </p>
-        </div>
-        {email && (
-          <div className="text-right text-sm">
-            <p className="text-idle">{email}</p>
-            <button type="button" onClick={() => void auth.signOut()} className="underline">
+    <main className="min-h-screen bg-fill font-sans text-label">
+      <header className="border-b border-separator bg-white">
+        <nav className="mx-auto flex max-w-6xl items-baseline gap-3 px-4 py-4 sm:px-6 lg:px-8">
+          <h1 className="text-xl font-semibold tracking-tight">Kachel</h1>
+          <span className="text-[15px] text-secondary">Buyer console</span>
+          {email && (
+            <button
+              type="button"
+              onClick={() => void auth.signOut()}
+              className="ml-auto text-[15px] text-action hover:underline"
+            >
               Sign out
             </button>
-          </div>
-        )}
+          )}
+        </nav>
       </header>
       {email === null && (
-        <SignIn
-          auth={auth}
-          heading="Sign in to see your jobs"
-          {...(local ? { demo: DEMO_BUYER } : {})}
-        />
+        <div className="px-4 py-6 sm:py-10">
+          <SignIn
+            auth={auth}
+            heading="Sign in to see your jobs"
+            {...(local ? { demo: DEMO_BUYER } : {})}
+          />
+        </div>
       )}
       {email && (
-        <div key={email}>
+        <div key={email} className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
           <JobForm submit={submitAndShow} />
           <JobTable feed={live.feed} />
         </div>

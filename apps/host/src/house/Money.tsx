@@ -1,8 +1,8 @@
 import type { HouseYear } from "@kachel/db";
-import { Sourced } from "@kachel/ui";
 import type { ReactNode } from "react";
 import type { DayMoney, Figure, Prices } from "./day";
-import { chf, count, kwh } from "./format";
+import { chf, count, kwh, NBSP } from "./format";
+import { Sources } from "./Sources";
 
 function Price({ f }: { f: Figure }) {
   return (
@@ -12,43 +12,22 @@ function Price({ f }: { f: Figure }) {
   );
 }
 
-type Line = { label: string; sign: "+" | "−" | ""; value: number; source: ReactNode };
+type Line = { label: string; sign: "+" | "−" | ""; day?: number; year?: number };
 
-function Column({ title, lines, year }: { title: string; lines: Line[]; year: boolean }) {
-  const total = lines.at(-1);
-  const parts = lines.slice(0, -1);
+function Amount({ value, sign, year }: { value: number; sign: Line["sign"]; year: boolean }) {
+  const shown = value < 0 && sign === "" ? `−${NBSP}` : sign ? `${sign}${NBSP}` : "";
   return (
-    <div>
-      <h3 className="text-xs font-medium tracking-wide text-muted uppercase">{title}</h3>
-      <dl className="mt-2 text-sm">
-        {parts.map((l) => (
-          <div key={l.label} className="flex items-baseline justify-between gap-3 py-1">
-            <dt className="text-muted">{l.label}</dt>
-            <dd className="tabular-nums">
-              <span className="mr-1 text-muted">{l.sign}</span>
-              <Sourced align="right" source={l.source}>
-                {chf(l.value, year)}
-              </Sourced>
-            </dd>
-          </div>
-        ))}
-        {total && (
-          <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-ink/20 pt-2">
-            <dt className="font-medium">{total.label}</dt>
-            <dd className="text-xl font-semibold tabular-nums">
-              <Sourced align="right" source={total.source}>
-                {total.value < 0 ? "−" : ""}
-                {chf(total.value, year)}
-              </Sourced>
-            </dd>
-          </div>
-        )}
-      </dl>
-    </div>
+    <>
+      {shown}
+      {chf(value, year)}
+    </>
   );
 }
 
-/** What the servers earned and saved, for the shown day and for the year. */
+/**
+ * What the servers earned and saved, for the shown day and for the year, as one table. A column
+ * without its numbers (no prices yet, no yearly run yet) is left out rather than filled in.
+ */
 export function Money({
   today,
   dayLabel,
@@ -60,135 +39,133 @@ export function Money({
   prices: Prices | undefined;
   year: HouseYear | null;
 }) {
-  const todayLines: Line[] =
-    today && prices
-      ? [
-          {
-            label: "Earned from computing",
-            sign: "",
-            value: today.earned,
-            source: (
-              <>
-                {count(today.serverHours)} server-hours on {dayLabel} (sum of{" "}
-                <code>heat_state.server_hours</code>) × compute price. <Price f={prices.compute} />
-              </>
-            ),
-          },
-          {
-            label: "Electricity for the servers",
-            sign: "−",
-            value: today.electricity,
-            source: (
-              <>
-                {count(today.serverHours)} server-hours × {prices.power.value} kW ×{" "}
-                {prices.electricity.value} CHF/kWh. <Price f={prices.electricity} />
-              </>
-            ),
-          },
-          {
-            label: "Heat it saved",
-            sign: "+",
-            value: today.heatSaved,
-            source: (
-              <>
-                {kwh(today.heatUsedKwh)} kWh of server heat used (sum of{" "}
-                <code>heat_state.heat_used</code>) × {prices.electricity.value} CHF/kWh ÷ heat-pump
-                COP {prices.cop.value}: what a heat pump would have spent on it.{" "}
-                <Price f={prices.cop} />
-              </>
-            ),
-          },
-          {
-            label: "Left before hardware",
-            sign: "",
-            value: today.left,
-            source: <>Earned − electricity + heat saved, as the scheduler counts its year.</>,
-          },
-        ]
-      : [];
+  const day = today && prices ? today : undefined;
+  const lines: Line[] = [
+    {
+      label: "Earned from computing",
+      sign: "",
+      ...(day && { day: day.earned }),
+      ...(year && { year: year.computing_income_chf }),
+    },
+    {
+      label: "Electricity for the servers",
+      sign: "−",
+      ...(day && { day: day.electricity }),
+      ...(year && { year: year.electricity_cost_chf }),
+    },
+    {
+      label: "Heat it saved you",
+      sign: "+",
+      ...(day && { day: day.heatSaved }),
+      ...(year && { year: year.value_of_heat_used_chf }),
+    },
+    {
+      label: "Left before hardware",
+      sign: "",
+      ...(day && { day: day.left }),
+      ...(year && {
+        year: year.computing_income_chf - year.electricity_cost_chf + year.value_of_heat_used_chf,
+      }),
+    },
+  ];
   const yearSource = year
     ? `kpis, computed ${year.computed_at.slice(0, 10)} by the scheduler's yearly run on ${year.profile_source} (${count(year.server_hours_sold)} server-hours sold).`
     : "";
-  const yearLines: Line[] = year
-    ? [
-        {
-          label: "Earned from computing",
-          sign: "",
-          value: year.computing_income_chf,
-          source: (
-            <>
-              <code>kpis.computing_income_chf</code>: {yearSource}
-            </>
-          ),
-        },
-        {
-          label: "Electricity for the servers",
-          sign: "−",
-          value: year.electricity_cost_chf,
-          source: (
-            <>
-              <code>kpis.electricity_cost_chf</code>: {yearSource}
-            </>
-          ),
-        },
-        {
-          label: "Heat it saved",
-          sign: "+",
-          value: year.value_of_heat_used_chf,
-          source: (
-            <>
-              <code>kpis.value_of_heat_used_chf</code>: {yearSource}
-            </>
-          ),
-        },
-        {
-          label: "Left before hardware",
-          sign: "",
-          value:
-            year.computing_income_chf - year.electricity_cost_chf + year.value_of_heat_used_chf,
-          source: (
-            <>
-              Earned − electricity + heat saved, from <code>kpis</code>. Hardware and its payback
-              are on the economics page (docs/economics).
-            </>
-          ),
-        },
-      ]
-    : [];
+
+  let sources: ReactNode = null;
+  if (day && prices) {
+    sources = (
+      <p>
+        <strong className="font-medium text-label">{dayLabel}.</strong> Earned:{" "}
+        {count(day.serverHours)} server-hours (sum of <code>heat_state.server_hours</code>) ×
+        compute price, <Price f={prices.compute} />. Electricity: server-hours ×{" "}
+        {prices.power.value} kW × {prices.electricity.value} CHF/kWh,{" "}
+        <Price f={prices.electricity} />. Heat saved: {kwh(day.heatUsedKwh)} kWh of server heat used
+        (sum of <code>heat_state.heat_used</code>) × {prices.electricity.value} CHF/kWh ÷ heat-pump
+        COP {prices.cop.value}, what a heat pump would have spent on it, <Price f={prices.cop} />.
+      </p>
+    );
+  }
+
+  if (!day && !year) {
+    return (
+      <section aria-labelledby="money">
+        <h2 id="money" className="text-2xl font-semibold tracking-tight">
+          The money
+        </h2>
+        <p className="mt-3 text-sm text-secondary">
+          No prices and no yearly balance yet: the scheduler has not written them.
+        </p>
+      </section>
+    );
+  }
 
   return (
-    <section aria-labelledby="money" className="rounded-lg border border-grid bg-paper p-5">
-      <h2 id="money" className="text-lg font-semibold">
+    <section aria-labelledby="money">
+      <h2 id="money" className="text-2xl font-semibold tracking-tight">
         The money
       </h2>
-      <div className="mt-3 grid gap-6 sm:grid-cols-2">
-        {todayLines.length > 0 ? (
-          <Column title={dayLabel} lines={todayLines} year={false} />
-        ) : (
-          <p className="text-sm text-muted">No prices for the day yet.</p>
+      <table className="mt-4 w-full text-sm tabular-nums">
+        <thead>
+          <tr className="border-b border-separator text-xs text-secondary">
+            <th scope="col" className="py-2 text-left font-normal">
+              <span className="sr-only">What</span>
+            </th>
+            {day && (
+              <th scope="col" className="py-2 pl-3 text-right font-normal">
+                {dayLabel}
+              </th>
+            )}
+            {year && (
+              <th scope="col" className="py-2 pl-3 text-right font-normal">
+                This year
+              </th>
+            )}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-separator">
+          {lines.map((l, i) => {
+            const total = i === lines.length - 1;
+            return (
+              <tr key={l.label} className={total ? "font-semibold" : ""}>
+                <th
+                  scope="row"
+                  className={`py-3 text-left ${total ? "font-semibold" : "font-normal"}`}
+                >
+                  {l.label}
+                </th>
+                {l.day !== undefined && (
+                  <td className="py-3 pl-3 text-right whitespace-nowrap">
+                    <Amount value={l.day} sign={l.sign} year={false} />
+                  </td>
+                )}
+                {l.year !== undefined && (
+                  <td className="py-3 pl-3 text-right whitespace-nowrap">
+                    <Amount value={l.year} sign={l.sign} year />
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <Sources>
+        {sources}
+        {year && (
+          <p>
+            <strong className="font-medium text-label">This year.</strong>{" "}
+            <code>kpis.computing_income_chf</code>, <code>kpis.electricity_cost_chf</code> and{" "}
+            <code>kpis.value_of_heat_used_chf</code>: {yearSource} The share of your heat at the top
+            is <code>kpis.share_of_heat_covered_pct</code> ({kwh(year.share_of_heat_covered_pct)}
+            %), from the same run.
+          </p>
         )}
-        {yearLines.length > 0 ? (
-          <Column title="This year" lines={yearLines} year />
-        ) : (
-          <p className="text-sm text-muted">The yearly balance has not been computed yet.</p>
-        )}
-      </div>
-      {year && (
-        <p className="mt-4 text-xs text-muted">
-          Over the year the servers covered{" "}
-          <Sourced
-            source={
-              <>
-                <code>kpis.share_of_heat_covered_pct</code>: {yearSource}
-              </>
-            }
-          >
-            {kwh(year.share_of_heat_covered_pct)}%
-          </Sourced>{" "}
-          of the house&apos;s heat. Hover or tap any number for its source; the compute price is our
-          assumption.
+        <p>
+          Left before hardware is earned − electricity + heat saved, as the scheduler counts its
+          year. Hardware and its payback are on the economics page (docs/economics). The compute
+          price is our assumption.
         </p>
-      )}
+      </Sources>
     </section>
   );
 }

@@ -1,3 +1,26 @@
 @import "tailwindcss";
 @import "@kachel/ui/tokens.css";
 @source "../../../packages/ui/src";
+
+/*
+ * Apple's system colours and font: white and grey surfaces, blue for actions. Green, orange and
+ * red belong to the state pills only, ember (from tokens.css) to heat only.
+ */
+@theme {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Inter", "Segoe UI",
+    system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --color-label: #1d1d1f;
+  --color-secondary: #6e6e73;
+  --color-tertiary: #8e8e93;
+  --color-fill: #f5f5f7;
+  --color-separator: #e5e5ea;
+  --color-field: #d2d2d7;
+  --color-action: #0071e3;
+  --color-action-hover: #0077ed;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}

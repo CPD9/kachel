@@ -17,7 +17,7 @@ function Value({ fact }: { fact: Fact }) {
   return (
     <>
       {shown}
-      {fact.unit && <span className="ml-1 text-muted">{fact.unit}</span>}
+      {fact.unit && <span className="ml-1 text-secondary">{fact.unit}</span>}
     </>
   );
 }
@@ -25,8 +25,8 @@ function Value({ fact }: { fact: Fact }) {
 /** One tool's values and where each came from. */
 function Card({ card }: { card: ToolResult }) {
   return (
-    <figure data-tool={card.tool} className="rounded-md border border-grid bg-paper p-3 text-xs">
-      <figcaption className="font-semibold tracking-wide text-muted uppercase">
+    <figure data-tool={card.tool} className="rounded-xl bg-white p-3 text-xs">
+      <figcaption className="font-semibold text-secondary">
         {card.title} <span className="font-normal normal-case">· tool {card.tool}</span>
       </figcaption>
       {card.facts.length > 0 ? (
@@ -39,14 +39,14 @@ function Card({ card }: { card: ToolResult }) {
                   <Value fact={f} />
                 </dd>
               </div>
-              <p className="text-muted">{f.source}</p>
+              <p className="text-secondary">{f.source}</p>
             </div>
           ))}
         </dl>
       ) : (
         <p className="mt-2">Nothing found.</p>
       )}
-      {card.note && <p className="mt-2 text-muted">{card.note}</p>}
+      {card.note && <p className="mt-2 text-secondary">{card.note}</p>}
     </figure>
   );
 }
@@ -54,21 +54,21 @@ function Card({ card }: { card: ToolResult }) {
 function Answer({ turn }: { turn: Turn }) {
   return (
     <li className="space-y-2">
-      <p className="ml-auto w-fit max-w-[85%] rounded-lg bg-ink px-3 py-2 text-sm text-paper">
+      <p className="ml-auto w-fit max-w-[85%] rounded-2xl bg-action px-4 py-2 text-sm text-white">
         {turn.question}
       </p>
       <div className="max-w-[95%] space-y-2">
-        <p data-answer className="text-sm">
+        <p data-answer className="text-[15px]">
           {turn.answer}
         </p>
         {turn.unchecked.length > 0 && (
-          <p role="note" className="rounded bg-amber/30 px-2 py-1 text-xs">
+          <p role="note" className="rounded-lg bg-white px-3 py-2 text-xs">
             No tool gave {turn.unchecked.join(", ")}: check{" "}
             {turn.unchecked.length > 1 ? "these" : "it"} before relying on it.
           </p>
         )}
         {turn.cards.length === 0 && (
-          <p className="text-xs text-muted">The model answered without reading any data.</p>
+          <p className="text-xs text-secondary">The model answered without reading any data.</p>
         )}
         {turn.cards.length > 0 && (
           <div className="grid gap-2 sm:grid-cols-2">
@@ -78,7 +78,7 @@ function Answer({ turn }: { turn: Turn }) {
           </div>
         )}
         {turn.thinking && (
-          <details className="text-xs text-muted">
+          <details className="text-xs text-secondary">
             <summary className="cursor-pointer">The model&apos;s reasoning</summary>
             <p className="mt-1 whitespace-pre-wrap">{turn.thinking}</p>
           </details>
@@ -140,22 +140,25 @@ export function Chat({ model, data }: { model: ChatModel; data: ChatData }) {
 
   const ready = status === "ready";
   return (
-    <section aria-labelledby="ask" className="rounded-lg border border-grid bg-paper p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="ask" className="text-lg font-semibold">
+    <section aria-labelledby="ask" className="rounded-2xl bg-fill p-5 sm:p-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 id="ask" className="text-2xl font-semibold tracking-tight">
           Ask your house
         </h2>
-        <span className="rounded-full border border-grid px-2 py-0.5 text-xs font-medium">
-          Local AI · no cloud
-        </span>
+        <code className="rounded-md bg-white px-2 py-0.5 font-mono text-xs text-label">
+          {model.name}
+        </code>
+        <span className="text-xs text-secondary">Local AI · no cloud</span>
       </div>
-      <p className="mt-1 text-xs text-muted">
-        {model.name} runs on this computer, as it would on the house&apos;s own server, and answers
-        from your house&apos;s own data; no question or answer leaves the house. Every number comes
-        from a tool, shown with its source.
+      <p className="mt-3 text-[17px] text-label">
+        Runs on this computer, as it would on the server in your basement.
+      </p>
+      <p className="mt-1 text-sm text-secondary">
+        It answers from your house&apos;s own data, and no question or answer leaves the house.
+        Every number comes from a tool, shown with its source.
       </p>
       {status === "checking" && (
-        <p className="mt-3 text-sm text-muted">Looking for the local model…</p>
+        <p className="mt-3 text-sm text-secondary">Looking for the local model…</p>
       )}
       {status !== "checking" && !ready && (
         <p role="status" className="mt-3 text-sm">
@@ -169,7 +172,7 @@ export function Chat({ model, data }: { model: ChatModel; data: ChatData }) {
           ))}
         </ol>
       )}
-      {busy && <p className="mt-3 text-sm text-muted">{model.name} is reading the house…</p>}
+      {busy && <p className="mt-3 text-sm text-secondary">{model.name} is reading the house…</p>}
       {error && (
         <p role="alert" className="mt-3 text-sm">
           {error}
@@ -184,30 +187,32 @@ export function Chat({ model, data }: { model: ChatModel; data: ChatData }) {
                 type="button"
                 disabled={busy}
                 onClick={() => void send(q)}
-                className="rounded-full border border-grid px-3 py-1 text-xs hover:border-ink disabled:opacity-50"
+                className="rounded-full bg-white px-3 py-1.5 text-sm text-action hover:bg-white/70 disabled:opacity-50"
               >
                 {q}
               </button>
             ))}
           </div>
-          <form onSubmit={onSubmit} className="mt-3 flex gap-2">
-            <label htmlFor="ask-input" className="sr-only">
+          <form onSubmit={onSubmit} className="mt-4">
+            <label htmlFor="ask-input" className="text-xs text-secondary">
               Your question
             </label>
-            <input
-              id="ask-input"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Ask about your heat, money, servers or solar"
-              className="min-w-0 flex-1 rounded-md border border-grid px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              disabled={busy || !text.trim()}
-              className="rounded-md bg-ink px-4 py-2 text-sm text-paper disabled:opacity-50"
-            >
-              Ask
-            </button>
+            <div className="mt-1 flex gap-3">
+              <input
+                id="ask-input"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Ask about your heat, money, servers or solar"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-field bg-white px-4 text-base focus:border-action focus:outline-2 focus:outline-action/30"
+              />
+              <button
+                type="submit"
+                disabled={busy || !text.trim()}
+                className="h-12 rounded-xl bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-50"
+              >
+                Ask
+              </button>
+            </div>
           </form>
         </>
       )}

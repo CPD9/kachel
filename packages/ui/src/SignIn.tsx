@@ -51,9 +51,12 @@ export function SignIn({ auth, heading, demo }: { auth: Auth; heading: string; d
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="mx-6 my-6 flex max-w-sm flex-col gap-3">
-      <h2 className="text-lg font-semibold">{heading}</h2>
-      <label className="flex flex-col gap-1 text-sm">
+    <form
+      onSubmit={(e) => void submit(e)}
+      className="mx-auto my-10 flex w-full max-w-sm flex-col gap-4 rounded-2xl bg-white p-6 text-[#1d1d1f]"
+    >
+      <h2 className="text-xl font-semibold tracking-tight">{heading}</h2>
+      <label className="flex flex-col gap-1 text-sm text-[#6e6e73]">
         Email
         <input
           type="email"
@@ -61,10 +64,10 @@ export function SignIn({ auth, heading, demo }: { auth: Auth; heading: string; d
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded border border-idle/60 px-2 py-1"
+          className="h-10 rounded-lg border border-[#d2d2d7] bg-white px-3 text-base text-[#1d1d1f] focus:border-[#0071e3] focus:outline-2 focus:outline-[#0071e3]/30"
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm text-[#6e6e73]">
         Password
         <input
           type="password"
@@ -72,13 +75,13 @@ export function SignIn({ auth, heading, demo }: { auth: Auth; heading: string; d
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded border border-idle/60 px-2 py-1"
+          className="h-10 rounded-lg border border-[#d2d2d7] bg-white px-3 text-base text-[#1d1d1f] focus:border-[#0071e3] focus:outline-2 focus:outline-[#0071e3]/30"
         />
       </label>
       <button
         type="submit"
         disabled={state === "busy"}
-        className="rounded bg-heat px-3 py-1.5 font-medium text-paper disabled:opacity-60"
+        className="h-10 rounded-lg bg-[#0071e3] px-4 font-medium text-white hover:bg-[#0077ed] disabled:opacity-60"
       >
         {state === "busy" ? "Signing in…" : "Sign in"}
       </button>
@@ -94,7 +97,7 @@ export function SignIn({ auth, heading, demo }: { auth: Auth; heading: string; d
         </p>
       )}
       {demo && (
-        <p className="text-sm text-idle">
+        <p className="text-sm text-[#6e6e73]">
           Local demo: {demo.email}, password {demo.password} (from supabase/seed.sql).
         </p>
       )}

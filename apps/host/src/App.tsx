@@ -5,7 +5,7 @@ import {
   type HouseFeed,
   type JobFeed,
 } from "@kachel/db";
-import { HeatLoop, SignIn, useSession } from "@kachel/ui";
+import { SignIn, useSession } from "@kachel/ui";
 import { Chat } from "./chat/Chat";
 import type { ChatModel } from "./chat/model";
 import type { ChatData } from "./chat/tools";
@@ -37,42 +37,45 @@ export function App({
   const email = useSession(auth);
 
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-idle/40 px-4 py-4 sm:px-6">
-        <HeatLoop variant="wide" className="h-12 w-auto shrink-0 sm:h-16" />
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold">Kachel</h1>
-          <p className="text-sm text-idle">Your house, your heat, your servers.</p>
-        </div>
-        {email && (
-          <div className="flex w-full items-baseline justify-between gap-3 text-sm sm:block sm:w-auto sm:text-right">
-            <p className="min-w-0 truncate text-idle">{email}</p>
+    <main className="min-h-screen bg-white font-sans text-label">
+      <header className="border-b border-separator">
+        <nav className="mx-auto flex max-w-6xl items-baseline gap-3 px-4 py-4 sm:px-6 lg:px-8">
+          <h1 className="text-xl font-semibold tracking-tight">Kachel</h1>
+          <span className="text-[15px] text-secondary">Your house</span>
+          {email && (
             <button
               type="button"
               onClick={() => void auth.signOut()}
-              className="shrink-0 underline"
+              className="ml-auto text-[15px] text-action hover:underline"
             >
               Sign out
             </button>
-          </div>
-        )}
+          )}
+        </nav>
       </header>
       {email === null && (
-        <SignIn
-          auth={auth}
-          heading="Sign in to see your servers"
-          {...(local ? { demo: DEMO_HOST } : {})}
-        />
+        <div className="bg-fill px-4 py-6 sm:py-10">
+          <SignIn
+            auth={auth}
+            heading="Sign in to see your servers"
+            {...(local ? { demo: DEMO_HOST } : {})}
+          />
+        </div>
       )}
       {email && (
-        <div key={email} className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6">
-          <House feed={house} />
-          <div className="grid items-start gap-5 lg:grid-cols-2">
-            <div className="rounded-lg border border-grid bg-paper py-1">
-              <LiveJobs feed={feed} />
-            </div>
-            {decisions && <Why feed={decisions} />}
-          </div>
+        <div
+          key={email}
+          className="mx-auto max-w-6xl space-y-14 px-4 py-10 sm:px-6 sm:py-14 lg:px-8"
+        >
+          <House
+            feed={house}
+            servers={
+              <div className="space-y-12">
+                <LiveJobs feed={feed} />
+                {decisions && <Why feed={decisions} />}
+              </div>
+            }
+          />
           {chat && <Chat model={chat.model} data={chat.data} />}
         </div>
       )}
