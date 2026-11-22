@@ -82,6 +82,7 @@ describe("operator view", () => {
     expect(screen.getByRole("img", { name: /Basel and Bern/ })).toBeTruthy();
     // Without Supabase (a deployed build): the model shows, and the live part says what it needs
     expect(screen.getByText(/Live data needs the local stack/)).toBeTruthy();
+    expect(screen.queryByText(/Sign in as the operator/)).toBeNull();
   });
 
   it("follows the month: less heat and revenue in July than in January", () => {
