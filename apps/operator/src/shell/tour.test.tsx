@@ -69,7 +69,7 @@ describe("the A-key tour", () => {
     press("Escape");
     expect(hint()).toBeNull();
     expect(window.location.search).toBe("");
-  });
+  }, 20_000); // walks every page, dashboards included: slow on CI runners
 
   it("leaves the month to the operator between steps", () => {
     window.history.replaceState(null, "", "/?tour=1");
