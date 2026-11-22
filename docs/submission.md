@@ -95,8 +95,8 @@ Source: Open-Meteo archive, Basel 2025
 
 1. Run the live loop on real time: `make live LIVE_ARGS="--source db --tick 3600"` reads
    `heat_state` for the clock's hour, which a heat meter in the house would write.
-2. Meter the power with a plug meter, and run a neural embedding and a Whisper job on a GPU
-   box instead of citing them.
+2. Meter the whole box with a plug meter (today the GPU is metered and the CPU share is
+   stated), and run a Whisper transcription job instead of citing it.
 3. Prices from real compute buyers who accept pauses, and the reference house's yearly
    balance on its own municipality's ElCom tariff, as the map card already does (#174).
 4. One Basel pilot building with a fitter's quote, and a summer heat sink worked out with the
@@ -104,6 +104,12 @@ Source: Open-Meteo archive, Basel 2025
 5. A pilot with a rail operator's tagging backlog (station and track images and video), run
    overnight on the pilot building's servers, measured against the cited figures in
    [job-types.md](job-types.md).
+
+## Live
+
+- Pitch: https://pitch-three-chi.vercel.app (press A at FHNW with `?at=fhnw`)
+- Map: https://map-two-gules.vercel.app
+- Operator console: https://operator-omega-jade.vercel.app
 
 ## Repository URL
 
@@ -114,11 +120,11 @@ Setup steps are under "Run it" in the README; the live demo steps are in
 
 ## Video pitch URL
 
-Draft, without voice-over:
-https://github.com/CPD9/kachel/releases/download/media-v1/kachel-pitch-draft.mp4
+The pitch film, with the recorded voice-over:
+https://github.com/CPD9/kachel/releases/download/media-v1/kachel-pitch-film.mp4
 
-The final cut with the recorded voice-over replaces it under the same name in the media-v1
-release.
+A smaller 720p copy:
+https://github.com/CPD9/kachel/releases/download/media-v1/kachel-pitch-film-720p.mp4
 
 ## Project ZIP
 
@@ -135,12 +141,12 @@ building's energy card open, cropped from [map-card.webp](images/map-card.webp).
 | Must-have                                                                                   | Evidence                                                                                                                                                                                                                                                              | Status                                                                                              |
 | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | At least two job types with runtime, energy, interruptible, deadline, jobs a day and source | [job-types.md](job-types.md): transcription batch (24 h deadline, cited) and embedding backlog; interactive sessions as a third (#77)                                                                                                                                 | Met                                                                                                 |
-| One job type measured on our machine and scaled to 1 kW                                     | [measurements.md](measurements.md), `make measure-ai` (#194)                                                                                                                                                                                                          | Met; power from TDP, not metered                                                                    |
+| One job type measured on our machine and scaled to 1 kW                                     | [measurements.md](measurements.md), `make measure-ai` (#196), `make measure-tagging` (#211)                                                                                                                                                                           | Met; GPU power metered, CPU share stated                                                            |
 | The same scheduler code pauses and resumes one real process on the heat signal              | `make live` (`services/scheduler/live.py`) runs `decide()` from `heatsched/scheduler.py` each tick and writes the agent's signal; the agent holds a real job with SIGSTOP/SIGCONT (#191); "Why this decision" in the host app shows each decision and its hash (#197) | Met; no hand on stage. Every decision is hash-chained and `make verify-live` replays it             |
 | Yearly balance: servers, heat covered, dumped, utilisation, missed deadlines, cost, income  | `make year` writes `services/scheduler/out/kpis.json` (#44); figures above                                                                                                                                                                                            | Met                                                                                                 |
 | Break-even CHF per server-hour, and when it does not pay off                                | `kpis.json`, [economics/README.md](economics/README.md) charts 4 to 7, the no-backlog case                                                                                                                                                                            | Met                                                                                                 |
 | Every assumption visible                                                                    | [assumptions.md](assumptions.md), generated from `config.json` (#75); [the model paper](paper/kachel-model.pdf) (#153)                                                                                                                                                | Met; the reference house uses the ElCom median, the map card each municipality's ElCom price (#174) |
-| Pitch: key figures first, a January day, a July day, an interrupted job                     | [slides](pitch/slides.pdf), [pitch.md](pitch.md), the day-night films in [media](media/README.md), [live-demo.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)                                                                           | Met; the voice-over is still to record                                                              |
+| Pitch: key figures first, a January day, a July day, an interrupted job                     | [slides](pitch/slides.pdf), [pitch.md](pitch.md), the day-night films in [media](media/README.md), [live-demo.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)                                                                           | Met; the film has the recorded voice-over                                                           |
 
 The single most optimistic assumption is an unlimited pausable backlog. Without it the house
 sells far fewer server-hours; the no-backlog case is in
@@ -149,6 +155,7 @@ sells far fewer server-hours; the no-backlog case is in
 ## Links
 
 - Repository: https://github.com/CPD9/kachel
+- Live pitch, map and operator console: see "Live" above
 - Wiki: [docs/wiki/Home.md](wiki/Home.md)
 - Model paper: [docs/paper/kachel-model.pdf](paper/kachel-model.pdf)
 - Media and films: [docs/media](media/README.md) and the
