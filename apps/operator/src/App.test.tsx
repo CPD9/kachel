@@ -1,4 +1,4 @@
-import type { AppAuth, JobFeed, LiveJob } from "@kachel/db";
+import type { AppAuth, DecisionFeed, JobFeed, LiveDecision, LiveJob } from "@kachel/db";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App";
@@ -67,6 +67,29 @@ const source: OperatorSource = {
   local: true,
 };
 
+const decision: LiveDecision = {
+  hash: "91156f8a4342" + "3".repeat(52),
+  prev_hash: "5ec7b4868fd0" + "1".repeat(52),
+  seq: 25,
+  site_id: "00000000-0000-4000-8000-000000000100",
+  time: "2025-07-15T01:00:00+02:00",
+  temp_c: 19.8,
+  demand_kwh: 0.5,
+  soc_kwh: 34.3,
+  tank_kwh: 35,
+  interactive: 0,
+  batch: 0,
+  opportunistic: 1,
+  reason: "heat needed",
+  run: ["00000000-0000-4000-8000-000000000304"],
+  placed: 0,
+  written_at: "2026-11-22T01:00:00Z",
+};
+const decisions: DecisionFeed = {
+  load: () => Promise.resolve([decision]),
+  subscribe: () => () => undefined,
+};
+
 const signedOut: OperatorSource = {
   ...source,
   auth: { ...signedIn, current: () => Promise.resolve(null) },
@@ -120,5 +143,20 @@ describe("operator view", () => {
     expect(document.querySelectorAll("[data-buyer]")).toHaveLength(2);
     expect(document.querySelectorAll("path.flow")).toHaveLength(1);
     expect(document.querySelectorAll('path[stroke-dasharray="2 6"]')).toHaveLength(1);
+  });
+
+  it("shows the scheduler's newest decision with its hash once signed in", async () => {
+    await act(async () => {
+      render(<Dashboard startMonth={0} source={{ ...source, decisions }} />);
+    });
+    expect(await screen.findByRole("heading", { name: /Why this decision/ })).toBeTruthy();
+    expect(screen.getByText("Backlog runs on 1 server")).toBeTruthy();
+    expect(screen.getByText(decision.hash)).toBeTruthy();
+  });
+
+  it("keeps the decisions to the signed-in operator", async () => {
+    render(<Dashboard startMonth={0} source={{ ...signedOut, decisions }} />);
+    expect(await screen.findByRole("button", { name: "Sign in" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: /Why this decision/ })).toBeNull();
   });
 });

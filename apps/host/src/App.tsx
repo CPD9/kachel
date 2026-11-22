@@ -1,10 +1,17 @@
-import { DEMO_HOST, type AppAuth, type HouseFeed, type JobFeed } from "@kachel/db";
+import {
+  DEMO_HOST,
+  type AppAuth,
+  type DecisionFeed,
+  type HouseFeed,
+  type JobFeed,
+} from "@kachel/db";
 import { HeatLoop, SignIn, useSession } from "@kachel/ui";
 import { Chat } from "./chat/Chat";
 import type { ChatModel } from "./chat/model";
 import type { ChatData } from "./chat/tools";
 import { House } from "./house/House";
 import { LiveJobs } from "./live/LiveJobs";
+import { Why } from "./live/Why";
 
 /**
  * Host app: the homeowner's view of their house, its heat and its servers.
@@ -16,6 +23,7 @@ export function App({
   auth,
   local,
   chat,
+  decisions,
 }: {
   feed: JobFeed;
   house: HouseFeed;
@@ -23,6 +31,8 @@ export function App({
   local: boolean;
   /** The local model and the house data it may read (#26); no panel without it. */
   chat?: { model: ChatModel; data: ChatData };
+  /** The scheduler's live decisions (#191); no panel without them. */
+  decisions?: DecisionFeed;
 }) {
   const email = useSession(auth);
 
@@ -57,8 +67,11 @@ export function App({
       {email && (
         <div key={email} className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6">
           <House feed={house} />
-          <div className="rounded-lg border border-grid bg-paper py-1">
-            <LiveJobs feed={feed} />
+          <div className="grid items-start gap-5 lg:grid-cols-2">
+            <div className="rounded-lg border border-grid bg-paper py-1">
+              <LiveJobs feed={feed} />
+            </div>
+            {decisions && <Why feed={decisions} />}
           </div>
           {chat && <Chat model={chat.model} data={chat.data} />}
         </div>

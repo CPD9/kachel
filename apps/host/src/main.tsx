@@ -4,7 +4,13 @@ import { App } from "./App";
 import { supabaseChatData } from "./chat/data";
 import { ollama } from "./chat/model";
 import { db } from "./db";
-import { isLocalStack, supabaseAuth, supabaseFeed, supabaseHouseFeed } from "@kachel/db";
+import {
+  isLocalStack,
+  supabaseAuth,
+  supabaseDecisions,
+  supabaseFeed,
+  supabaseHouseFeed,
+} from "@kachel/db";
 import "./index.css";
 
 const feed = supabaseFeed(db);
@@ -27,6 +33,7 @@ createRoot(root).render(
       auth={supabaseAuth(db)}
       local={isLocalStack(import.meta.env.VITE_SUPABASE_URL)}
       chat={chat}
+      decisions={supabaseDecisions(db)}
     />
   </StrictMode>,
 );

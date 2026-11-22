@@ -3,6 +3,7 @@ import {
   supabaseBuyers,
   watch,
   type AppAuth,
+  type DecisionFeed,
   type JobFeed,
   type LiveBuyer,
   type LiveJob,
@@ -28,6 +29,8 @@ export interface OperatorSource {
   places(): Promise<PlacedSite[]>;
   /** True on the local stack, where the seed's operator account exists. */
   local: boolean;
+  /** The scheduler's live decisions (#191); no panel without them. */
+  decisions?: DecisionFeed;
 }
 
 export type Live = {
