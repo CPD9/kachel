@@ -39,7 +39,7 @@ describe("House", () => {
     expect(
       (await screen.findByRole("heading", { level: 2, name: /^Your servers/ })).textContent,
     ).toBe(
-      "Your servers covered 80 % of your heat this year and left you CHF 9'683 before hardware.",
+      "Your servers covered 80\u00a0% of your heat this year and left you CHF\u00a09'683 before hardware.",
     );
   });
 

@@ -14,12 +14,15 @@ export const celsius = (v: number) => one.format(v).replace("-", "−");
 /** Swiss grouping with a straight apostrophe: 15'538. */
 const swiss = (s: string) => s.replaceAll(",", "'");
 
-/** CHF 72.00 for a day, CHF 15'538 for a year. */
+/** A space that never breaks a line, so an amount stays with its unit. */
+export const NBSP = "\u00a0";
+
+/** CHF 72.00 for a day, CHF 15'538 for a year; "CHF" never wraps away from the number. */
 export const chf = (v: number, year = false) =>
-  `CHF ${swiss((year ? whole : cents).format(Math.abs(v)))}`;
+  `CHF${NBSP}${swiss((year ? whole : cents).format(Math.abs(v)))}`;
 export const count = (v: number) => swiss(whole.format(v));
-/** 80 %, rounded, with the space Swiss style puts before the sign. */
-export const percent = (v: number) => `${whole.format(v)} %`;
+/** 80 %, rounded, with the (non-breaking) space Swiss style puts before the sign. */
+export const percent = (v: number) => `${whole.format(v)}${NBSP}%`;
 
 /** 13 January 2025, in Basel. */
 export const longDate = (date: string) =>

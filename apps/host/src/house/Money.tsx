@@ -1,7 +1,7 @@
 import type { HouseYear } from "@kachel/db";
 import type { ReactNode } from "react";
 import type { DayMoney, Figure, Prices } from "./day";
-import { chf, count, kwh } from "./format";
+import { chf, count, kwh, NBSP } from "./format";
 import { Sources } from "./Sources";
 
 function Price({ f }: { f: Figure }) {
@@ -15,7 +15,7 @@ function Price({ f }: { f: Figure }) {
 type Line = { label: string; sign: "+" | "−" | ""; day?: number; year?: number };
 
 function Amount({ value, sign, year }: { value: number; sign: Line["sign"]; year: boolean }) {
-  const shown = value < 0 && sign === "" ? "− " : sign ? `${sign} ` : "";
+  const shown = value < 0 && sign === "" ? `−${NBSP}` : sign ? `${sign}${NBSP}` : "";
   return (
     <>
       {shown}
