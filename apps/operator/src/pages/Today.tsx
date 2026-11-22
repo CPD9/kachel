@@ -6,6 +6,7 @@ import { houseName, needsAttention, ATTENTION_BELOW } from "../fleet/state";
 import { href } from "../shell/route";
 import { PageHead, Pill, Sources } from "../shell/Shell";
 import { card, secondary, th } from "../ui";
+import { TodayDash } from "./TodayDash";
 
 /** The attention list stays short; the rest is one click away in Buildings. */
 const SHOWN = 8;
@@ -16,6 +17,8 @@ const SHOWN = 8;
  */
 export function Today({
   month,
+  before,
+  monthNumber,
   monthName,
   dateLine,
   brightest,
@@ -24,6 +27,9 @@ export function Today({
   source,
 }: {
   month: FleetMonth;
+  /** The month before, in the same model, for the deltas. */
+  before: FleetMonth;
+  monthNumber: number;
   monthName: string;
   /** "Sunday 22 November." in the month we are in, otherwise "In July." */
   dateLine: string;
@@ -50,6 +56,7 @@ export function Today({
   return (
     <>
       <PageHead eyebrow="Today" title={<span data-headline>{headline}</span>} />
+      <TodayDash month={month} before={before} monthNumber={monthNumber} monthName={monthName} />
 
       <section aria-labelledby="attention" className={`${card} mt-6 overflow-hidden`}>
         <div className="flex items-baseline justify-between gap-4 px-4 pt-4 sm:px-5">

@@ -20,3 +20,5 @@ export const chf = (v: number) => `${v < 0 ? "−" : ""}CHF ${count(Math.abs(v))
 export const chf2 = (v: number) => `${v < 0 ? "−" : ""}CHF ${group(two.format(Math.abs(v)))}`;
 /** 17 % */
 export const pct = (share: number) => `${whole.format(share * 100)} %`;
+/** 99.8 % */
+export const pct1 = (share: number) => `${one.format(share * 100)} %`;
