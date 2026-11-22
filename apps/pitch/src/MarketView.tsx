@@ -652,7 +652,7 @@ export function MarketHouses({ m }: { m: Market }) {
         }}
       >
         <span className="absolute right-5 bottom-2 text-white drop-shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
-          <BuildingIcon kind={q.offer.kind} size={64} />
+          <BuildingIcon kind={q.offer.kind} size={56} />
         </span>
         <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-black">
           <span
