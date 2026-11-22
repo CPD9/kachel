@@ -12,7 +12,7 @@ flowchart LR
     agent["Agent<br/>services/agent<br/>pauses and resumes the job"]
     servers -- "heat" --> tank
     tank -- "tank level, heat demand" --> sched
-    sched -. "run / pause<br/>(signal file, by hand in the demo)" .-> agent
+    sched -- "run / pause<br/>(signal file, make live)" --> agent
     agent -- "SIGSTOP / SIGCONT" --> servers
   end
 
@@ -23,6 +23,7 @@ flowchart LR
   outlook["District heating as a summer heat sink (next, #66)"]
 
   agent -- "job and server state" --> supa
+  sched -- "decisions (hash-chained),<br/>placements" --> supa
   fleet -- "one hour of a fleet day<br/>(fleet_write.py)" --> supa
   console -- "submit a job (QUEUED)" --> supa
   supa -- "Realtime" --> host
@@ -41,6 +42,7 @@ What each box is in the repo:
 | Supabase and Realtime       | `supabase/migrations`, `packages/db/src/live.ts` | Built. Realtime on `servers`, `jobs` and `heat_state`; row level security on all        |
 | Host app                    | `apps/host`                                      | Built. Shows the house, each server and its job live                                    |
 | Console app                 | `apps/console`                                   | Built. Submits jobs (#85) and lists them with their state                               |
-| Scheduler writes the signal | `services/scheduler`, `services/agent`           | Next. On stage the signal file is written by hand                                       |
-| Live routing                | none yet                                         | Next. A submitted job waits as QUEUED; nothing places it live yet                       |
+| Scheduler writes the signal | `services/scheduler/live.py`, `services/agent`   | Built (#191). `make live` runs `decide()` each tick and writes the agent's signal       |
+| Live routing                | `services/scheduler/heatsched/live.py`           | Built (#191). A queued console job gets a server through the fleet's `place_hour`       |
+| Decision log                | `heatsched/ledger.py`, `decisions` table         | Built (#191). SHA-256 chained, append-only; `make verify-live` replays it               |
 | District heating            | issue #66                                        | Next. A summer heat sink for heat the houses cannot use                                 |

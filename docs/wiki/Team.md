@@ -51,8 +51,10 @@ From the [open issues](https://github.com/CPD9/kachel/issues):
   ([#69](https://github.com/CPD9/kachel/issues/69)), a devcontainer
   ([#29](https://github.com/CPD9/kachel/issues/29)).
 
-Beyond the hack, the scheduler should write the agent's signal itself, a submitted job should be
-placed on a house live, and the [research topics](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md#research-topics-for-the-report)
+The scheduler now writes the agent's signal itself and places a submitted job on a house live,
+with every decision in a hash-chained log anyone can replay (`make live`, `make verify-live`,
+[#191](https://github.com/CPD9/kachel/issues/191)). Beyond the hack, the
+[research topics](https://github.com/CPD9/kachel/blob/main/docs/economics/README.md#research-topics-for-the-report)
 should replace our guesses with evidence.
 
 ## Our ask

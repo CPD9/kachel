@@ -32,32 +32,29 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
    `permission denied ... docker.sock`: run `newgrp docker` in that terminal first. The reset
    also ends every sign-in, so sign in to the tabs after it.
 
-3. [ ] A second terminal, from the repo root: a fresh job that runs for hours, and the agent.
+3. [ ] A second terminal, from the repo root, ready but not started:
 
    ```sh
-   rm -f /tmp/job_progress.json
-   JOB_ITEMS=100000000 services/scheduler/.venv/bin/python services/scheduler/jobs/embed_job.py /tmp/job_progress.json &
-   JOB=$!
-   echo run > /tmp/heat
-   set -a; . services/agent/.env; set +a
-   uv run --project services/agent python -m kachel_agent --pid $JOB --signal /tmp/heat --tick 0.2 \
-     --job-id 00000000-0000-4000-8000-000000000304 \
-     --server-id 00000000-0000-4000-8000-000000000204
+   make live-demo LIVE_PACE=1.2
    ```
 
-   Without `JOB_ITEMS` the job ends after about 30 s and Server 4 shows Done. Without the `rm` an
-   old progress file makes it end at once.
+   It starts a real embedding job on Server 4, the agent, and the scheduler's live loop on 13
+   January then 15 July, about 29 s a day (the default `LIVE_PACE` of 2.5 is a minute a day).
+   The scheduler writes the agent's signal; no one types `pause`. Dry run on 22 Nov: the pill
+   followed each decision in under a second. It ends by itself after July and stops the job and
+   the agent with it; Ctrl-C does the same at any time.
 
-4. [ ] A third terminal, ready for the flip: `echo pause > /tmp/heat` and `echo run > /tmp/heat`.
-       In the dry run the pill changed in about 0.3 s.
+4. [ ] Once now, as a rehearsal: run it, watch Server 4 pause and resume in July, then
+       `make verify-live` (no mismatch) and `make db-reset`, which puts Server 4 back. Sign in to
+       the tabs again after the reset.
 5. [ ] Only if you show the chat: ask one question now, so the model is loaded. Warm, the four
        example questions took 5 to 16 s each on the GPU.
 
 ## Tabs, in this order
 
 1. Slides (PDF, full screen).
-2. Host app, http://localhost:5173, signed in as `host@kachel.test` / `kachel-demo`. Server 4
-   shows Running.
+2. Host app, http://localhost:5173, signed in as `host@kachel.test` / `kachel-demo`, scrolled to
+   "Your servers now" and "Why this decision". Server 4 shows Paused (the seed).
 3. Console, http://localhost:5174, signed in as `buyer@kachel.test` / `kachel-demo`. A Batch
    job needs a deadline; Backlog does not.
 4. Pitch intro, http://localhost:5176 (`?at=fhnw` for FHNW Campus Dreispitz). Press the
@@ -84,16 +81,18 @@ console, the agent and the chat run offline. With no network, skip the map.
 
 ## When something fails
 
-| What you see                         | Do this                                                                    |
-| ------------------------------------ | -------------------------------------------------------------------------- |
-| "Is the local database running?"     | `.env` keys against `pnpm exec supabase status -o env`, restart `make dev` |
-| Server 4 shows Done or Off           | The job ended: step 3 again                                                |
-| The pill does not move               | Is the agent running? Its terminal prints `signal pause -> PAUSED`         |
-| The chat says the model is off       | `ollama serve`; leave the chat out                                         |
-| Anything else in the 60 s live block | Play live-demo.mp4 and say the same lines                                  |
-| The whole laptop                     | Play kachel-film-2min.mp4 from a USB stick on any laptop                   |
+| What you see                         | Do this                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------- |
+| "Is the local database running?"     | `.env` keys against `pnpm exec supabase status -o env`, restart `make dev`  |
+| Server 4 shows Done or Off           | The job ended: `make live-demo LIVE_PACE=1.2` again                         |
+| The pill does not move               | Is the loop printing hours? The agent's log is `/tmp/kachel-live/agent.log` |
+| "Why this decision" stays empty      | `services/agent/.env` keys against `pnpm exec supabase status -o env`       |
+| The chat says the model is off       | `ollama serve`; leave the chat out                                          |
+| Anything else in the 60 s live block | Play live-demo.mp4 and say the same lines                                   |
+| The whole laptop                     | Play kachel-film-2min.mp4 from a USB stick on any laptop                    |
 
 ## Afterwards
 
-Stop the agent (Ctrl-C), then the job: `kill -CONT $JOB; kill $JOB`. A job left paused stays
-stopped. `make db-stop` stops the database.
+`make live-demo` stops its job and agent when it ends or on Ctrl-C, resuming the job first so
+nothing is left frozen. `make verify-live` replays the day's decisions. `make db-stop` stops
+the database.

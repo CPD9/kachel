@@ -79,12 +79,13 @@ Source: Open-Meteo archive, Basel 2025
 | 3D map: swisstopo buildings and imagery                                   | Real                                           |
 | Fleet houses, buyer accounts, jobs in the apps                            | Synthetic                                      |
 | Demo transcript and the questionnaire figures in Duc's pitch intro (#156) | Synthetic                                      |
-| Scheduler writing the agent's signal; live placement of submitted jobs    | Not yet: by hand on stage                      |
+| Scheduler writing the agent's signal; live placement of submitted jobs    | Real, on a replayed day; hash-chained log      |
 | ORC turbine with a heat-pump booster, district heating as a summer sink   | Concept, outlook only                          |
 
 ### What's next, with four more weeks
 
-1. Close the loop: the scheduler writes the agent's signal and places submitted jobs live.
+1. Run the live loop on real time: `make live LIVE_ARGS="--source db --tick 3600"` reads
+   `heat_state` for the clock's hour, which a heat meter in the house would write.
 2. Meter the power with a plug meter, and run a neural embedding and a Whisper job on a GPU
    box instead of citing them.
 3. Prices from real compute buyers who accept pauses, and the reference house's yearly
