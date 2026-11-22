@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import type { BuyerRow, Live, OperatorSource } from "../live/live";
 import { FleetMap } from "../map/FleetMap";
+import { AgentStrip } from "../replay/AgentStrip";
+import type { Agent } from "../replay/replay";
 import type { FleetMonth } from "../fleet/months";
 import { houseName, needsAttention, ATTENTION_BELOW } from "../fleet/state";
 import { href } from "../shell/route";
@@ -25,6 +27,7 @@ export function Today({
   live,
   rows,
   source,
+  agent,
 }: {
   month: FleetMonth;
   /** The month before, in the same model, for the deltas. */
@@ -37,6 +40,7 @@ export function Today({
   live: Live;
   rows: BuyerRow[];
   source: OperatorSource | undefined;
+  agent: Agent;
 }) {
   const attention = useMemo(() => needsAttention(month, monthName), [month, monthName]);
   const total = month.houses.length;
@@ -57,6 +61,7 @@ export function Today({
     <>
       <PageHead eyebrow="Today" title={<span data-headline>{headline}</span>} />
       <TodayDash month={month} before={before} monthNumber={monthNumber} monthName={monthName} />
+      <AgentStrip agent={agent} />
 
       <section aria-labelledby="attention" className={`${card} mt-6 overflow-hidden`}>
         <div className="flex items-baseline justify-between gap-4 px-4 pt-4 sm:px-5">

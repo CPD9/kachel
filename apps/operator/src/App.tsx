@@ -9,6 +9,7 @@ import { Buildings, type NewBuilding } from "./pages/Buildings";
 import { Jobs } from "./pages/Jobs";
 import { Quotes } from "./pages/Quotes";
 import { Today } from "./pages/Today";
+import { useAgent } from "./replay/replay";
 import { useRoute, type Route } from "./shell/route";
 import { Shell } from "./shell/Shell";
 import { TourHint, useTour } from "./shell/Tour";
@@ -58,6 +59,7 @@ export function App({
   const [added, setAdded] = useState<NewBuilding[]>([]);
   const live = useLive(source);
   const tour = useTour(setMonth);
+  const agent = useAgent(source, Boolean(live.email));
 
   const m = useMemo(() => fleetMonth(file, { month, offset }), [file, month, offset]);
   const before = useMemo(
@@ -105,13 +107,14 @@ export function App({
           live={live}
           rows={rows}
           source={source}
+          agent={agent}
         />
       )}
       {route === "buildings" && (
         <Buildings key={query.toString()} month={m} monthName={name} added={added} query={query} />
       )}
       {route === "buildings/new" && <AddBuilding onAdd={(b) => setAdded((a) => [b, ...a])} />}
-      {route === "jobs" && <Jobs live={live} rows={rows} source={source} />}
+      {route === "jobs" && <Jobs live={live} rows={rows} source={source} agent={agent} />}
       {route === "quotes" && <Quotes month={month} monthName={name} offset={offset} />}
       {(route === "billing" || route === "billing/year") && (
         <Billing

@@ -3,7 +3,12 @@ import { SEED_BUYERS, SEED_SITES, seedJobs } from "../jobs/seed";
 import { JobsTable, type JobTableData } from "../jobs/JobsTable";
 import { Buyers } from "../live/Buyers";
 import type { BuyerRow, Live, OperatorSource } from "../live/live";
-import { Why } from "../live/Why";
+import { STEP_MS } from "../replay/replay";
+
+const STEP_S = STEP_MS / 1000;
+import { WhyDecision } from "@kachel/ui";
+import { ReplayHouse } from "../replay/House";
+import type { Agent } from "../replay/replay";
 import { href } from "../shell/route";
 import { PageHead, Sources } from "../shell/Shell";
 import { primary } from "../ui";
@@ -16,10 +21,12 @@ export function Jobs({
   live,
   rows,
   source,
+  agent,
 }: {
   live: Live;
   rows: BuyerRow[];
   source: OperatorSource | undefined;
+  agent: Agent;
 }) {
   const [now] = useState(() => Date.now());
   // Signed in and live means live, even before the loop has placed a job.
@@ -67,9 +74,29 @@ export function Jobs({
           </p>
         </Sources>
       </div>
+      {agent.mode === "replay" && (
+        <section aria-labelledby="replay" className="mt-8">
+          <h2 id="replay" data-replay-label className="text-[20px] font-semibold tracking-tight">
+            Replay of the scheduler&apos;s decisions, {agent.day}
+          </h2>
+          <p className="mt-1 max-w-[880px] text-[14px] text-label-2">
+            Not live: the live loop&apos;s own hash-chained log for 13 January and 15 July 2025 on
+            the reference house, an hour every {STEP_S} seconds.{" "}
+            {source
+              ? "Sign in under Compute buyers for the live decisions."
+              : "With the local stack (make live-demo) the decisions arrive live here."}
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <ReplayHouse entry={agent.entry} />
+            <WhyDecision decisions={agent.decisions} status="loading" tone="light" />
+          </div>
+        </section>
+      )}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Buyers live={live} rows={rows} source={source} />
-        {source?.decisions && <Why feed={source.decisions} signedIn={Boolean(live.email)} />}
+        {agent.mode === "live" && (
+          <WhyDecision decisions={agent.decisions} status={agent.status} tone="light" />
+        )}
       </div>
     </>
   );
