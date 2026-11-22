@@ -11,6 +11,9 @@ pnpm --filter @kachel/map dev     # http://localhost:5175
 ```
 
 `?at=2026-11-21T16:15:00Z` opens the map paused at that moment (for screenshots and the demo).
+`?egid=442141&card=1` flies to that building (by its GWR number), colours it and opens its card, the
+clock held at dusk; the pitch intro (`apps/pitch`) hands over with it. For FHNW Campus Dreispitz
+(`?egid=243058419&card=1`) our block model stands in, as on the tour.
 Without it, the clock starts 20 minutes before today's sunset in Basel and a day passes in about
 five minutes.
 

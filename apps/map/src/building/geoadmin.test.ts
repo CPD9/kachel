@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { heatEstimate, formatEnergy } from "./estimate";
-import { clearCache, lookUp, parseRegister, parseRoofs, type Fetch } from "./geoadmin";
+import { clearCache, locate, lookUp, parseRegister, parseRoofs, type Fetch } from "./geoadmin";
 
 // Shapes as api3.geo.admin.ch returned them on 21 Nov 2026 for Missionsstrasse 55, Basel.
 const GWR = {
@@ -220,5 +220,32 @@ describe("heat estimate", () => {
     expect(formatEnergy(12_345)).toBe("12.3 MWh");
     expect(formatEnergy(386_067)).toBe("386 MWh");
     expect(formatEnergy(8_765)).toBe("8,770 kWh");
+  });
+});
+
+describe("locate", () => {
+  it("reads the register point of a building by EGID", async () => {
+    const calls: string[] = [];
+    const fetcher: Fetch = async (url) => {
+      calls.push(url);
+      return {
+        ok: true,
+        json: async () => ({
+          results: [{ geometry: { x: 7.582214, y: 47.55211 } }],
+        }),
+      };
+    };
+    expect(await locate(442141, fetcher)).toEqual({ lon: 7.582214, lat: 47.55211 });
+    expect(calls[0]).toContain("searchText=442141");
+    expect(calls[0]).toContain("sr=4326");
+  });
+
+  it("gives null when the register has no such building or does not answer", async () => {
+    const empty: Fetch = async () => ({ ok: true, json: async () => ({ results: [] }) });
+    const down: Fetch = async () => {
+      throw new Error("offline");
+    };
+    expect(await locate(1, empty)).toBeNull();
+    expect(await locate(1, down)).toBeNull();
   });
 });
