@@ -2,7 +2,7 @@
 AGENT := services/agent
 SCHED := services/scheduler
 
-.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months measure-ai video-charts paper pitch-graphics live verify-live
+.PHONY: bootstrap dev db-stop db-reset check check-js check-py check-db check-readme heat-loop year bern-days fleet months measure-ai video-charts paper pitch-graphics live live-demo verify-live
 
 bootstrap:
 	pnpm install --frozen-lockfile
