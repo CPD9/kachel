@@ -11,6 +11,9 @@ const P0 = config.prices.electricity_chf_per_kwh;
 const COP = config.prices.heat_pump_cop;
 
 export type HardwareCase = keyof typeof config.hardware.cases;
+/** Job types a buyer can send beyond the reference house's (config.json: workloads, #159). */
+export const JOB_TYPES = config.workloads;
+
 export const HARDWARE_CASES = Object.keys(config.hardware.cases) as HardwareCase[];
 
 /** A server size the card offers (#159): its power, and whether it is the GPU workstation. */

@@ -12,23 +12,13 @@ import {
   Factory,
   Fan,
   Flame,
-  Hammer,
-  Hand,
   Heater,
-  Hourglass,
   Layers,
-  Leaf,
   MoonStar,
-  PiggyBank,
   Repeat,
   RotateCcw,
-  Server,
-  ShowerHead,
-  SlidersHorizontal,
-  Sparkles,
+  Dumbbell,
   Square,
-  Timer,
-  TrendingUp,
   Users,
   Utensils,
   Waves,
@@ -100,9 +90,9 @@ const HOT_WATER: Option<HotWater>[] = [
   { value: "basins", icon: Droplet, name: "Washbasins only", note: "Offices and lecture rooms" },
   { value: "canteen", icon: Utensils, name: "A canteen", note: "As a typical school" },
   {
-    value: "showers",
-    icon: ShowerHead,
-    name: "Canteen and showers",
+    value: "sports",
+    icon: Dumbbell,
+    name: "Canteen and sports hall",
     note: "Sports, labs, cyclists",
   },
 ];
@@ -267,11 +257,10 @@ function Stepper({
 }
 
 /** A big number with its label underneath. */
-function Stat({ icon: Icon, value, name }: { icon: Icon; value: string; name: string }) {
+function Stat({ value, name }: { value: string; name: string }) {
   return (
     <div className="rounded-2xl bg-black/[0.035] px-2.5 py-2">
-      <Icon size={13} className="text-clay" />
-      <p className="mt-1 text-[13px] leading-tight font-semibold tabular-nums">{value}</p>
+      <p className="text-[13px] leading-tight font-semibold tabular-nums">{value}</p>
       <p className="text-[10.5px] text-muted">{name}</p>
     </div>
   );
@@ -279,7 +268,6 @@ function Stat({ icon: Icon, value, name }: { icon: Icon; value: string; name: st
 
 /** One assumption as a slider: name and value on top, the slider and its range below. */
 function Slider({
-  icon: Icon,
   name,
   value,
   min,
@@ -289,7 +277,6 @@ function Slider({
   onChange,
   check = false,
 }: {
-  icon: Icon;
   name: string;
   /** No published source yet: say so under the slider. */
   check?: boolean;
@@ -303,9 +290,7 @@ function Slider({
   return (
     <label className="block rounded-2xl px-2 py-1.5 hover:bg-black/[0.025]">
       <span className="flex items-center justify-between text-[11.5px]">
-        <span className="flex items-center gap-1.5 font-medium">
-          <Icon size={13} className="text-ink/50" /> {name}
-        </span>
+        <span className="font-medium">{name}</span>
         <span className="font-semibold text-clay tabular-nums">{format(value)}</span>
       </span>
       <input
@@ -363,9 +348,7 @@ function AssumptionsCard({
     <article className={bare ? "" : `${card} absolute top-6 left-6 w-[300px]`}>
       <div className="px-2 pt-2">
         <div className="flex items-center justify-between">
-          <p className={label}>
-            <SlidersHorizontal size={12} /> Your numbers
-          </p>
+          <p className={label}>Your numbers</p>
           <button
             onClick={onReset}
             className="tap relative flex items-center gap-1 text-[11px] font-medium text-muted hover:text-ink"
@@ -380,7 +363,6 @@ function AssumptionsCard({
 
       <div className="mt-2 space-y-0.5 border-t border-black/[0.06] pt-1.5">
         <Slider
-          icon={Flame}
           name={`Heat today (${FUELS[answers.fuel].name.toLowerCase()})`}
           check
           value={params.heatPrice}
@@ -391,7 +373,6 @@ function AssumptionsCard({
           onChange={(v) => onParam("heatPrice", v)}
         />
         <Slider
-          icon={Server}
           name="Kachel heat"
           check
           value={params.kachelPrice}
@@ -402,7 +383,6 @@ function AssumptionsCard({
           onChange={(v) => onParam("kachelPrice", v)}
         />
         <Slider
-          icon={TrendingUp}
           name="Energy prices rise"
           check
           value={params.priceRise}
@@ -413,7 +393,6 @@ function AssumptionsCard({
           onChange={(v) => onParam("priceRise", v)}
         />
         <Slider
-          icon={Hourglass}
           name="Building age"
           value={params.age}
           min={0}
@@ -426,7 +405,7 @@ function AssumptionsCard({
           onClick={() => onParam("renovated", !params.renovated)}
           className="flex w-full items-center gap-1.5 rounded-2xl px-2 py-1.5 text-left text-[11.5px] font-medium hover:bg-black/[0.025]"
         >
-          <Hammer size={13} className="text-ink/50" /> Renovated
+          Renovated
           <span
             className={`ml-auto grid size-4 place-items-center rounded-[5px] ${
               params.renovated ? "bg-clay text-white" : "bg-black/[0.08]"
@@ -436,9 +415,7 @@ function AssumptionsCard({
           </span>
         </button>
         <div className="rounded-2xl px-2 py-1.5">
-          <span className="flex items-center gap-1.5 text-[11.5px] font-medium">
-            <Layers size={13} className="text-ink/50" /> Insulation
-          </span>
+          <span className="text-[11.5px] font-medium">Insulation</span>
           <div className="mt-1.5 grid grid-cols-4 gap-0.5 rounded-full bg-black/[0.05] p-0.5">
             {(Object.keys(INSULATION) as Insulation[]).map((k) => (
               <button
@@ -495,9 +472,7 @@ function ProjectionCard({ r, bare = false }: { r: Result; bare?: boolean }) {
     >
       <div className="flex items-start justify-between px-2 pt-2">
         <div>
-          <p className={label}>
-            <TrendingUp size={12} /> Saved in {years} years
-          </p>
+          <p className={label}>Saved in {years} years</p>
           <h3 className="mt-1 text-[22px] leading-tight font-semibold tabular-nums">
             {chf(r.cumulative[years] ?? 0)}
           </h3>
@@ -533,9 +508,9 @@ function ProjectionCard({ r, bare = false }: { r: Result; bare?: boolean }) {
       </div>
 
       <div className="mt-2.5 grid grid-cols-3 gap-1 px-1 pb-1">
-        <Stat icon={PiggyBank} value={chf(r.savingsPerYear)} name="per year" />
-        <Stat icon={Timer} value={payback} name="payback" />
-        <Stat icon={Leaf} value={`${r.co2Tonnes.toFixed(1)} t`} name="CO₂ / yr" />
+        <Stat value={chf(r.savingsPerYear)} name="per year" />
+        <Stat value={payback} name="payback" />
+        <Stat value={`${r.co2Tonnes.toFixed(1)} t`} name="CO₂ / yr" />
       </div>
       <p className="px-2 pb-1.5 text-[9.5px] leading-snug text-muted">
         {`Heat ${kwh(r.demand)} a year: ${TARGET.name} has ${kwh(b.spaceHeatingKwh + b.hotWaterKwh)} from ${b.heatSource}, ${b.areaM2.toLocaleString("en-GB")} m² built ${b.built} (BFS GWR, EGID ${b.egid}); your answers scale it. Prices, install cost, subsidy and CO₂: assumptions, to check.`}
@@ -581,7 +556,6 @@ function ProductCard({
             best ? "bg-clay text-white" : "bg-white/80 text-ink/75 ring-1 ring-black/[0.06]"
           }`}
         >
-          {best ? <Sparkles size={11} /> : <Hand size={11} />}
           {best ? "Best fit" : "Your pick"}
         </span>
         <span className="absolute top-2 right-2 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-ink/75 tabular-nums ring-1 ring-black/[0.06]">
@@ -597,9 +571,7 @@ function ProductCard({
 
       <div className="px-2 pt-2.5">
         <h3 className="text-[17px] leading-tight font-semibold">{r.rack.name}</h3>
-        <p className="mt-0.5 text-[11px] text-muted">
-          {r.rack.servers} servers · {r.rack.size}
-        </p>
+        <p className="mt-0.5 text-[11px] text-muted">{r.rack.size}</p>
       </div>
 
       {/* All models; the best fit marked with a dot */}

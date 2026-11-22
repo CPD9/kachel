@@ -1,3 +1,4 @@
+import { JOB_TYPES } from "@kachel/economics/model";
 import { describe, expect, it } from "vitest";
 import {
   mismatch,
@@ -54,5 +55,15 @@ describe("market", () => {
       const firstMiss = list.findIndex((q) => q.miss);
       if (firstMiss >= 0) expect(list.slice(firstMiss).every((q) => q.miss)).toBe(true);
     }
+  });
+});
+
+describe("image and video tagging", () => {
+  it("shows our measured speed, not the cited MLPerf one", () => {
+    const t = JOB_TYPES.image_tagging;
+    expect(WORKLOADS.tagging.note).toBe(
+      `≈ ${t.measured_images_per_server_hour.toLocaleString("en-GB")} images a server-hour, measured`,
+    );
+    expect(WORKLOADS.tagging.note).not.toContain(t.images_per_server_hour.toLocaleString("en-GB"));
   });
 });

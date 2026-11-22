@@ -12,6 +12,12 @@
   --color-border: #e3e5e9;
   --color-muted: #5b616b;
   --color-ink: #111418;
+  /* The market's green: compute and its buyers. Clay stays for heat. */
+  --color-forest-900: #0e3b2e;
+  --color-forest-700: #1e6b4a;
+  --color-forest-500: #2f9e6b;
+  --color-forest-300: #7fd3a6;
+  --color-forest-100: #d8f3e3;
   /* apps/map's background (packages/ui tokens.css, --color-ink), for the hand-over fade */
   --color-map-ink: oklch(0.22 0.02 250);
 

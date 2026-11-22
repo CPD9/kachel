@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@kachel/economics": "workspace:*",
+    "@phosphor-icons/react": "2.1.10",
     "@react-three/fiber": "9.8.2",
     "lucide-react": "1.77.0",
     "mapbox-gl": "3.16.0",

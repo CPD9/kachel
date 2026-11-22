@@ -55,7 +55,8 @@ function Pill({
   );
 }
 
-const NAV = ["How it works", "For buildings", "For data centers", "Contact"];
+/** Header links: only to sections that exist on this page. */
+const NAV = [{ label: "How it works", href: "#how-it-works" }];
 const SUGGESTIONS = ["How does it work?", "Is my building suitable?", "What does it cost?"];
 const STEPS = [
   {
@@ -378,14 +379,14 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
             <span className="font-display text-2xl font-semibold tracking-tight">Kachel</span>
           </span>
           <nav className="hidden gap-8 text-[15px] md:flex">
-            {NAV.map((label) => (
-              <a key={label} href="#" className="hover:text-clay">
+            {NAV.map(({ label, href }) => (
+              <a key={label} href={href} className="hover:text-clay">
                 {label}
               </a>
             ))}
           </nav>
           <a
-            href="#"
+            href="#ask"
             className="flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink/85 pointer-coarse:min-h-11"
           >
             Check my building <ArrowRight size={16} />
@@ -393,7 +394,10 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
         </header>
 
         {/* Three rows with equal outer rows, so the chat box sits in the middle of the screen */}
-        <section className="grid h-screen min-h-[640px] grid-cols-[minmax(0,1fr)] grid-rows-[1fr_auto_1fr] justify-items-center text-center">
+        <section
+          id="ask"
+          className="grid h-screen min-h-[640px] grid-cols-[minmax(0,1fr)] grid-rows-[1fr_auto_1fr] justify-items-center text-center"
+        >
           <div className="flex flex-col items-center justify-end pt-24 pb-8">
             <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-rust uppercase">
               Server heating
@@ -420,7 +424,7 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
           </div>
         </section>
 
-        <section className="grid gap-8 pb-20 md:grid-cols-3">
+        <section id="how-it-works" className="grid gap-8 pb-20 md:grid-cols-3">
           {STEPS.map(({ title, text }, i) => (
             <div key={title} className="border-t border-border pt-6">
               <p className="mb-2 font-display text-lg font-medium text-rust">0{i + 1}</p>

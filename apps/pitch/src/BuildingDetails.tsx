@@ -1,17 +1,4 @@
-import {
-  Building2,
-  Calendar,
-  Flame,
-  Landmark,
-  MapPin,
-  Ruler,
-  ShowerHead,
-  ScanSearch,
-  Snowflake,
-  Sparkles,
-  Wifi,
-  Zap,
-} from "lucide-react";
+import { Building2, Flame, Landmark, Wifi, Zap } from "lucide-react";
 import { useState } from "react";
 import { useCompact } from "./compact";
 import { Sheet } from "./Sheet";
@@ -30,9 +17,9 @@ const BUILDING = {
   image: "/byfangweg-18-aerial.jpg",
   kind: "House · 3 storeys · 1 dwelling",
   facts: [
-    { icon: Calendar, k: "Built", v: "1894" },
-    { icon: Ruler, k: "Heated area", v: "330 m²" },
-    { icon: Flame, k: "Current heating", v: "District heating" },
+    { k: "Built", v: "1894" },
+    { k: "Heated area", v: "330 m²" },
+    { k: "Current heating", v: "District heating" },
   ],
   source: "Source: BFS GWR, EGID 442141, as of 19.11.2026",
   tags: ["Hot water: district heating", "Plant room · to check", "Radiators · to check"],
@@ -78,8 +65,8 @@ const MONTHS = [
 /** Top of the chart's scale, in °C. */
 const MAX_TEMP = 22;
 const CLIMATE = [
-  { icon: Snowflake, k: "Heating days", v: "≈ 210 / yr · to check" },
-  { icon: Calendar, k: "Heating season", v: "Oct – Apr" },
+  { k: "Heating days", v: "≈ 210 / yr · to check" },
+  { k: "Heating season", v: "Oct – Apr" },
 ];
 
 /** Building photo, or a plain tinted block if the image isn't there. */
@@ -98,7 +85,7 @@ function Photo() {
         />
       )}
       <span className="absolute top-2 left-2 flex animate-pill-in items-center gap-1 rounded-full bg-clay px-2 py-0.5 text-[10px] font-semibold text-white">
-        <Sparkles size={11} /> Looks suitable
+        Looks suitable
       </span>
       {!failed && (
         <span className="absolute right-2 bottom-1 text-[9px] text-white/70">
@@ -115,20 +102,16 @@ function BuildingBody() {
     <>
       <Photo />
       <div className="px-2 pt-3 pb-1.5">
-        <p className={`${label} text-clay`}>
-          <MapPin size={11} /> Your building
-        </p>
+        <p className={`${label} text-clay`}>Your building</p>
         <h3 className="mt-1 text-[17px] leading-tight font-semibold">{BUILDING.name}</h3>
         <p className="mt-0.5 text-[11.5px] text-white/55">
           {BUILDING.address} · {BUILDING.kind}
         </p>
 
         <dl className="mt-3 space-y-1.5 text-[11.5px]">
-          {BUILDING.facts.map(({ icon: Icon, k, v }) => (
+          {BUILDING.facts.map(({ k, v }) => (
             <div key={k} className="flex items-center justify-between">
-              <dt className={label}>
-                <Icon size={12} /> {k}
-              </dt>
+              <dt className={label}>{k}</dt>
               <dd className="font-semibold tabular-nums">{v}</dd>
             </div>
           ))}
@@ -155,9 +138,7 @@ function ChecksBody() {
   return (
     <div className="px-2 pt-2 pb-1.5">
       <div className="flex items-center justify-between">
-        <p className={label}>
-          <ScanSearch size={12} /> Building checks
-        </p>
+        <p className={label}>Building checks</p>
         <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[10px] font-semibold text-white/70 tabular-nums">
           {SOURCED}/{CHECKS.length} sourced
         </span>
@@ -188,9 +169,7 @@ function ChecksBody() {
 function WeatherBody() {
   return (
     <div className="px-2 pt-2 pb-1.5">
-      <p className={label}>
-        <Snowflake size={12} /> Weather in Basel
-      </p>
+      <p className={label}>Weather in Basel</p>
 
       {/* Average temperature per month, orange where the heating is on */}
       <div className="mt-3 flex h-24 items-end gap-1">
@@ -232,17 +211,14 @@ function WeatherBody() {
       </div>
 
       <dl className="mt-3 space-y-1.5 text-[11.5px]">
-        {CLIMATE.map(({ icon: Icon, k, v }) => (
+        {CLIMATE.map(({ k, v }) => (
           <div key={k} className="flex items-center justify-between">
-            <dt className={label}>
-              <Icon size={12} /> {k}
-            </dt>
+            <dt className={label}>{k}</dt>
             <dd className="font-semibold tabular-nums">{v}</dd>
           </div>
         ))}
       </dl>
-      <p className="mt-2.5 flex items-start gap-1.5 rounded-xl bg-clay/15 px-2.5 py-1.5 text-[11px] font-medium text-clay">
-        <ShowerHead size={13} className="mt-px shrink-0" />
+      <p className="mt-2.5 rounded-xl bg-clay/15 px-2.5 py-1.5 text-[11px] font-medium text-clay">
         In summer, the server heat still goes into your hot water.
       </p>
     </div>

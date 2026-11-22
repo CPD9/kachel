@@ -1,23 +1,19 @@
 import {
   ArrowLeft,
   ArrowRight,
-  Cable,
+  Broadcast,
   Check,
-  Cpu,
-  MemoryStick,
-  Radio,
+  Lightning,
   Snowflake,
-  Sparkles,
-  Star,
-  Timer,
-  Zap,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import {
   FLEX_DISCOUNT,
   GPU_COUNTS,
   MAX_JOB_HOURS,
   HEAT_LABEL,
+  BUILDING_ICON,
+  type BuildingKind,
   type HeatNeed,
   type Needs,
   needsFor,
@@ -32,10 +28,10 @@ import {
 import { COMPACT_TOP, useCompact } from "./compact";
 import { distanceFromHome } from "./neighbours";
 import { Sheet } from "./Sheet";
-import { REMOTE_COLOR } from "./simulation";
-import { card, label } from "./ui";
+import { FOREST, card, label } from "./ui";
 
-const VIOLET = REMOTE_COLOR;
+/** Selected controls carry white text on this green (6.5:1). Clay stays for heat. */
+const ACCENT = FOREST[700];
 const HEAT_COLOR: Record<HeatNeed, string> = { high: "#f97316", medium: "#fbbf24", low: "#64748b" };
 
 const chf = (x: number) =>
@@ -45,7 +41,7 @@ const chf = (x: number) =>
 export type MarketPin = {
   id: string;
   at: [number, number];
-  emoji: string;
+  kind: BuildingKind;
   price: string;
   fit: boolean;
 };
@@ -63,7 +59,7 @@ export function useMarket() {
   const pins: MarketPin[] = list.map((q) => ({
     id: q.offer.id,
     at: q.offer.at,
-    emoji: q.offer.emoji,
+    kind: q.offer.kind,
     price: `${chf(q.perHour)}/h`,
     fit: !q.miss,
   }));
@@ -114,9 +110,9 @@ function Steps({ at }: { at: 1 | 2 }) {
     >
       <span
         className="grid size-5 place-items-center rounded-full text-[10px]"
-        style={{ background: at >= n ? VIOLET : "rgb(255 255 255 / 0.1)" }}
+        style={{ background: at >= n ? ACCENT : "rgb(255 255 255 / 0.1)" }}
       >
-        {at > n ? <Check size={11} strokeWidth={3} /> : n}
+        {at > n ? <Check size={11} weight="bold" /> : n}
       </span>
       {text}
     </span>
@@ -151,7 +147,7 @@ function Chips<T extends number>({
           className={`flex-1 rounded-full px-1 text-[11px] font-semibold whitespace-nowrap transition-colors ${
             compact ? "min-h-10" : "py-1"
           } ${o === value ? "text-white" : "text-white/50 hover:text-white"}`}
-          style={o === value ? { background: VIOLET } : undefined}
+          style={o === value ? { background: ACCENT } : undefined}
         >
           {format(o)}
         </button>
@@ -202,7 +198,10 @@ function Toggle({
     >
       <span
         className="grid size-7 shrink-0 place-items-center rounded-full"
-        style={{ background: on ? VIOLET : "rgb(255 255 255 / 0.08)" }}
+        style={{
+          background: on ? ACCENT : "rgb(255 255 255 / 0.08)",
+          color: on ? "white" : FOREST[300],
+        }}
       >
         {icon}
       </span>
@@ -212,7 +211,7 @@ function Toggle({
       </span>
       <span
         className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${on ? "" : "bg-white/15"}`}
-        style={on ? { background: VIOLET } : undefined}
+        style={on ? { background: FOREST[500] } : undefined}
       >
         <span
           className={`absolute top-0.5 size-3 rounded-full bg-white transition-all ${on ? "left-3.5" : "left-0.5"}`}
@@ -229,7 +228,7 @@ function CompactTop({ back, at, onBack }: { back: string; at: 1 | 2; onBack: () 
       <button
         onClick={onBack}
         aria-label={back}
-        className="pointer-events-auto grid size-11 shrink-0 animate-pill-in place-items-center rounded-full border border-white/10 bg-[#1b1d21]/85 text-white backdrop-blur-md hover:text-clay"
+        className="pointer-events-auto grid size-11 shrink-0 animate-pill-in place-items-center rounded-full border border-white/10 bg-[#1b1d21]/85 text-white backdrop-blur-md hover:text-forest-300"
       >
         <ArrowLeft size={18} />
       </button>
@@ -260,7 +259,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
         <>
           <button
             onClick={onBack}
-            className="pointer-events-auto absolute top-6 left-6 flex animate-pill-in items-center gap-1.5 rounded-full border border-white/10 bg-[#1b1d21]/85 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:text-clay"
+            className="pointer-events-auto absolute top-6 left-6 flex animate-pill-in items-center gap-1.5 rounded-full border border-white/10 bg-[#1b1d21]/85 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:text-forest-300"
           >
             <ArrowLeft size={14} /> Back to the simulation
           </button>
@@ -290,8 +289,8 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
           <div
             className={`min-w-0 px-3 pt-3 pb-2 ${compact ? "" : "flex-1 overflow-y-auto [scrollbar-width:none]"}`}
           >
-            <p className={label} style={{ color: VIOLET }}>
-              <Sparkles size={12} /> Kachel Compute
+            <p className={label} style={{ color: FOREST[300] }}>
+              Rent compute in Basel
             </p>
             <h2 className="mt-1 text-[24px] leading-tight font-semibold tracking-tight">
               What do you want to run?
@@ -309,20 +308,21 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
                     key={w}
                     onClick={() => setNeeds(needsFor(w, needs.flex, needs.once))}
                     className={`flex items-start gap-2 rounded-2xl border p-2.5 text-left transition-all ${
+                      // The tagging DigitalHeat asked for leads, across the row above the other six
+                      w === "tagging" && !compact ? "col-span-3" : ""
+                    } ${
                       on
-                        ? "border-transparent text-white"
+                        ? "text-white"
                         : "border-white/[0.07] bg-white/[0.03] text-white/80 hover:bg-white/[0.07]"
                     }`}
-                    style={
-                      on
-                        ? {
-                            background: `linear-gradient(135deg, ${VIOLET}, #4c1d95)`,
-                            boxShadow: `0 8px 24px -8px ${VIOLET}`,
-                          }
-                        : undefined
-                    }
+                    style={on ? { background: FOREST[900], borderColor: FOREST[500] } : undefined}
                   >
-                    <Icon size={18} className="mt-0.5 shrink-0" />
+                    <Icon
+                      size={20}
+                      weight="duotone"
+                      className="mt-px shrink-0"
+                      style={{ color: on ? FOREST[300] : undefined }}
+                    />
                     <span className="min-w-0">
                       <span className="block text-[12.5px] font-semibold">{name}</span>
                       <span className="block text-[10.5px] opacity-65">{note}</span>
@@ -362,7 +362,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
                   max={RAM_STEPS.length - 1}
                   value={Math.max(0, RAM_STEPS.indexOf(needs.ram as (typeof RAM_STEPS)[number]))}
                   onChange={(e) => set({ ram: RAM_STEPS[Number(e.target.value)] ?? 16 })}
-                  className="h-1 w-full cursor-pointer accent-violet-500"
+                  className="h-1 w-full cursor-pointer accent-forest-500"
                 />
               </Field>
               <div>
@@ -387,7 +387,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
                         className={`rounded-full px-2 text-[10.5px] font-semibold transition-colors ${
                           compact ? "min-h-9" : "py-px"
                         } ${needs.once === once ? "text-white" : "text-white/50 hover:text-white"}`}
-                        style={needs.once === once ? { background: VIOLET } : undefined}
+                        style={needs.once === once ? { background: ACCENT } : undefined}
                       >
                         {text}
                       </button>
@@ -404,7 +404,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
                   step={needs.once ? 1 : 10}
                   value={needs.hours}
                   onChange={(e) => set({ hours: Number(e.target.value) })}
-                  className="h-1 w-full cursor-pointer accent-violet-500"
+                  className="h-1 w-full cursor-pointer accent-forest-500"
                 />
               </div>
             </div>
@@ -412,14 +412,14 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
             <div className={`mt-3.5 grid gap-1.5 ${compact ? "grid-cols-1" : "grid-cols-2"}`}>
               <Toggle
                 on={needs.interactive}
-                icon={<Radio size={13} />}
+                icon={<Broadcast size={14} />}
                 title="Someone's waiting"
                 note="Free right now, ≈ 2 ms away"
                 onChange={(interactive) => set({ interactive })}
               />
               <Toggle
                 on={needs.flex}
-                icon={<Snowflake size={13} />}
+                icon={<Snowflake size={14} />}
                 title="Heat-flex"
                 note={`Runs when it's cold · up to −${FLEX_DISCOUNT.high * 100} %`}
                 onChange={(flex) => set({ flex })}
@@ -446,13 +446,15 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
               {m.list.map((q) => (
                 <span
                   key={q.offer.id}
+                  role="img"
+                  aria-label={`${q.offer.address}${q.miss ? `: ${q.miss}` : ": fits"}`}
                   title={`${q.offer.address}${q.miss ? ` · ${q.miss}` : ""}`}
-                  className={`grid size-8 place-items-center rounded-full text-[15px] transition-all duration-300 ${
-                    q.miss ? "scale-90 opacity-25 grayscale" : ""
+                  className={`grid size-8 place-items-center rounded-lg transition-all duration-300 ${
+                    q.miss ? "scale-90 bg-white/[0.06] text-white/60 opacity-25" : ""
                   }`}
-                  style={{ background: q.miss ? "rgb(255 255 255 / 0.06)" : `${VIOLET}40` }}
+                  style={q.miss ? undefined : { background: FOREST[900], color: FOREST[300] }}
                 >
-                  {q.offer.emoji}
+                  <BuildingIcon kind={q.offer.kind} size={17} />
                 </span>
               ))}
             </div>
@@ -469,7 +471,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
               <div className="flex justify-between">
                 <dt className="text-white/55">Best match</dt>
                 <dd className="truncate pl-2 font-semibold">
-                  {best && !best.miss ? `${best.offer.emoji} ${best.offer.area}` : "–"}
+                  {best && !best.miss ? best.offer.area : "–"}
                 </dd>
               </div>
             </dl>
@@ -478,7 +480,7 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
               onClick={m.toHouses}
               disabled={!fits.length}
               className={`mt-auto flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40 ${compact ? "min-h-11" : ""}`}
-              style={{ background: VIOLET }}
+              style={{ background: ACCENT }}
             >
               {fits.length ? (
                 <>
@@ -493,6 +495,12 @@ export function MarketSetup({ m, onBack }: { m: Market; onBack: () => void }) {
       </div>
     </div>
   );
+}
+
+/** A building's icon, by its kind: the same one on its row and its price pin. */
+export function BuildingIcon({ kind, size }: { kind: BuildingKind; size: number }) {
+  const I = BUILDING_ICON[kind];
+  return <I size={size} weight="duotone" />;
 }
 
 function HeatBadge({ heat }: { heat: HeatNeed }) {
@@ -530,19 +538,19 @@ function HouseRow({ q, on, onPick }: { q: Quote; on: boolean; onPick: () => void
             ? "border-transparent opacity-40"
             : "border-transparent hover:bg-white/[0.05]"
       }`}
-      style={on ? { boxShadow: `inset 3px 0 0 ${VIOLET}` } : undefined}
+      style={on ? { boxShadow: `inset 3px 0 0 ${FOREST[500]}` } : undefined}
     >
       <span
-        className="grid size-10 shrink-0 place-items-center rounded-xl text-[20px]"
-        style={{ background: q.miss ? "rgb(255 255 255 / 0.06)" : `${VIOLET}33` }}
+        className={`grid size-10 shrink-0 place-items-center rounded-xl ${q.miss ? "bg-white/[0.06] text-white/60" : ""}`}
+        style={q.miss ? undefined : { background: FOREST[900], color: FOREST[300] }}
       >
-        {o.emoji}
+        <BuildingIcon kind={o.kind} size={22} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5 text-[12px] font-semibold">
           <span className="truncate">{o.area}</span>
           {o.home && (
-            <span className="rounded-full bg-clay px-1.5 text-[9px] font-bold text-white">
+            <span className="rounded-full bg-forest-100 px-1.5 text-[9px] font-bold text-forest-900">
               START
             </span>
           )}
@@ -578,7 +586,7 @@ export function MarketHouses({ m }: { m: Market }) {
   const WIcon = w.icon;
   const asked = (
     <div className="flex animate-pill-in items-center gap-1.5 rounded-full bg-black/50 px-3 py-1 text-[11px] text-white/75 backdrop-blur-md">
-      <WIcon size={12} style={{ color: VIOLET }} /> {w.name}
+      <WIcon size={13} weight="duotone" style={{ color: FOREST[300] }} /> {w.name}
       <span className="text-white/30">·</span>
       {needs.gpus ? `${needs.gpus}× GPU · ${needs.vram} GB` : "CPU only"}
       <span className="text-white/30">·</span>
@@ -613,7 +621,7 @@ export function MarketHouses({ m }: { m: Market }) {
               className={`rounded-full ${compact ? "min-h-10" : "py-1"} text-[11px] font-semibold transition-colors ${
                 m.sort === s ? "text-white" : "text-white/50 hover:text-white"
               }`}
-              style={m.sort === s ? { background: VIOLET } : undefined}
+              style={m.sort === s ? { background: ACCENT } : undefined}
             >
               {text}
             </button>
@@ -641,20 +649,17 @@ export function MarketHouses({ m }: { m: Market }) {
       <div
         className="relative h-28 overflow-hidden rounded-[20px]"
         style={{
-          background: `radial-gradient(90% 130% at 80% 100%, ${HEAT_COLOR[q.offer.heat]}aa, transparent 60%), radial-gradient(90% 120% at 10% 0%, ${VIOLET}, #120a24 70%)`,
+          background: `radial-gradient(90% 130% at 15% 100%, ${HEAT_COLOR[q.offer.heat]}66, transparent 55%), linear-gradient(135deg, ${FOREST[900]}, #1b1d21 80%)`,
         }}
       >
-        <span className="absolute right-5 bottom-2 text-[56px] drop-shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
-          {q.offer.emoji}
+        <span className="absolute right-4 bottom-2" style={{ color: FOREST[300] }}>
+          <BuildingIcon kind={q.offer.kind} size={64} />
         </span>
-        <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-black">
+        <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-forest-100 px-2 py-0.5 text-[10px] font-semibold text-forest-900">
           <span
-            className={`size-1.5 rounded-full ${q.offer.freeFrom ? "bg-amber-500" : "animate-pulse bg-emerald-500"}`}
+            className={`size-1.5 rounded-full ${q.offer.freeFrom ? "bg-amber-500" : "animate-pulse bg-forest-500"}`}
           />
           {q.offer.freeFrom ? `Free ${q.offer.freeFrom}` : "Free now"}
-        </span>
-        <span className="absolute bottom-2 left-3 flex items-center gap-1 text-[11px] font-semibold text-white/85">
-          <Star size={11} className="fill-amber-300 text-amber-300" /> {q.offer.rating.toFixed(1)}
         </span>
       </div>
       <div className="px-2 pt-3 pb-1.5">
@@ -666,23 +671,19 @@ export function MarketHouses({ m }: { m: Market }) {
 
         <dl className="mt-3 space-y-1.5 text-[11.5px]">
           {[
-            { icon: Cpu, k: "Compute", v: gpuText(q, needs) },
+            { k: "Compute", v: gpuText(q, needs) },
             {
-              icon: MemoryStick,
               k: "Memory",
               v: `${q.offer.gpu ? `${q.offer.gpu.vram} GB · ` : ""}${q.offer.ram} GB RAM`,
             },
             {
-              icon: Cable,
               k: "Latency",
               v: `≈ ${(1 + distanceFromHome(q.offer.at) / 2000).toFixed(0)} ms in Basel`,
             },
-            { icon: Timer, k: "Runs", v: needs.flex ? "When the house is cold" : "Any time" },
-          ].map(({ icon: Icon, k, v }) => (
+            { k: "Runs", v: needs.flex ? "When the house is cold" : "Any time" },
+          ].map(({ k, v }) => (
             <div key={k} className="flex items-center justify-between gap-2">
-              <dt className={`${label} shrink-0`}>
-                <Icon size={12} /> {k}
-              </dt>
+              <dt className={`${label} shrink-0`}>{k}</dt>
               <dd className="truncate text-right font-semibold tabular-nums">{v}</dd>
             </div>
           ))}
@@ -701,7 +702,7 @@ export function MarketHouses({ m }: { m: Market }) {
             <span className="text-white/45 line-through tabular-nums">
               {chf(q.cloud)} in the cloud
             </span>
-            <span className="font-semibold text-emerald-400 tabular-nums">
+            <span className="font-semibold text-forest-300 tabular-nums">
               −{Math.round((1 - q.total / q.cloud) * 100)} %
             </span>
           </div>
@@ -716,17 +717,17 @@ export function MarketHouses({ m }: { m: Market }) {
           onClick={() => setBooked(q.offer.id)}
           disabled={booked === q.offer.id}
           className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold text-white transition-colors ${
-            booked === q.offer.id ? "bg-emerald-600" : "hover:brightness-110"
+            booked === q.offer.id ? "bg-forest-900 text-forest-100" : "hover:brightness-110"
           }`}
-          style={booked === q.offer.id ? undefined : { background: VIOLET }}
+          style={booked === q.offer.id ? undefined : { background: ACCENT }}
         >
           {booked === q.offer.id ? (
             <>
-              <Check size={16} strokeWidth={3} /> Booked · starts tonight
+              <Check size={16} weight="bold" /> Booked · starts tonight
             </>
           ) : (
             <>
-              <Zap size={15} /> Run it here · {chf(q.total)}
+              <Lightning size={15} weight="fill" /> Run it here · {chf(q.total)}
               {needs.once ? ` once` : `/mo`}
             </>
           )}
@@ -768,7 +769,7 @@ export function MarketHouses({ m }: { m: Market }) {
     <div className="pointer-events-none absolute inset-0 font-sans">
       <button
         onClick={m.toSetup}
-        className="pointer-events-auto absolute top-6 left-6 flex animate-pill-in items-center gap-1.5 rounded-full border border-white/10 bg-[#1b1d21]/85 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:text-clay"
+        className="pointer-events-auto absolute top-6 left-6 flex animate-pill-in items-center gap-1.5 rounded-full border border-white/10 bg-[#1b1d21]/85 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:text-forest-300"
       >
         <ArrowLeft size={14} /> Change what you run
       </button>

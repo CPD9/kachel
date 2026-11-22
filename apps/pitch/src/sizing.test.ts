@@ -84,7 +84,7 @@ it("asks a school about its use and hot water, and scales the campus's heat by t
   const p = defaultParams(a.fuel, fhnw);
   const at = (more: Partial<typeof a>) => size({ ...a, ...more }, p, null, fhnw);
   expect(at({ use: "allYear" }).spaceHeat).toBeGreaterThan(at({}).spaceHeat);
-  expect(at({ hotWater: "showers" }).hotWater).toBeGreaterThan(at({}).hotWater);
+  expect(at({ hotWater: "sports" }).hotWater).toBeGreaterThan(at({}).hotWater);
   expect(at({ hotWater: "basins" }).spaceHeat).toBeCloseTo(at({}).spaceHeat);
   // A home is not asked: its answers leave both out
   expect(DEFAULT_ANSWERS.use).toBeUndefined();

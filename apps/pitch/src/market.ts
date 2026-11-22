@@ -1,13 +1,24 @@
 import { TARGET } from "./target";
+import { JOB_TYPES } from "@kachel/economics/model";
 import {
   Atom,
-  Bot,
-  BrainCircuit,
-  Clapperboard,
-  Film,
-  Gamepad2,
-  type LucideIcon,
-} from "lucide-react";
+  Baby,
+  Bed,
+  Brain,
+  BuildingApartment,
+  Buildings,
+  ChatCircleDots,
+  Cube,
+  FilmSlate,
+  GameController,
+  GraduationCap,
+  HouseLine,
+  HouseSimple,
+  type Icon,
+  ImageSquare,
+  Plant,
+  SwimmingPool,
+} from "@phosphor-icons/react";
 import { HOME } from "./neighbours";
 
 /**
@@ -15,7 +26,7 @@ import { HOME } from "./neighbours";
  * Hand-written demo data; prices, houses and hosts are made up for the pitch.
  */
 
-export type Workload = "gaming" | "render" | "train" | "infer" | "science" | "video";
+export type Workload = "tagging" | "gaming" | "render" | "train" | "infer" | "science" | "video";
 
 export type Needs = {
   workload: Workload;
@@ -35,10 +46,17 @@ export type Needs = {
   flex: boolean;
 };
 
+/** Image and video tagging as the scheduler runs it (config.json: workloads, from #200). */
+const TAGGING = JOB_TYPES;
+/** Server-hours a night of tagging: the image batch at 20:00 plus the video batch at 22:00. */
+const TAGGING_NIGHT_H = [TAGGING.image_tagging, TAGGING.video_tagging]
+  .flatMap((t) => Object.values(t.arrivals_server_h))
+  .reduce((a, b) => a + b, 0);
+
 export const WORKLOADS: Record<
   Workload,
   {
-    icon: LucideIcon;
+    icon: Icon;
     name: string;
     note: string;
     needs: Omit<Needs, "workload" | "flex" | "once">;
@@ -46,29 +64,39 @@ export const WORKLOADS: Record<
     job: number;
   }
 > = {
+  tagging: {
+    icon: ImageSquare,
+    name: "Image and video tagging",
+    // Our own measured speed on an RTX 2080 Ti (#211), as the operator's quote uses (#214)
+    note: `≈ ${TAGGING.image_tagging.measured_images_per_server_hour.toLocaleString("en-GB")} images a server-hour, measured`,
+    // 8 GB: the measured speed comes from our 11 GB card, so a card like it must fit; the
+    // hours are the scheduler's
+    needs: { gpus: 1, vram: 8, ram: 32, hours: TAGGING_NIGHT_H * 30, interactive: false },
+    job: TAGGING_NIGHT_H,
+  },
   gaming: {
-    icon: Gamepad2,
+    icon: GameController,
     name: "Cloud gaming",
     note: "4K at 120 fps, streamed",
     needs: { gpus: 1, vram: 16, ram: 32, hours: 60, interactive: true },
     job: 4,
   },
   render: {
-    icon: Clapperboard,
+    icon: Cube,
     name: "3D rendering",
     note: "Blender, Cinema 4D, Unreal",
     needs: { gpus: 2, vram: 24, ram: 64, hours: 120, interactive: false },
     job: 12,
   },
   train: {
-    icon: BrainCircuit,
+    icon: Brain,
     name: "AI training",
     note: "Fine-tune and train models",
     needs: { gpus: 4, vram: 80, ram: 512, hours: 200, interactive: false },
     job: 48,
   },
   infer: {
-    icon: Bot,
+    icon: ChatCircleDots,
     name: "AI inference",
     note: "Serve an LLM or an API",
     needs: { gpus: 1, vram: 48, ram: 128, hours: 300, interactive: true },
@@ -82,7 +110,7 @@ export const WORKLOADS: Record<
     job: 36,
   },
   video: {
-    icon: Film,
+    icon: FilmSlate,
     name: "Video encoding",
     note: "Transcode and upscale",
     needs: { gpus: 1, vram: 12, ram: 32, hours: 80, interactive: false },
@@ -111,8 +139,34 @@ export const HEAT_LABEL: Record<HeatNeed, string> = {
   low: "Warm enough",
 };
 
+export type BuildingKind =
+  | "house"
+  | "bungalow"
+  | "flats"
+  | "coop"
+  | "hostel"
+  | "villa"
+  | "greenhouse"
+  | "school"
+  | "daycare";
+
+/** One icon per kind of building, in the lists and on the map's price pins. */
+export const BUILDING_ICON: Record<BuildingKind, Icon> = {
+  house: HouseLine,
+  bungalow: HouseSimple,
+  flats: BuildingApartment,
+  coop: Buildings,
+  hostel: Bed,
+  villa: SwimmingPool,
+  greenhouse: Plant,
+  school: GraduationCap,
+  daycare: Baby,
+};
+
 export type Offer = {
   id: string;
+  /** What kind of building it is, for its icon. */
+  kind: BuildingKind;
   at: [number, number];
   address: string;
   area: string;
@@ -120,7 +174,6 @@ export type Offer = {
   host: string;
   /** What the job's heat goes into. */
   heatsWhat: string;
-  emoji: string;
   gpu: { name: string; count: number; vram: number } | null;
   cpu: string;
   ram: number;
@@ -130,7 +183,6 @@ export type Offer = {
   heat: HeatNeed;
   /** Null when free now, else when it frees up. */
   freeFrom: string | null;
-  rating: number;
   /** Power per GPU while computing, kW (all of it ends up as heat). */
   kwPerGpu: number;
   /** The house from the start of the pitch. */
@@ -140,12 +192,12 @@ export type Offer = {
 export const OFFERS: Offer[] = [
   {
     id: "byfang",
+    kind: TARGET.building.kind === "school" ? "school" : "house",
     at: HOME,
     address: TARGET.name,
     area: "Gotthelf",
     host: "Family of four · 1930s house",
     heatsWhat: "the radiators and the kids' baths",
-    emoji: "🏡",
     gpu: { name: "RTX 4090", count: 4, vram: 24 },
     cpu: "64 cores",
     ram: 256,
@@ -153,18 +205,17 @@ export const OFFERS: Offer[] = [
     gpuH: 0.42,
     heat: "high",
     freeFrom: null,
-    rating: 4.9,
     kwPerGpu: 0.45,
     home: true,
   },
   {
     id: "gueter",
+    kind: "flats",
     at: [7.5915, 47.5425],
     address: "Güterstrasse 112",
     area: "Gundeldingen",
     host: "Meier block · 8 flats from 1912",
     heatsWhat: "hot water for 8 flats",
-    emoji: "🏢",
     gpu: { name: "RTX 4090", count: 8, vram: 24 },
     cpu: "128 cores",
     ram: 512,
@@ -172,17 +223,16 @@ export const OFFERS: Offer[] = [
     gpuH: 0.39,
     heat: "high",
     freeFrom: null,
-    rating: 4.8,
     kwPerGpu: 0.45,
   },
   {
     id: "rheinblick",
+    kind: "coop",
     at: [7.5775, 47.5672],
     address: "Elsässerstrasse 41",
     area: "St. Johann",
     host: "Co-op Rheinblick · 24 flats",
     heatsWhat: "the floor heating of 24 flats",
-    emoji: "🏘️",
     gpu: { name: "H100", count: 2, vram: 80 },
     cpu: "96 cores",
     ram: 1024,
@@ -190,17 +240,16 @@ export const OFFERS: Offer[] = [
     gpuH: 2.1,
     heat: "medium",
     freeFrom: null,
-    rating: 4.7,
     kwPerGpu: 0.7,
   },
   {
     id: "hostel",
+    kind: "hostel",
     at: [7.5952, 47.5655],
     address: "Klybeckstrasse 77",
     area: "Kleinbasel",
     host: "Hostel am Rhy · 60 beds",
-    heatsWhat: "60 guests' morning showers",
-    emoji: "🛏️",
+    heatsWhat: "hot water for 60 beds",
     gpu: { name: "L40S", count: 4, vram: 48 },
     cpu: "96 cores",
     ram: 384,
@@ -208,17 +257,16 @@ export const OFFERS: Offer[] = [
     gpuH: 0.85,
     heat: "high",
     freeFrom: null,
-    rating: 4.6,
     kwPerGpu: 0.35,
   },
   {
     id: "vogt",
+    kind: "greenhouse",
     at: [7.5405, 47.5505],
     address: "Baslerstrasse 210",
     area: "Allschwil",
     host: "Gärtnerei Vogt · tomato greenhouse",
     heatsWhat: "a greenhouse, all year round",
-    emoji: "🍅",
     gpu: { name: "H100", count: 8, vram: 80 },
     cpu: "192 cores",
     ram: 2048,
@@ -226,17 +274,16 @@ export const OFFERS: Offer[] = [
     gpuH: 1.95,
     heat: "high",
     freeFrom: null,
-    rating: 4.9,
     kwPerGpu: 0.7,
   },
   {
     id: "wenken",
+    kind: "villa",
     at: [7.6455, 47.5835],
     address: "Bettingerstrasse 8",
     area: "Riehen",
     host: "Brunner family · villa with a pool",
     heatsWhat: "the pool and the house",
-    emoji: "🏊",
     gpu: { name: "RTX 6000 Ada", count: 2, vram: 48 },
     cpu: "48 cores",
     ram: 256,
@@ -244,17 +291,16 @@ export const OFFERS: Offer[] = [
     gpuH: 0.8,
     heat: "medium",
     freeFrom: "from 18:00",
-    rating: 4.8,
     kwPerGpu: 0.3,
   },
   {
     id: "bruderholz",
+    kind: "bungalow",
     at: [7.5955, 47.5305],
     address: "Batteriestrasse 20",
     area: "Bruderholz",
     host: "Retired couple · 1960s bungalow",
     heatsWhat: "a bungalow that's always a bit cold",
-    emoji: "🫖",
     gpu: { name: "RTX 4080", count: 1, vram: 16 },
     cpu: "16 cores",
     ram: 64,
@@ -262,17 +308,16 @@ export const OFFERS: Offer[] = [
     gpuH: 0.32,
     heat: "high",
     freeFrom: null,
-    rating: 5,
     kwPerGpu: 0.32,
   },
   {
     id: "breite",
+    kind: "school",
     at: [7.6125, 47.5535],
     address: "Zürcherstrasse 150",
     area: "Breite",
-    host: "Schulhaus Breite · gym and showers",
-    heatsWhat: "the gym and 400 pupils' showers",
-    emoji: "🏫",
+    host: "Schulhaus Breite · school and gym",
+    heatsWhat: "the school's space heating and hot water",
     gpu: null,
     cpu: "2× EPYC · 192 cores",
     ram: 768,
@@ -280,17 +325,16 @@ export const OFFERS: Offer[] = [
     gpuH: 0,
     heat: "medium",
     freeFrom: null,
-    rating: 4.7,
     kwPerGpu: 0,
   },
   {
     id: "sunneschii",
+    kind: "daycare",
     at: [7.5705, 47.5405],
     address: "Hauptstrasse 30",
     area: "Binningen",
     host: "Kita Sunneschii · day-care",
     heatsWhat: "warm floors for crawling toddlers",
-    emoji: "🧸",
     gpu: { name: "RTX 4070", count: 2, vram: 12 },
     cpu: "24 cores",
     ram: 64,
@@ -298,7 +342,6 @@ export const OFFERS: Offer[] = [
     gpuH: 0.22,
     heat: "low",
     freeFrom: null,
-    rating: 4.9,
     kwPerGpu: 0.22,
   },
 ];
@@ -364,7 +407,7 @@ export function quote(o: Offer, n: Needs): Quote {
     heatKwh,
     co2: heatKwh * GAS_CO2_PER_KWH,
     // Cheaper is better, and a house that needs the heat counts as up to 25 % cheaper
-    score: -total * (1 - heatBonus) + o.rating,
+    score: -total * (1 - heatBonus),
   };
 }
 

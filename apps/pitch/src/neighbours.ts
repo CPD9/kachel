@@ -1,20 +1,5 @@
 import { BYFANGWEG_AT, TARGET } from "./target";
-import {
-  Box,
-  BrainCircuit,
-  Clapperboard,
-  Clock,
-  Cpu,
-  Gamepad2,
-  HardDrive,
-  type LucideIcon,
-  Monitor,
-  Server,
-  Thermometer,
-  Users,
-  Volume2,
-  Zap,
-} from "lucide-react";
+import { Box, BrainCircuit, Clapperboard, Gamepad2, type LucideIcon, Server } from "lucide-react";
 
 /** The presenter's home, hard-coded for the demo: [lng, lat]. */
 export const HOME: [number, number] = TARGET.at;
@@ -49,7 +34,7 @@ export type Neighbour = {
   status: string;
   /** On the roof tag: "Noah · plays on your rack". */
   tag: string;
-  facts: { icon: LucideIcon; k: string; v: string }[];
+  facts: { k: string; v: string }[];
   tags: string[];
   service: string;
   plans: [Plan, Plan, Plan];
@@ -73,12 +58,12 @@ const PLACED: Neighbour[] = [
     status: "Online · in a match",
     tag: "Noah · plays on your rack",
     facts: [
-      { icon: Clock, k: "Plays", v: "≈ 4 h a night" },
-      { icon: Monitor, k: "Setup today", v: "Gaming PC · 450 W" },
-      { icon: Thermometer, k: "Room in summer", v: "29 °C with the PC on" },
+      { k: "Plays", v: "≈ 4 h a night" },
+      { k: "Setup today", v: "Gaming PC · 450 W" },
+      { k: "Room in summer", v: "29 °C with the PC on" },
     ],
     tags: ["4K · 120 fps", "Streams evenings", "Fibre 10 Gbit/s"],
-    service: "Kachel Play · gaming on the rack",
+    service: "Gaming on the rack",
     plans: [
       {
         id: "casual",
@@ -132,12 +117,12 @@ const PLACED: Neighbour[] = [
     status: "Rendering · 62 %",
     tag: "Lena · renders on your rack",
     facts: [
-      { icon: Clock, k: "Renders", v: "Overnight, 5 nights a week" },
-      { icon: Monitor, k: "Setup today", v: "Laptop + render queue" },
-      { icon: Volume2, k: "Pain point", v: "Fans scream till 3 am" },
+      { k: "Renders", v: "Overnight, 5 nights a week" },
+      { k: "Setup today", v: "Laptop + render queue" },
+      { k: "Laptop busy", v: "Until about 3 am" },
     ],
     tags: ["Blender · V-Ray", "Client deadlines", "Visualisations"],
-    service: "Kachel Render · renders overnight",
+    service: "Renders overnight",
     plans: [
       {
         id: "draft",
@@ -191,12 +176,12 @@ const PLACED: Neighbour[] = [
     status: "Training · epoch 14 / 40",
     tag: "Jonas · trains on your rack",
     facts: [
-      { icon: Clock, k: "Runs", v: "12–48 h per experiment" },
-      { icon: Cpu, k: "Setup today", v: "Waits days for uni GPUs" },
-      { icon: HardDrive, k: "Data", v: "Stays in Switzerland" },
+      { k: "Runs", v: "12–48 h per experiment" },
+      { k: "Setup today", v: "Waits days for uni GPUs" },
+      { k: "Data", v: "Stays in Switzerland" },
     ],
     tags: ["PyTorch", "Uni Basel", "Swiss data"],
-    service: "Kachel Compute · GPUs for research",
+    service: "GPUs for research",
     plans: [
       {
         id: "notebook",
@@ -250,12 +235,12 @@ const PLACED: Neighbour[] = [
     status: "Exporting · 4K edit",
     tag: "Studio Rhein · exports on your rack",
     facts: [
-      { icon: Users, k: "Team", v: "3 editors" },
-      { icon: Clock, k: "Exports", v: "≈ 20 videos a week" },
-      { icon: Zap, k: "Setup today", v: "2 render PCs · 1.2 kW" },
+      { k: "Team", v: "3 editors" },
+      { k: "Exports", v: "≈ 20 videos a week" },
+      { k: "Setup today", v: "2 render PCs · 1.2 kW" },
     ],
     tags: ["4K · 8K", "Colour grading", "Ads & weddings"],
-    service: "Kachel Stream · editing & export",
+    service: "Editing and export",
     plans: [
       {
         id: "solo",
@@ -309,12 +294,12 @@ const PLACED: Neighbour[] = [
     status: "Serving 1.2k users now",
     tag: "Fluxa · hosts on your rack",
     facts: [
-      { icon: Users, k: "Users", v: "≈ 40k a month" },
-      { icon: Server, k: "Setup today", v: "Cloud in Frankfurt" },
-      { icon: HardDrive, k: "Wants", v: "Data in Basel" },
+      { k: "Users", v: "≈ 40k a month" },
+      { k: "Setup today", v: "Cloud in Frankfurt" },
+      { k: "Wants", v: "Data in Basel" },
     ],
     tags: ["Always on", "Swiss hosting", "ISO 27001"],
-    service: "Kachel Cloud · hosting next door",
+    service: "Hosting next door",
     plans: [
       {
         id: "starter",

@@ -6,6 +6,8 @@ import { HOME, NEIGHBOURS } from "./neighbours";
 import type { MarketPin } from "./MarketView";
 import { REMOTE_COLOR, REMOTE_FROM, type SimView } from "./simulation";
 import { useCompact } from "./compact";
+import { FOREST } from "./ui";
+import { BUILDING_ICON } from "./market";
 
 /** One full turn every this many seconds. */
 const SECONDS_PER_REVOLUTION = 120;
@@ -563,7 +565,7 @@ function drawRemoteLink(map: mapboxgl.Map, kw: number) {
       type: "line",
       source: REMOTE_LINK,
       layout: { "line-cap": "round" },
-      paint: { "line-color": "#c4b5fd", "line-dasharray": [1, 2] },
+      paint: { "line-color": "#7fd3a6", "line-dasharray": [1, 2] },
     });
   }
   const on = kw > 0.05;
@@ -589,11 +591,12 @@ function HousePin({
   picked: boolean;
   onPick?: ((id: string) => void) | undefined;
 }) {
+  const Icon = BUILDING_ICON[pin.kind];
   if (!pin.fit)
     return (
       <span className="flex animate-pill-in flex-col items-center opacity-35 grayscale transition-all">
-        <span className="grid size-6 place-items-center rounded-full border border-white/15 bg-[#1b1d21]/80 text-[11px]">
-          {pin.emoji}
+        <span className="grid size-6 place-items-center rounded-lg border border-white/15 bg-[#1b1d21]/80 text-white/70">
+          <Icon size={14} />
         </span>
         <span className="h-2 w-px bg-white/30" />
       </span>
@@ -606,35 +609,34 @@ function HousePin({
     >
       <span
         className={`flex items-center gap-1.5 rounded-full border py-1 pr-2.5 pl-1 font-semibold whitespace-nowrap text-white shadow-[0_6px_20px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all group-enabled:group-hover:scale-105 ${
-          picked
-            ? "scale-110 border-white/70 text-[12.5px]"
-            : "border-white/15 bg-[#1b1d21]/90 text-[11px]"
+          picked ? "scale-110 text-[12.5px]" : "border-white/15 bg-[#1b1d21]/90 text-[11px]"
         }`}
-        style={
-          picked ? { background: REMOTE_COLOR, boxShadow: `0 0 28px ${REMOTE_COLOR}` } : undefined
-        }
+        style={picked ? { background: FOREST[700], borderColor: FOREST[300] } : undefined}
       >
         <span
-          className={`grid place-items-center rounded-full ${picked ? "size-6 bg-white/25 text-[14px]" : "size-5 text-[12px]"}`}
-          style={picked ? undefined : { background: `${REMOTE_COLOR}55` }}
+          className={`grid place-items-center rounded-full ${picked ? "size-6" : "size-5"}`}
+          style={{
+            background: FOREST[900],
+            color: picked ? FOREST[100] : FOREST[300],
+          }}
         >
-          {pin.emoji}
+          <Icon size={picked ? 15 : 13} weight="duotone" />
         </span>
         <span className="tabular-nums">{pin.price}</span>
       </span>
       <span
         className={picked ? "h-6 w-0.5" : "h-3 w-px bg-white/40"}
-        style={picked ? { background: `linear-gradient(${REMOTE_COLOR}, transparent)` } : undefined}
+        style={picked ? { background: `linear-gradient(${FOREST[300]}, transparent)` } : undefined}
       />
       {picked && (
         <span className="relative flex size-3">
           <span
             className="absolute inset-0 animate-ping rounded-full"
-            style={{ background: REMOTE_COLOR }}
+            style={{ background: FOREST[500] }}
           />
           <span
             className="size-3 rounded-full ring-2 ring-white/80"
-            style={{ background: REMOTE_COLOR }}
+            style={{ background: FOREST[500] }}
           />
         </span>
       )}
