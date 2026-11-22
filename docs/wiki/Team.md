@@ -7,7 +7,7 @@ Four people built Kachel at the DigitalHeat hackathon in Basel.
 | Peter Dike | [@CPD9](https://github.com/CPD9)           | Speaks throughout and clicks the slides          |
 | Duc        | [@bila9630](https://github.com/bila9630)   | Runs the demo laptop, the film and the live flip |
 | Loyola     | [@Loyola-sk](https://github.com/Loyola-sk) | Keeps the clock                                  |
-| Nikolas    | [@Ni93c42l](https://github.com/Ni93c42l)   | Takes questions on the numbers                   |
+| Nicolas    | [@Ni93c42l](https://github.com/Ni93c42l)   | Takes questions on the numbers                   |
 
 The roles come from the [pitch script](https://github.com/CPD9/kachel/blob/main/docs/pitch.md).
 Who wrote what is in the [merged pull requests](https://github.com/CPD9/kachel/pulls?q=is%3Apr+is%3Amerged).
