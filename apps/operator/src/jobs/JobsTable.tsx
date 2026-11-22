@@ -80,6 +80,11 @@ export function JobsTable({
           {caption}
         </p>
       </div>
+      {rows.length === 0 && (
+        <p className="px-4 pt-2 pb-5 text-[15px] text-label-2 sm:px-5">
+          No jobs yet. The live loop places them as they arrive.
+        </p>
+      )}
       <ul className="mt-3 divide-y divide-sep/60 border-t border-sep/60 md:hidden">
         {rows.map((r) => (
           <li key={r.j.id} data-job={r.j.id} data-state={r.j.state} className="px-4 py-3">

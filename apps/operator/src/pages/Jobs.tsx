@@ -22,7 +22,8 @@ export function Jobs({
   source: OperatorSource | undefined;
 }) {
   const [now] = useState(() => Date.now());
-  const isLive = Boolean(live.email) && live.status === "live" && live.state.jobs.size > 0;
+  // Signed in and live means live, even before the loop has placed a job.
+  const isLive = Boolean(live.email) && live.status === "live";
   const data: JobTableData = useMemo(() => {
     if (isLive)
       return {
