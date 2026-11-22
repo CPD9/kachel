@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import type { BuyerRow, Live, OperatorSource } from "../live/live";
 import { FleetMap } from "../map/FleetMap";
+import { AgentStrip } from "../replay/AgentStrip";
+import { useAgent } from "../replay/replay";
 import type { FleetMonth } from "../fleet/months";
 import { houseName, needsAttention, ATTENTION_BELOW } from "../fleet/state";
 import { href } from "../shell/route";
@@ -38,6 +40,8 @@ export function Today({
   rows: BuyerRow[];
   source: OperatorSource | undefined;
 }) {
+  // Here, not in App: only the pages that show the agent re-render on its ticks.
+  const agent = useAgent(source, Boolean(live.email));
   const attention = useMemo(() => needsAttention(month, monthName), [month, monthName]);
   const total = month.houses.length;
   const fine = total - attention.length;
@@ -57,6 +61,7 @@ export function Today({
     <>
       <PageHead eyebrow="Today" title={<span data-headline>{headline}</span>} />
       <TodayDash month={month} before={before} monthNumber={monthNumber} monthName={monthName} />
+      <AgentStrip agent={agent} />
 
       <section aria-labelledby="attention" className={`${card} mt-6 overflow-hidden`}>
         <div className="flex items-baseline justify-between gap-4 px-4 pt-4 sm:px-5">

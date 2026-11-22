@@ -263,6 +263,27 @@ describe("operator console", () => {
     at("#/jobs");
     render(<App startMonth={0} source={{ ...signedOut, decisions }} />);
     expect(await screen.findByRole("button", { name: "Sign in" })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: /Why this decision/ })).toBeNull();
+    // Signed out, no live decision shows: only the replay of the log, said to be one.
+    expect(screen.queryByText(decision.hash)).toBeNull();
+    expect(document.querySelector("[data-replay-label]")?.textContent).toMatch(
+      /^Replay of the scheduler's decisions, (13 January|15 July) 2025$/,
+    );
+  });
+
+  it("without Supabase, replays the scheduler's log on Today and Jobs and never says live", () => {
+    render(<App startMonth={0} />);
+    expect(document.querySelector("[data-agent]")?.getAttribute("data-agent")).toBe("replay");
+    expect(document.querySelector("[data-replay-label]")?.textContent).toBe(
+      "Replay of the scheduler's decisions, 13 January 2025",
+    );
+    expect(document.querySelector("[data-agent]")?.textContent).not.toMatch(/live/i);
+  });
+
+  it("shows the live decision on Today once signed in", async () => {
+    await act(async () => {
+      render(<App startMonth={0} source={{ ...source, decisions }} />);
+    });
+    expect(document.querySelector("[data-agent]")?.getAttribute("data-agent")).toBe("live");
+    expect(await screen.findByText(decision.hash.slice(0, 12))).toBeTruthy();
   });
 });
