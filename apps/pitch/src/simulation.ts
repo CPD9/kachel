@@ -105,7 +105,7 @@ export type Hour = {
 };
 
 /** The colour of the work from far away, on the map and in the cards. */
-export const REMOTE_COLOR = "#8b5cf6";
+export const REMOTE_COLOR = "#94a3b8";
 /** Where the far-away work comes in from on the map: Zürich, off-screen to the east. */
 export const REMOTE_FROM: [number, number] = [8.5417, 47.3769];
 

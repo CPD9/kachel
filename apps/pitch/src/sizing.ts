@@ -22,8 +22,8 @@ export type Fuel = "oil" | "gas" | "heatpump" | "electric" | "district";
 export type Insulation = "bare" | "attic" | "facade" | "thermos";
 /** A school's hours: in term on weekdays, also evenings and weekends, or all year. */
 export type Use = "term" | "evenings" | "allYear";
-/** What a school uses hot water for: washbasins, a canteen, or a canteen and showers. */
-export type HotWater = "basins" | "canteen" | "showers";
+/** What a school uses hot water for: washbasins, a canteen, or a canteen and a sports hall. */
+export type HotWater = "basins" | "canteen" | "sports";
 
 export type Answers = {
   windows: Windows;
@@ -61,7 +61,7 @@ const HOT_WATER_PER_CHILD = 500;
 /** A school's space heating against term-time use (the SIA mean). Assumptions, to check. */
 export const USE_FACTOR: Record<Use, number> = { term: 1, evenings: 1.15, allYear: 1.3 };
 /** A school's hot water against one with a canteen (the SIA mean). Assumptions, to check. */
-export const HOT_WATER_FACTOR: Record<HotWater, number> = { basins: 0.5, canteen: 1, showers: 1.8 };
+export const HOT_WATER_FACTOR: Record<HotWater, number> = { basins: 0.5, canteen: 1, sports: 1.8 };
 /** How much of the heat insulation keeps in: roof, outer walls, or both. */
 export const INSULATION: Record<Insulation, { name: string; hint: string; factor: number }> = {
   bare: { name: "Bare", hint: "Heat slips out through roof and walls", factor: 1 },
@@ -122,16 +122,16 @@ export const defaultParams = (fuel: Fuel, b: Published = TARGET.building): Param
 /** The biggest set-up, for homes that need more than any single rack. */
 const TWIN_XL: Rack = {
   id: "xl",
-  name: "Kachel Twin XL",
+  name: "Two racks XL, 40 servers",
   kw: 40,
   servers: 40,
   size: "Two racks · 1.6 m²",
 };
 
 export const RACKS: Rack[] = [
-  { id: "s", name: "Kachel Tile S", kw: 8, servers: 8, size: "Half rack · 0.6 m²" },
-  { id: "m", name: "Kachel Rack M", kw: 15, servers: 16, size: "One rack · 0.8 m²" },
-  { id: "l", name: "Kachel Rack L", kw: 24, servers: 24, size: "One rack · 0.8 m²" },
+  { id: "s", name: "Rack S, 8 servers", kw: 8, servers: 8, size: "Half rack · 0.6 m²" },
+  { id: "m", name: "Rack M, 16 servers", kw: 15, servers: 16, size: "One rack · 0.8 m²" },
+  { id: "l", name: "Rack L, 24 servers", kw: 24, servers: 24, size: "One rack · 0.8 m²" },
   TWIN_XL,
 ];
 

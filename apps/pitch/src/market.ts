@@ -120,7 +120,6 @@ export type Offer = {
   host: string;
   /** What the job's heat goes into. */
   heatsWhat: string;
-  emoji: string;
   gpu: { name: string; count: number; vram: number } | null;
   cpu: string;
   ram: number;
@@ -130,7 +129,6 @@ export type Offer = {
   heat: HeatNeed;
   /** Null when free now, else when it frees up. */
   freeFrom: string | null;
-  rating: number;
   /** Power per GPU while computing, kW (all of it ends up as heat). */
   kwPerGpu: number;
   /** The house from the start of the pitch. */
@@ -145,7 +143,6 @@ export const OFFERS: Offer[] = [
     area: "Gotthelf",
     host: "Family of four · 1930s house",
     heatsWhat: "the radiators and the kids' baths",
-    emoji: "🏡",
     gpu: { name: "RTX 4090", count: 4, vram: 24 },
     cpu: "64 cores",
     ram: 256,
@@ -153,7 +150,6 @@ export const OFFERS: Offer[] = [
     gpuH: 0.42,
     heat: "high",
     freeFrom: null,
-    rating: 4.9,
     kwPerGpu: 0.45,
     home: true,
   },
@@ -164,7 +160,6 @@ export const OFFERS: Offer[] = [
     area: "Gundeldingen",
     host: "Meier block · 8 flats from 1912",
     heatsWhat: "hot water for 8 flats",
-    emoji: "🏢",
     gpu: { name: "RTX 4090", count: 8, vram: 24 },
     cpu: "128 cores",
     ram: 512,
@@ -172,7 +167,6 @@ export const OFFERS: Offer[] = [
     gpuH: 0.39,
     heat: "high",
     freeFrom: null,
-    rating: 4.8,
     kwPerGpu: 0.45,
   },
   {
@@ -182,7 +176,6 @@ export const OFFERS: Offer[] = [
     area: "St. Johann",
     host: "Co-op Rheinblick · 24 flats",
     heatsWhat: "the floor heating of 24 flats",
-    emoji: "🏘️",
     gpu: { name: "H100", count: 2, vram: 80 },
     cpu: "96 cores",
     ram: 1024,
@@ -190,7 +183,6 @@ export const OFFERS: Offer[] = [
     gpuH: 2.1,
     heat: "medium",
     freeFrom: null,
-    rating: 4.7,
     kwPerGpu: 0.7,
   },
   {
@@ -199,8 +191,7 @@ export const OFFERS: Offer[] = [
     address: "Klybeckstrasse 77",
     area: "Kleinbasel",
     host: "Hostel am Rhy · 60 beds",
-    heatsWhat: "60 guests' morning showers",
-    emoji: "🛏️",
+    heatsWhat: "hot water for 60 beds",
     gpu: { name: "L40S", count: 4, vram: 48 },
     cpu: "96 cores",
     ram: 384,
@@ -208,7 +199,6 @@ export const OFFERS: Offer[] = [
     gpuH: 0.85,
     heat: "high",
     freeFrom: null,
-    rating: 4.6,
     kwPerGpu: 0.35,
   },
   {
@@ -218,7 +208,6 @@ export const OFFERS: Offer[] = [
     area: "Allschwil",
     host: "Gärtnerei Vogt · tomato greenhouse",
     heatsWhat: "a greenhouse, all year round",
-    emoji: "🍅",
     gpu: { name: "H100", count: 8, vram: 80 },
     cpu: "192 cores",
     ram: 2048,
@@ -226,7 +215,6 @@ export const OFFERS: Offer[] = [
     gpuH: 1.95,
     heat: "high",
     freeFrom: null,
-    rating: 4.9,
     kwPerGpu: 0.7,
   },
   {
@@ -236,7 +224,6 @@ export const OFFERS: Offer[] = [
     area: "Riehen",
     host: "Brunner family · villa with a pool",
     heatsWhat: "the pool and the house",
-    emoji: "🏊",
     gpu: { name: "RTX 6000 Ada", count: 2, vram: 48 },
     cpu: "48 cores",
     ram: 256,
@@ -244,7 +231,6 @@ export const OFFERS: Offer[] = [
     gpuH: 0.8,
     heat: "medium",
     freeFrom: "from 18:00",
-    rating: 4.8,
     kwPerGpu: 0.3,
   },
   {
@@ -254,7 +240,6 @@ export const OFFERS: Offer[] = [
     area: "Bruderholz",
     host: "Retired couple · 1960s bungalow",
     heatsWhat: "a bungalow that's always a bit cold",
-    emoji: "🫖",
     gpu: { name: "RTX 4080", count: 1, vram: 16 },
     cpu: "16 cores",
     ram: 64,
@@ -262,7 +247,6 @@ export const OFFERS: Offer[] = [
     gpuH: 0.32,
     heat: "high",
     freeFrom: null,
-    rating: 5,
     kwPerGpu: 0.32,
   },
   {
@@ -270,9 +254,8 @@ export const OFFERS: Offer[] = [
     at: [7.6125, 47.5535],
     address: "Zürcherstrasse 150",
     area: "Breite",
-    host: "Schulhaus Breite · gym and showers",
-    heatsWhat: "the gym and 400 pupils' showers",
-    emoji: "🏫",
+    host: "Schulhaus Breite · school and gym",
+    heatsWhat: "the school's space heating and hot water",
     gpu: null,
     cpu: "2× EPYC · 192 cores",
     ram: 768,
@@ -280,7 +263,6 @@ export const OFFERS: Offer[] = [
     gpuH: 0,
     heat: "medium",
     freeFrom: null,
-    rating: 4.7,
     kwPerGpu: 0,
   },
   {
@@ -290,7 +272,6 @@ export const OFFERS: Offer[] = [
     area: "Binningen",
     host: "Kita Sunneschii · day-care",
     heatsWhat: "warm floors for crawling toddlers",
-    emoji: "🧸",
     gpu: { name: "RTX 4070", count: 2, vram: 12 },
     cpu: "24 cores",
     ram: 64,
@@ -298,7 +279,6 @@ export const OFFERS: Offer[] = [
     gpuH: 0.22,
     heat: "low",
     freeFrom: null,
-    rating: 4.9,
     kwPerGpu: 0.22,
   },
 ];
@@ -364,7 +344,7 @@ export function quote(o: Offer, n: Needs): Quote {
     heatKwh,
     co2: heatKwh * GAS_CO2_PER_KWH,
     // Cheaper is better, and a house that needs the heat counts as up to 25 % cheaper
-    score: -total * (1 - heatBonus) + o.rating,
+    score: -total * (1 - heatBonus),
   };
 }
 

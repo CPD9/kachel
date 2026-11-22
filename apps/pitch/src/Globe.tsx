@@ -6,6 +6,7 @@ import { HOME, NEIGHBOURS } from "./neighbours";
 import type { MarketPin } from "./MarketView";
 import { REMOTE_COLOR, REMOTE_FROM, type SimView } from "./simulation";
 import { useCompact } from "./compact";
+import { CLAY as MARKET_ACCENT } from "./ui";
 
 /** One full turn every this many seconds. */
 const SECONDS_PER_REVOLUTION = 120;
@@ -563,7 +564,7 @@ function drawRemoteLink(map: mapboxgl.Map, kw: number) {
       type: "line",
       source: REMOTE_LINK,
       layout: { "line-cap": "round" },
-      paint: { "line-color": "#c4b5fd", "line-dasharray": [1, 2] },
+      paint: { "line-color": "#cbd5e1", "line-dasharray": [1, 2] },
     });
   }
   const on = kw > 0.05;
@@ -593,7 +594,7 @@ function HousePin({
     return (
       <span className="flex animate-pill-in flex-col items-center opacity-35 grayscale transition-all">
         <span className="grid size-6 place-items-center rounded-full border border-white/15 bg-[#1b1d21]/80 text-[11px]">
-          {pin.emoji}
+          {pin.initial}
         </span>
         <span className="h-2 w-px bg-white/30" />
       </span>
@@ -610,31 +611,30 @@ function HousePin({
             ? "scale-110 border-white/70 text-[12.5px]"
             : "border-white/15 bg-[#1b1d21]/90 text-[11px]"
         }`}
-        style={
-          picked ? { background: REMOTE_COLOR, boxShadow: `0 0 28px ${REMOTE_COLOR}` } : undefined
-        }
+        style={picked ? { background: MARKET_ACCENT } : undefined}
       >
         <span
-          className={`grid place-items-center rounded-full ${picked ? "size-6 bg-white/25 text-[14px]" : "size-5 text-[12px]"}`}
-          style={picked ? undefined : { background: `${REMOTE_COLOR}55` }}
+          className={`grid place-items-center rounded-full font-semibold ${picked ? "size-6 bg-white/25 text-[12px]" : "size-5 bg-white/15 text-[10px]"}`}
         >
-          {pin.emoji}
+          {pin.initial}
         </span>
         <span className="tabular-nums">{pin.price}</span>
       </span>
       <span
         className={picked ? "h-6 w-0.5" : "h-3 w-px bg-white/40"}
-        style={picked ? { background: `linear-gradient(${REMOTE_COLOR}, transparent)` } : undefined}
+        style={
+          picked ? { background: `linear-gradient(${MARKET_ACCENT}, transparent)` } : undefined
+        }
       />
       {picked && (
         <span className="relative flex size-3">
           <span
             className="absolute inset-0 animate-ping rounded-full"
-            style={{ background: REMOTE_COLOR }}
+            style={{ background: MARKET_ACCENT }}
           />
           <span
             className="size-3 rounded-full ring-2 ring-white/80"
-            style={{ background: REMOTE_COLOR }}
+            style={{ background: MARKET_ACCENT }}
           />
         </span>
       )}

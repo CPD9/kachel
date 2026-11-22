@@ -1,25 +1,13 @@
 import { TARGET } from "./target";
-import {
-  ArrowLeft,
-  Cable,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Cpu,
-  Flame,
-  MapPin,
-  ShowerHead,
-  Timer,
-  Zap,
-} from "lucide-react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCompact } from "./compact";
 import { distanceFromHome, NEIGHBOURS, type Neighbour } from "./neighbours";
 import { Sheet } from "./Sheet";
 import { card, label } from "./ui";
 
-/** kWh of heat for one hot shower. */
-const SHOWER_KWH = 2;
+/** Litres of hot water one kWh heats from 10 to 55 °C (1 kWh = 860 kcal, 45 K). */
+const LITRES_PER_KWH = 860 / 45;
 
 /**
  * The bar at the top to step through everyone near the house who could use its rack (like
@@ -117,7 +105,7 @@ export function NeighbourDetails({
   const [booked, setBooked] = useState(false);
   const plan = n.plans.find((p) => p.id === planId) ?? n.plans[1];
   const heat = n.load.reduce((sum, t) => sum + t.v * plan.kw, 0);
-  const showers = Math.max(1, Math.round(heat / SHOWER_KWH));
+  const litres = Math.round((heat * LITRES_PER_KWH) / 10) * 10;
   const code = `KP-${(plan.price * 97 + 4021).toString().slice(-4)}`;
   const Icon = n.icon;
   const metres = distanceFromHome(n.at);
@@ -158,18 +146,16 @@ export function NeighbourDetails({
       </div>
       <div className="px-2 pt-3 pb-1.5">
         <p className={label} style={{ color: n.color }}>
-          <MapPin size={11} /> Your neighbour
+          Your neighbour
         </p>
         <h3 className="mt-1 text-[17px] leading-tight font-semibold">{n.name}</h3>
         <p className="mt-0.5 text-[11.5px] text-white/55">
           {n.what} · {metres} m from {TARGET.name}
         </p>
         <dl className="mt-3 space-y-1.5 text-[11.5px]">
-          {n.facts.map(({ icon: FactIcon, k, v }) => (
+          {n.facts.map(({ k, v }) => (
             <div key={k} className="flex items-center justify-between gap-2">
-              <dt className={`${label} shrink-0`}>
-                <FactIcon size={12} /> {k}
-              </dt>
+              <dt className={`${label} shrink-0`}>{k}</dt>
               <dd className="text-right font-semibold tabular-nums">{v}</dd>
             </div>
           ))}
@@ -189,9 +175,7 @@ export function NeighbourDetails({
   );
   const planBody = (
     <div className="px-2 pt-2 pb-1.5">
-      <p className={label}>
-        <Cpu size={12} /> {n.service}
-      </p>
+      <p className={label}>{n.service}</p>
       <div className="mt-1.5 flex items-end justify-between">
         <div>
           <h3 className="text-[19px] leading-tight font-semibold">{plan.spec}</h3>
@@ -225,18 +209,15 @@ export function NeighbourDetails({
 
       <dl className="mt-3 space-y-1.5 text-[11.5px]">
         {[
-          { icon: Cable, k: "Latency", v: `≈ 2 ms · ${metres} m of fibre` },
+          { k: "Latency", v: `≈ 2 ms · ${metres} m of fibre` },
           {
-            icon: Timer,
             k: "Included",
             v: plan.hours >= 720 ? "Always on" : `${plan.hours} h a month`,
           },
-          { icon: Zap, k: "Instead of", v: n.instead },
-        ].map(({ icon: RowIcon, k, v }) => (
+          { k: "Instead of", v: n.instead },
+        ].map(({ k, v }) => (
           <div key={k} className="flex items-center justify-between gap-2">
-            <dt className={`${label} shrink-0`}>
-              <RowIcon size={12} /> {k}
-            </dt>
+            <dt className={`${label} shrink-0`}>{k}</dt>
             <dd className="text-right font-semibold tabular-nums">{v}</dd>
           </div>
         ))}
@@ -270,7 +251,7 @@ export function NeighbourDetails({
   const heatBody = (
     <div className="px-2 pt-2 pb-1.5">
       <p className={label}>
-        <Flame size={12} /> {n.heatTitle} heat {TARGET.name}
+        {n.heatTitle} heat {TARGET.name}
       </p>
 
       {/* Load per hour: the same bars are heat for the house */}
@@ -302,14 +283,12 @@ export function NeighbourDetails({
 
       <div className="mt-3 grid grid-cols-2 gap-1.5">
         <div className="rounded-2xl bg-white/[0.06] px-2.5 py-2">
-          <Flame size={13} className="text-clay" />
-          <p className="mt-1 text-[15px] font-semibold tabular-nums">{heat.toFixed(1)} kWh</p>
+          <p className="text-[15px] font-semibold tabular-nums">{heat.toFixed(1)} kWh</p>
           <p className="text-[10.5px] text-white/55">of heat</p>
         </div>
         <div className="rounded-2xl bg-white/[0.06] px-2.5 py-2">
-          <ShowerHead size={13} className="text-clay" />
-          <p className="mt-1 text-[15px] font-semibold tabular-nums">
-            {showers} {showers === 1 ? "shower" : "showers"}
+          <p className="text-[15px] font-semibold tabular-nums">
+            {litres.toLocaleString("de-CH")} litres
           </p>
           <p className="text-[10.5px] text-white/55">of hot water</p>
         </div>

@@ -10,3 +10,6 @@ export const lightCard =
 /** Small uppercase heading inside a light card. */
 export const lightLabel =
   "flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-muted uppercase";
+
+/** The pitch's clay accent (index.css --color-clay), for inline styles and map pins. */
+export const CLAY = "#ea580c";
