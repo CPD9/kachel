@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Baby,
+  CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -17,15 +18,19 @@ import {
   Hourglass,
   Layers,
   Leaf,
+  MoonStar,
   PiggyBank,
+  Repeat,
   RotateCcw,
   Server,
+  ShowerHead,
   SlidersHorizontal,
   Sparkles,
   Square,
   Timer,
   TrendingUp,
   Users,
+  Utensils,
   Waves,
   Zap,
 } from "lucide-react";
@@ -35,6 +40,7 @@ import {
   type Emitters,
   type Fuel,
   FUELS,
+  type HotWater,
   defaultParams,
   INSULATION,
   type Insulation,
@@ -42,6 +48,7 @@ import {
   RACKS,
   type Rack,
   type Result,
+  type Use,
   type Windows,
   ourModel,
   size,
@@ -78,13 +85,38 @@ const FUEL_OPTIONS: Option<Fuel>[] = [
   },
 ];
 
-export const STEPS = ["Windows", "Heating", "Energy", "People", "Result"] as const;
-type Step = (typeof STEPS)[number];
+/** A school (the campus) gets its own questions: the register's period, its use, its hot water. */
+const SCHOOL_PERIODS: Option<Windows>[] = [
+  { value: "triple", icon: Columns3, name: "After 2015", note: "Triple glazing, well insulated" },
+  { value: "double", icon: Columns2, name: "1980–2015", note: "Double glazing, some insulation" },
+  { value: "single", icon: Square, name: "Before 1980", note: "Single glazing, little insulation" },
+];
+const USES: Option<Use>[] = [
+  { value: "term", icon: CalendarDays, name: "Term-time weekdays", note: "Lectures and studios" },
+  { value: "evenings", icon: MoonStar, name: "Evenings and weekends too", note: "Courses, events" },
+  { value: "allYear", icon: Repeat, name: "All year", note: "Labs and studios, no breaks" },
+];
+const HOT_WATER: Option<HotWater>[] = [
+  { value: "basins", icon: Droplet, name: "Washbasins only", note: "Offices and lecture rooms" },
+  { value: "canteen", icon: Utensils, name: "A canteen", note: "As a typical school" },
+  {
+    value: "showers",
+    icon: ShowerHead,
+    name: "Canteen and showers",
+    note: "Sports, labs, cyclists",
+  },
+];
+
+const HOME_STEPS = ["Windows", "Heating", "Energy", "People", "Result"] as const;
+const SCHOOL_STEPS = ["Building", "Heat today", "Use", "Hot water", "Result"] as const;
+export type Step = (typeof HOME_STEPS)[number] | (typeof SCHOOL_STEPS)[number];
+/** The building the questions start from (target.ts). */
+const b = TARGET.building;
+const school = b.kind === "school";
+export const STEPS: readonly Step[] = school ? SCHOOL_STEPS : HOME_STEPS;
 
 const chf = (x: number) => `CHF ${Math.round(x).toLocaleString("de-CH")}`;
 const kwh = (x: number) => `${Math.round(x).toLocaleString("en-GB")} kWh`;
-/** The building the questions start from (target.ts). */
-const b = TARGET.building;
 
 /** Where you are: the questions as pills across the top. */
 function StepPills({
@@ -110,7 +142,7 @@ function StepPills({
             disabled={i > step}
             onClick={() => onStep(i)}
             aria-label={s}
-            className={`flex items-center justify-center gap-1 rounded-full text-[11.5px] font-medium transition-colors ${
+            className={`flex items-center justify-center gap-1 rounded-full text-[11.5px] font-medium whitespace-nowrap transition-colors ${
               compact ? "min-h-10 min-w-10 px-3" : "px-3 py-1"
             } ${
               i === step
@@ -313,13 +345,20 @@ function AssumptionsCard({
   onReset: () => void;
   onRestart: () => void;
 }) {
-  const chips = [
-    WINDOWS.find((o) => o.value === answers.windows)?.name,
-    EMITTERS.find((o) => o.value === answers.emitters)?.name,
-    FUELS[answers.fuel].name,
-    `${answers.adults} ${answers.adults === 1 ? "adult" : "adults"}`,
-    `${answers.children} ${answers.children === 1 ? "child" : "children"}`,
-  ];
+  const chips = school
+    ? [
+        `Built ${SCHOOL_PERIODS.find((o) => o.value === answers.windows)?.name.toLowerCase()}`,
+        FUELS[answers.fuel].name,
+        USES.find((o) => o.value === answers.use)?.name,
+        HOT_WATER.find((o) => o.value === answers.hotWater)?.name,
+      ]
+    : [
+        WINDOWS.find((o) => o.value === answers.windows)?.name,
+        EMITTERS.find((o) => o.value === answers.emitters)?.name,
+        FUELS[answers.fuel].name,
+        `${answers.adults} ${answers.adults === 1 ? "adult" : "adults"}`,
+        `${answers.children} ${answers.children === 1 ? "child" : "children"}`,
+      ];
   return (
     <article className={bare ? "" : `${card} absolute top-6 left-6 w-[300px]`}>
       <div className="px-2 pt-2">
@@ -596,11 +635,13 @@ function ProductCard({
           />
         </div>
         <p className="mt-1.5 mb-1 text-[10.5px] leading-snug text-muted">
-          {best
-            ? `Sized for your ${r.peakKw.toFixed(1)} kW peak. Your ${FUELS[answers.fuel].name.toLowerCase()} stays as backup.`
-            : smaller
-              ? `Smaller than your ${r.peakKw.toFixed(1)} kW peak: your ${FUELS[answers.fuel].name.toLowerCase()} does more of the work.`
-              : "More than you need: the extra heat has nowhere to go."}
+          {best && r.rack.kw < r.peakKw
+            ? `Your ${r.peakKw.toFixed(1)} kW peak needs ${Math.ceil(r.peakKw / r.rack.kw)} of these; the figures are for one. Your ${FUELS[answers.fuel].name.toLowerCase()} does the rest.`
+            : best
+              ? `Sized for your ${r.peakKw.toFixed(1)} kW peak. Your ${FUELS[answers.fuel].name.toLowerCase()} stays as backup.`
+              : smaller
+                ? `Smaller than your ${r.peakKw.toFixed(1)} kW peak: your ${FUELS[answers.fuel].name.toLowerCase()} does more of the work.`
+                : "More than you need: the extra heat has nowhere to go."}
         </p>
         <OurModelNote demandKwh={r.demand} />
       </div>
@@ -657,6 +698,50 @@ export function Assessment({
 
   const question = (
     <>
+      {current === "Building" && (
+        <Question
+          n={1}
+          title="When was it built?"
+          hint={`The register says ${b.built}: ${b.areaM2.toLocaleString("en-GB")} m² heated, a school (BFS GWR).`}
+        >
+          <Choice
+            options={SCHOOL_PERIODS}
+            value={answers.windows}
+            onPick={(v) => set("windows", v)}
+          />
+        </Question>
+      )}
+      {current === "Heat today" && (
+        <Question
+          n={2}
+          title="What heats it today?"
+          hint="The register says district heating. We compare against what it pays now."
+        >
+          <Choice options={FUEL_OPTIONS} value={answers.fuel} onPick={(v) => set("fuel", v)} />
+        </Question>
+      )}
+      {current === "Use" && (
+        <Question
+          n={3}
+          title="When is it in use?"
+          hint="More hours, more heat: our factors, to check."
+        >
+          <Choice options={USES} value={answers.use ?? "term"} onPick={(v) => set("use", v)} />
+        </Question>
+      )}
+      {current === "Hot water" && (
+        <Question
+          n={4}
+          title="What needs hot water?"
+          hint="Server heat makes hot water all year. Our factors, to check."
+        >
+          <Choice
+            options={HOT_WATER}
+            value={answers.hotWater ?? "canteen"}
+            onPick={(v) => set("hotWater", v)}
+          />
+        </Question>
+      )}
       {current === "Windows" && (
         <Question
           n={1}
@@ -724,7 +809,8 @@ export function Assessment({
           onClick={() => setStep(step + 1)}
           className={`ml-auto flex items-center gap-1.5 rounded-full bg-clay px-4 text-[12px] font-semibold text-white hover:bg-clay-dark ${compact ? "min-h-11" : "py-2"}`}
         >
-          {current === "People" ? "See my result" : "Next"} <ArrowRight size={13} />
+          {step === STEPS.length - 2 ? (school ? "See the result" : "See my result") : "Next"}{" "}
+          <ArrowRight size={13} />
         </button>
       </div>
     </>
@@ -766,7 +852,7 @@ export function Assessment({
             light
             tabs={[
               { id: "question", label: "Question", body: question },
-              { id: "floors", label: "Floors", body: floors },
+              { id: "floors", label: school ? "Levels" : "Floors", body: floors },
             ]}
           />
         )}
