@@ -80,6 +80,8 @@ describe("operator view", () => {
     expect(document.querySelectorAll("tbody tr[data-house]")).toHaveLength(100);
     expect(document.querySelectorAll("li[data-house-card]")).toHaveLength(100);
     expect(screen.getByRole("img", { name: /Basel and Bern/ })).toBeTruthy();
+    // Without Supabase (a deployed build): the model shows, and the live part says what it needs
+    expect(screen.getByText(/Live data needs the local stack/)).toBeTruthy();
   });
 
   it("follows the month: less heat and revenue in July than in January", () => {

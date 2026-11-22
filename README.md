@@ -51,7 +51,7 @@ Row level security shows each person only their own rows, so sign in to the host
 
 With both apps running, `pnpm screenshots` retakes these two images with headless Chromium.
 
-To pause and resume a real job from the heat signal, as on stage, follow [the demo checklist](docs/demo-checklist.md). Everything else, the model commands included, is in [Run it yourself](docs/wiki/Run-it-yourself.md). What we hand in for the hackathon is in [docs/submission.md](docs/submission.md).
+To pause and resume a real job from the heat signal, as on stage, follow [the demo checklist](docs/demo-checklist.md). Everything else, the model commands included, is in [Run it yourself](docs/wiki/Run-it-yourself.md). What we hand in for the hackathon is in [docs/submission.md](docs/submission.md). The map, the pitch and the operator view go online as described in [docs/deploy.md](docs/deploy.md).
 
 ## Repo map
 

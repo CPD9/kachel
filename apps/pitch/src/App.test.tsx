@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { App } from "./App";
-import { FADE_MS, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
+import { DEFAULT_MAP_URL, FADE_MS, mapBaseFor, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
 import { targetFor } from "./target";
 
 beforeEach(() => vi.useFakeTimers());
@@ -33,6 +33,26 @@ it("without a token, hands the scripted intro straight over to the map at Byfang
   // Fading to the map's background, then the page changes
   act(() => vi.advanceTimersByTime(FADE_MS));
   expect(go).toHaveBeenCalledWith("http://localhost:5175/?egid=442141&card=1");
+});
+
+it("in a deployed build without VITE_MAP_URL, says so instead of opening localhost", () => {
+  vi.stubEnv("VITE_MAPBOX_TOKEN", "");
+  vi.stubEnv("VITE_MAP_URL", "");
+  vi.stubEnv("DEV", false);
+  const go = vi.fn();
+  render(<App go={go} />);
+  fireEvent.click(screen.getByLabelText("Presentation mode"));
+  act(() => vi.advanceTimersByTime(3000));
+  act(() => vi.advanceTimersByTime(NO_GLOBE_HOLD_MS));
+  act(() => vi.advanceTimersByTime(FADE_MS));
+  expect(go).not.toHaveBeenCalled();
+  expect(screen.getByRole("status").textContent).toContain("VITE_MAP_URL");
+});
+
+it("uses VITE_MAP_URL, else localhost only in dev", () => {
+  expect(mapBaseFor("https://map.example", false)).toBe("https://map.example");
+  expect(mapBaseFor(undefined, true)).toBe(DEFAULT_MAP_URL);
+  expect(mapBaseFor("", false)).toBeNull();
 });
 
 it("builds the map's address from VITE_MAP_URL, at the demo target's building", () => {
