@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Home, Layers, Minus, Plus, Thermometer } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Assessment, STEPS } from "./Assessment";
+import { useCompact } from "./compact";
 import { FLOORS, type FloorId, type Focus, HouseScene } from "./House";
 import { DEFAULT_ANSWERS } from "./sizing";
 import { lightCard as card, lightLabel as label } from "./ui";
@@ -31,7 +32,7 @@ function Stepper({
   max: number;
 }) {
   const step =
-    "grid size-5 place-items-center rounded-full bg-black/[0.05] text-ink/80 hover:bg-black/10 disabled:opacity-30";
+    "tap relative grid size-5 place-items-center rounded-full bg-black/[0.05] text-ink/80 hover:bg-black/10 disabled:opacity-30";
   return (
     <span className="flex items-center gap-1.5 text-[11.5px] font-semibold tabular-nums">
       <button
@@ -84,6 +85,7 @@ export function HouseView({
   /** "a" on the result page: on to the neighbour who games on the rack. */
   onNext: () => void;
 }) {
+  const compact = useCompact();
   const [open, setOpen] = useState<FloorId | null>(null);
   const [hover, setHover] = useState<FloorId | null>(null);
   // The step-by-step questions, kept here so the house can show the answers
@@ -142,11 +144,9 @@ export function HouseView({
         onStep={setStep}
         answers={answers}
         onAnswers={setAnswers}
+        onNext={onNext}
         floors={
-          <article
-            className={`${card} absolute top-6 right-6 w-[280px]`}
-            style={{ animationDelay: "200ms" }}
-          >
+          <>
             <div className="px-2 pt-2 pb-1">
               {floor ? (
                 <>
@@ -167,7 +167,9 @@ export function HouseView({
                     <Layers size={12} /> Floors
                   </p>
                   <p className="mt-1 text-[11px] text-muted">
-                    Hover a floor to look inside, click to zoom in, Esc to go back.
+                    {compact
+                      ? "Tap a floor to look inside."
+                      : "Hover a floor to look inside, click to zoom in, Esc to go back."}
                   </p>
                 </>
               )}
@@ -227,25 +229,30 @@ export function HouseView({
                 </ul>
               )}
             </div>
-          </article>
+          </>
         }
       />
 
       {/* On the result page the floors card is gone: a pill under the steps leads back out */}
       {floor && STEPS[step] === "Result" && (
-        <div className="pointer-events-none absolute inset-x-0 top-[76px] flex justify-center">
+        <div
+          className={`pointer-events-none absolute inset-x-0 flex justify-center ${compact ? "" : "top-[76px]"}`}
+          style={compact ? { top: "calc(var(--compact-top) + 60px)" } : undefined}
+        >
           <button
             key={floor.id}
             onClick={() => openFloor(null)}
-            className={`${card} flex items-center gap-2 !rounded-full !py-1.5 !pr-2 !pl-3 text-[12px] font-medium hover:bg-white`}
+            className={`${card} flex items-center gap-2 !rounded-full !py-1.5 !pr-2 !pl-3 text-[12px] font-medium hover:bg-white ${compact ? "min-h-11" : ""}`}
           >
             <ChevronLeft size={14} className="text-clay" />
             Whole house
             <span className="text-ink/30">·</span>
             <span className="text-muted">{floor.name}</span>
-            <kbd className="rounded-md bg-black/[0.06] px-1.5 py-0.5 font-sans text-[10px] text-muted">
-              Esc
-            </kbd>
+            {!compact && (
+              <kbd className="rounded-md bg-black/[0.06] px-1.5 py-0.5 font-sans text-[10px] text-muted">
+                Esc
+              </kbd>
+            )}
           </button>
         </div>
       )}

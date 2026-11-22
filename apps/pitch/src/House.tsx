@@ -16,6 +16,7 @@ import {
   type MeshStandardMaterial,
   RepeatWrapping,
   Shape,
+  PerspectiveCamera,
   Spherical,
   SRGBColorSpace,
   type Texture,
@@ -25,6 +26,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Figure, type Rig, seeded, stride } from "./Figure";
 import type { Answers, Emitters, Fuel, Windows } from "./sizing";
 import { Surroundings } from "./Surroundings";
+import { useCompact } from "./compact";
 
 /** Floor-to-floor height, and the clear height of a room below the next slab. */
 const H = 2.8;
@@ -149,9 +151,35 @@ const FOCUS_FRAMING: Record<Focus, Framing> = {
 
 // ─── Camera ──────────────────────────────────────────────────────────────────
 
+/**
+ * Phones and tablets in portrait: how much further back the camera stands so the house fits the
+ * narrow screen, and how far up (as a share of the height) the picture moves so the house sits
+ * above the bottom sheet. 1 and 0 on a laptop.
+ */
+function portraitFit(width: number, height: number, compact: boolean) {
+  if (!compact) return { pull: 1, lift: 0 };
+  const aspect = width / height;
+  return { pull: Math.min(2.6, Math.max(1, 0.95 / aspect)), lift: 0.24 };
+}
+
 /** Orbit by drag, and glide to a new framing when it changes (as in baselhack_2026_adobe's Venue). */
-function Camera({ target, distance, polar, azimuth }: Framing) {
-  const { camera, gl } = useThree();
+function Camera({
+  target,
+  distance: near,
+  polar,
+  azimuth,
+  compact,
+}: Framing & { compact: boolean }) {
+  const { camera, gl, size } = useThree();
+  const { pull, lift } = portraitFit(size.width, size.height, compact);
+  const distance = near * pull;
+  // Moves the picture up without turning the camera: the house centres in the space above the sheet
+  useEffect(() => {
+    if (!(camera instanceof PerspectiveCamera)) return;
+    if (lift)
+      camera.setViewOffset(size.width, size.height, 0, size.height * lift, size.width, size.height);
+    else camera.clearViewOffset();
+  }, [camera, size.width, size.height, lift]);
   const controls = useRef<OrbitControls>(null);
   const goal = useRef<{ target: Vector3; position: Vector3 } | null>(null);
   useEffect(() => {
@@ -160,13 +188,13 @@ function Camera({ target, distance, polar, azimuth }: Framing) {
       enableDamping: true,
       enablePan: false,
       minDistance: 6,
-      maxDistance: 50,
+      maxDistance: 50 * pull,
       maxPolarAngle: 1.45,
     });
     c.target.set(0, 4.4, 0);
     controls.current = c;
     return () => c.dispose();
-  }, [camera, gl]);
+  }, [camera, gl, pull]);
   const [x, y, z] = target;
   useEffect(() => {
     const c = controls.current;
@@ -1239,6 +1267,7 @@ function House({ open, hover, onHover, onOpen, answers, focus }: HouseProps) {
 
 /** The demo house in 3D on a transparent canvas: orbit by drag, click a floor to zoom in. */
 export function HouseScene(props: HouseProps) {
+  const compact = useCompact();
   const level = FLOORS.find((f) => f.id === props.open)?.level;
   return (
     <Canvas
@@ -1252,6 +1281,7 @@ export function HouseScene(props: HouseProps) {
       <hemisphereLight args={["#ffffff", "#d8d4cc", 1.6]} />
       <directionalLight position={[8, 14, 10]} intensity={2.2} />
       <Camera
+        compact={compact}
         {...(level !== undefined
           ? floorFraming(level)
           : props.focus
