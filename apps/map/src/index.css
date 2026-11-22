@@ -5,6 +5,12 @@
 .cesium-viewer-bottom {
   bottom: 1.5rem !important;
 }
+/* On a phone the footer wraps onto two lines. */
+@media (width < 48rem) {
+  .cesium-viewer-bottom {
+    bottom: 2.5rem !important;
+  }
+}
 
 /* The map uses no Cesium ion service, so ion's logo would mislead. */
 .cesium-credit-logoContainer {

@@ -42,7 +42,7 @@ export function TourBar({
   return (
     <section
       aria-label="Tour"
-      className="absolute top-4 left-1/2 flex max-w-xl -translate-x-1/2 items-center gap-3 rounded-lg bg-ink/80 px-4 py-2 text-sm backdrop-blur"
+      className="absolute top-4 left-1/2 flex max-w-xl -translate-x-1/2 items-center gap-3 rounded-lg bg-ink/80 px-4 py-2 text-sm backdrop-blur max-md:top-14 max-md:left-2 max-md:max-w-[calc(100%-1rem)] max-md:translate-x-0 max-md:px-2 max-md:py-1"
     >
       {active ? (
         <>

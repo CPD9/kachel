@@ -77,13 +77,13 @@ export function BuildingCard({
   return (
     <aside
       aria-label="Building"
-      className="absolute top-24 left-4 max-h-[calc(100vh-8rem)] w-96 overflow-y-auto rounded-lg bg-ink/85 p-4 text-sm backdrop-blur"
+      className="absolute top-24 left-4 max-h-[calc(100vh-8rem)] w-96 overflow-y-auto rounded-lg bg-ink/85 p-4 text-sm backdrop-blur max-md:top-auto max-md:right-0 max-md:bottom-[3.75rem] max-md:left-0 max-md:w-auto max-md:max-h-[55dvh] max-md:overflow-y-auto max-md:rounded-b-none"
     >
       <button
         type="button"
         onClick={onClose}
         aria-label="Close"
-        className="float-right rounded px-2 text-paper/70 hover:text-paper"
+        className="float-right rounded px-2 text-paper/70 hover:text-paper max-md:min-h-11 max-md:min-w-11 max-md:text-xl"
       >
         ×
       </button>
