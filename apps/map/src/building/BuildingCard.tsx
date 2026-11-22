@@ -20,11 +20,15 @@ import { describeSolar, SOLAR_RADIUS_M } from "./solar";
 
 const NETWORK_THRESHOLD_MWH = 700;
 /**
- * ElCom's API does not allow calls from other sites, so the map asks it through its own server
- * (vite.config.ts: /elcom). Without that server the card keeps the saved tariff or the median.
+ * ElCom's API does not allow calls from other sites, so the map asks it through its own server:
+ * in dev the Vite proxy (vite.config.ts: /elcom), deployed the Vercel function (api/elcom.ts).
+ * Without either the card keeps the saved tariff or the median.
  */
 export const ELCOM_PROXY = "/elcom/api/graphql";
+export const ELCOM_API = "/api/elcom";
 const post: Post = (url, init) => fetch(url, init);
+/** The function takes the municipality only and builds ElCom's query itself. */
+const askFunction: Post = (url) => fetch(url);
 /**
  * Above this, heat per m² of heated floor is unusual even for an old, unrenovated building
  * (our rule of thumb), so the card flags the SFOE estimate for a second look.
@@ -341,7 +345,10 @@ function WithKachel({
   const [price, setPrice] = useState<Price>(() => savedPrice(bfs));
   useEffect(() => {
     let current = true;
-    void electricityPrice(bfs, post, ELCOM_PROXY).then((p) => {
+    const ask = import.meta.env.DEV
+      ? electricityPrice(bfs, post, ELCOM_PROXY)
+      : electricityPrice(bfs, askFunction, `${ELCOM_API}?bfs=${bfs ?? ""}`);
+    void ask.then((p) => {
       if (current) setPrice(p);
     });
     return () => {

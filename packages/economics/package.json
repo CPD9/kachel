@@ -7,6 +7,7 @@
     "./house": "./src/house.ts",
     "./model": "./src/model.ts",
     "./prices": "./src/prices.ts",
+    "./elcom": "./src/elcom.ts",
     "./buildings.json": "./src/buildings.json"
   },
   "scripts": {

@@ -278,7 +278,7 @@ export function Dashboard({
               buyer&apos;s job now, live
             </li>
           </ul>
-          {rows.length === 0 && (
+          {rows.length === 0 && source && (
             <p className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto w-[200px] -translate-y-1/2 text-center text-[14px] text-white/55">
               Sign in as the operator to see the buyers and their jobs.
             </p>
