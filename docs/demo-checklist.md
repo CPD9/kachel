@@ -63,12 +63,18 @@ clone 3 s, `make bootstrap` 3 s, the apps up in under a second.
    expected. With one, the globe lands on the building: `a` for the house and its questions,
    Esc to come back, `m` for the map. The map alone:
    http://localhost:5175/?egid=442141&card=1 (FHNW: `?egid=243058419&card=1`).
+   The last step: in the market, with a house picked and "Run it here" showing, `a` (on a phone
+   or tablet, "See DigitalHeat's side") opens the operator console in the same tab at Today with
+   its tour, `?tour=1`. That is http://localhost:5177 under `make dev`, otherwise
+   `VITE_OPERATOR_URL` or https://operator-omega-jade.vercel.app.
 5. Map, http://localhost:5175. Click Basel, then a building, for its energy card. **Tour** (top
    centre) stops at FHNW Campus Dreispitz, where we are: newer than swisstopo's 3D data, so an
    orange pin stands on its site.
 6. Operator console, http://localhost:5177: Today names the homes that need you. Under Jobs,
    sign in as `operator@kachel.test` / `kachel-demo` for the buyers, live. Under Billing, click
    July, then slide the temperature up: the settlement and the year's revenue fall.
+   With `?tour=1` (the pitch's last A opens it so), A walks Today → Buildings → Quotes →
+   Settlement → The year → July → January; Shift+A or Backspace back, Esc ends.
 7. The two films, open in the video player.
 
 If a tab is blank, reload it once.

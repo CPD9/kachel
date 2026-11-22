@@ -12,7 +12,14 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { BuildingDetails } from "./BuildingDetails";
 import { COMPACT_BAR, COMPACT_TOP, useCompact } from "./compact";
 import { Globe, INSIDE_DIVE_MS, type Stage } from "./Globe";
-import { FADE_MS, mapBaseFor, mapUrl, NO_GLOBE_HOLD_MS } from "./handoff";
+import {
+  FADE_MS,
+  mapBaseFor,
+  mapUrl,
+  NO_GLOBE_HOLD_MS,
+  operatorBaseFor,
+  operatorUrl,
+} from "./handoff";
 import { HouseView } from "./HouseView";
 import { MarketHouses, MarketSetup, useMarket } from "./MarketView";
 import { NeighbourDetails, NeighbourSwitch } from "./NeighbourDetails";
@@ -94,6 +101,7 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
   // Phones and tablets: one bottom sheet, buttons instead of the presenter's keys
   const compact = useCompact();
   const mapBase = mapBaseFor(import.meta.env.VITE_MAP_URL, import.meta.env.DEV);
+  const operatorBase = operatorBaseFor(import.meta.env.VITE_OPERATOR_URL, import.meta.env.DEV);
   // What the presenter said; null while the landing page is still showing
   const [said, setSaid] = useState<string | null>(null);
   const send = useCallback((text: string) => setSaid(text), []);
@@ -186,6 +194,19 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [stage, inside, gamer]);
 
+  // The last step: with a house picked, "a" opens the operator console at Today, tour on
+  const toOperator = useCallback(() => go(operatorUrl(operatorBase)), [go, operatorBase]);
+  const picked = market.page === "houses" && market.current !== null && !market.current.miss;
+  useEffect(() => {
+    if (!picked) return;
+    const onKey = (e: KeyboardEvent) => {
+      // Not on key repeat: a held "a" from the step before must not skip the houses
+      if (!typing(e) && !e.repeat && e.key.toLowerCase() === "a") toOperator();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [picked, toOperator]);
+
   // The hand-over: fade to the map's background, then load the map at the building
   useEffect(() => {
     if (!leaving || !mapBase) return;
@@ -262,7 +283,9 @@ export function App({ go = navigate }: { go?: (url: string) => void }) {
         {atGamer && sim && market.page === "setup" && (
           <MarketSetup m={market} onBack={market.close} />
         )}
-        {atGamer && sim && market.page === "houses" && <MarketHouses m={market} />}
+        {atGamer && sim && market.page === "houses" && (
+          <MarketHouses m={market} onNext={toOperator} />
+        )}
         {atGamer && !sim && NEIGHBOURS[who] && (
           <NeighbourDetails
             key={who}

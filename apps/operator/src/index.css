@@ -2,13 +2,15 @@
 @import "@kachel/ui/tokens.css";
 @source "../../../packages/ui/src";
 
-/* Apple system colours: blue for actions, green, orange and red only for state. Ember for heat. */
+/* Apple system colours: blue for actions, green, orange and red only for state. Ember for heat.
+   Teal and grey only as calm tints in the dashboard bars. */
 @theme {
   --color-blue: #007aff;
   --color-green: #34c759;
   --color-orange: #ff9500;
   --color-red: #ff3b30;
   --color-grey: #8e8e93;
+  --color-teal: #30b0c7;
   --color-label: #1d1d1f;
   --color-label-2: #6e6e73;
   --color-surface: #f5f5f7;

@@ -115,10 +115,17 @@ writes a signal file: the scheduler does.
   with its hash, chained to the one before. `make verify-live` replays every one through the
   same code as our yearly figures."
 - 3:20 The host app stays up; see the next block. The loop ends by itself after July.
+- After the pitch's last A, the operator console opens with `?tour=1`: Peter keeps pressing A
+  (Today, Buildings, the rail quote, November's settlement, the year, July, January), no mouse.
 
 If the stack is not up, Duc plays
 [live-demo.mp4](https://github.com/CPD9/kachel/releases/download/media-v1/live-demo.mp4)
 (30 s) and Peter says the same lines over it.
+
+From the pitch app instead (Q&A, or a stand-in for the host app): in its market, with a house
+picked and "Run it here" showing, Duc presses `a` (on a phone or tablet, "See DigitalHeat's
+side"). The operator console opens in the same tab at Today with its tour (`?tour=1`): localhost
+under `make dev`, otherwise the public console. No timings change.
 
 ### 3:20–3:42, the AI runs in the house (22 s)
 
