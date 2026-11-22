@@ -3,15 +3,15 @@ import { SEED_BUYERS, SEED_SITES, seedJobs } from "../jobs/seed";
 import { JobsTable, type JobTableData } from "../jobs/JobsTable";
 import { Buyers } from "../live/Buyers";
 import type { BuyerRow, Live, OperatorSource } from "../live/live";
-import { STEP_MS } from "../replay/replay";
 
-const STEP_S = STEP_MS / 1000;
 import { WhyDecision } from "@kachel/ui";
 import { ReplayHouse } from "../replay/House";
-import type { Agent } from "../replay/replay";
+import { STEP_MS, useAgent } from "../replay/replay";
 import { href } from "../shell/route";
 import { PageHead, Sources } from "../shell/Shell";
 import { primary } from "../ui";
+
+const STEP_S = STEP_MS / 1000;
 
 /**
  * Every job, and the buyers and why the scheduler decided as it did. Signed in on the local stack
@@ -21,13 +21,13 @@ export function Jobs({
   live,
   rows,
   source,
-  agent,
 }: {
   live: Live;
   rows: BuyerRow[];
   source: OperatorSource | undefined;
-  agent: Agent;
 }) {
+  // Here, not in App: only the pages that show the agent re-render on its ticks.
+  const agent = useAgent(source, Boolean(live.email));
   const [now] = useState(() => Date.now());
   // Signed in and live means live, even before the loop has placed a job.
   const isLive = Boolean(live.email) && live.status === "live";

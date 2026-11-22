@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { BuyerRow, Live, OperatorSource } from "../live/live";
 import { FleetMap } from "../map/FleetMap";
 import { AgentStrip } from "../replay/AgentStrip";
-import type { Agent } from "../replay/replay";
+import { useAgent } from "../replay/replay";
 import type { FleetMonth } from "../fleet/months";
 import { houseName, needsAttention, ATTENTION_BELOW } from "../fleet/state";
 import { href } from "../shell/route";
@@ -27,7 +27,6 @@ export function Today({
   live,
   rows,
   source,
-  agent,
 }: {
   month: FleetMonth;
   /** The month before, in the same model, for the deltas. */
@@ -40,8 +39,9 @@ export function Today({
   live: Live;
   rows: BuyerRow[];
   source: OperatorSource | undefined;
-  agent: Agent;
 }) {
+  // Here, not in App: only the pages that show the agent re-render on its ticks.
+  const agent = useAgent(source, Boolean(live.email));
   const attention = useMemo(() => needsAttention(month, monthName), [month, monthName]);
   const total = month.houses.length;
   const fine = total - attention.length;
