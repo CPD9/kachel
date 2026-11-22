@@ -3,7 +3,7 @@
 
 # Heat-led scheduling of AI compute in home basements: the Kachel model, its results and its economics
 
-<p class="authors">Peter Dike, Duc, Loyola, Nikolas</p>
+<p class="authors">Peter Dike, Duc, Loyola, Nicolas</p>
 <p class="affil">Kachel team, Basel</p>
 
 </header>

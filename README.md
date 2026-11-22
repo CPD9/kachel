@@ -75,7 +75,7 @@ To pause and resume a real job from the heat signal, as on stage, follow [the de
 - Peter Dike ([@CPD9](https://github.com/CPD9))
 - Duc ([@bila9630](https://github.com/bila9630))
 - Loyola ([@Loyola-sk](https://github.com/Loyola-sk))
-- Nikolas ([@Ni93c42l](https://github.com/Ni93c42l))
+- Nicolas ([@Ni93c42l](https://github.com/Ni93c42l))
 
 ## Licence
 

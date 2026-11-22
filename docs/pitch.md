@@ -28,7 +28,7 @@ water", never a single room or appliance.
 - **Duc** sits at the demo laptop: plays the film, runs the live flip, switches the projector
   between the film and the host app.
 - **Loyola** keeps the clock and holds up a card at 2:30 and 4:40.
-- **Nikolas** takes questions on the numbers.
+- **Nicolas** takes questions on the numbers.
 
 ## Running order
 
@@ -156,4 +156,4 @@ leaves it up for these lines.
 
 "For homeowners and building operators who want cheaper heat, and buyers who want compute
 that does double duty. Your AI heats your home. Thank you." Then the team: Peter, Duc,
-Loyola, Nikolas.
+Loyola, Nicolas.
