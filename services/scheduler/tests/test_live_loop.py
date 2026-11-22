@@ -173,6 +173,11 @@ def test_the_loop_carries_on_when_the_mirror_is_down(setup):
     loop.tick(heat(8, 9.7, 0.0))
     assert len(read(log)) == 1 and store.decisions == []
     assert any("could not mirror" in s for s in said)
+    # back up: the missed decision goes first, so the table's chain has no gap
+    store.down = False
+    loop.tick(heat(9, 9.7, 0.0))
+    assert [d["hash"] for d in store.decisions] == [e["hash"] for e in read(log)]
+    assert loop.unsent == []
 
 
 def test_write_signal_replaces_the_file_in_one_step(tmp_path):

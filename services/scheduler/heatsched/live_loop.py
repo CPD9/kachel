@@ -100,6 +100,7 @@ class Loop:
     agents: dict = field(default_factory=dict)      # job id -> signal file
     hours_per_tick: float = 1.0                      # the run time a tick gives each running job
     say: object = print
+    unsent: list = field(default_factory=list)       # decision rows the table has not taken yet, oldest first
 
     def inputs(self, heat):
         house = self.store.house(self.site_id)
@@ -134,11 +135,20 @@ class Loop:
         inputs, servers, rows = self.inputs(heat)
         entry = self.ledger.append({"inputs": inputs, **plan(inputs)})
         self.act(entry, servers, rows)
-        try:
-            self.store.add_decision(decision_row(entry))
-        except SupabaseError as err:
-            self.say(f"  could not mirror the decision to Supabase: {err}")
+        self.unsent.append(decision_row(entry))
+        self.mirror()
         return entry
+
+    def mirror(self):
+        """Send the decisions the table has not taken, oldest first, so its chain has no gap. A row
+        that fails stays, with every one after it, for the next tick."""
+        while self.unsent:
+            try:
+                self.store.add_decision(self.unsent[0])
+            except SupabaseError as err:
+                self.say(f"  could not mirror {len(self.unsent)} decision(s) to Supabase, will retry: {err}")
+                return
+            self.unsent.pop(0)
 
     def act(self, entry, servers, rows):
         run, d, note = set(entry["run"]), entry["decision"], decision_note(entry)
