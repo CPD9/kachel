@@ -1,9 +1,15 @@
 import type { JobKind } from "@kachel/db";
 import { useState, type FormEvent } from "react";
 import { KINDS } from "./JobTable";
-import { SignedOut, type NewJob, type SubmitJob } from "./submit";
+import { SignedOut, type NewJob, type Privacy, type SubmitJob } from "./submit";
 
-export type Fields = { label: string; kind: JobKind; size: string; deadline: string };
+export type Fields = {
+  label: string;
+  kind: JobKind;
+  size: string;
+  deadline: string;
+  privacy: Privacy;
+};
 export type Errors = Partial<Record<keyof Fields, string>>;
 
 /** Servers in the reference house (services/scheduler/out/kpis.json: servers_per_house). */
@@ -16,6 +22,16 @@ const HINTS: Record<JobKind, string> = {
   interactive: "Runs at once and cannot be paused; its heat is used or dumped.",
   batch: "Pauses when the house needs no heat and moves if the deadline is at risk.",
   opportunistic: "Runs only when the house needs heat, with no deadline.",
+};
+
+export const PLACES: Record<Privacy, string> = {
+  any: "Anywhere",
+  swiss: "Switzerland only",
+};
+
+const PLACE_HINTS: Record<Privacy, string> = {
+  any: "If no house has room in time, it finishes in a data centre.",
+  swiss: "Never leaves our Swiss houses: if none has room in time, it runs and the heat is dumped.",
 };
 
 /** The job these fields describe, or what is wrong with them. `now` is for the deadline. */
@@ -50,10 +66,10 @@ export function check(fields: Fields, now: Date): { job: NewJob } | { errors: Er
   }
 
   if (Object.keys(errors).length > 0) return { errors };
-  return { job: { label, kind: fields.kind, size, deadline } };
+  return { job: { label, kind: fields.kind, size, deadline, privacy: fields.privacy } };
 }
 
-const EMPTY_FIELDS: Fields = { label: "", kind: "batch", size: "", deadline: "" };
+const EMPTY_FIELDS: Fields = { label: "", kind: "batch", size: "", deadline: "", privacy: "any" };
 
 const input =
   "mt-1.5 block h-11 w-full rounded-lg border border-field bg-white px-3 text-[15px] text-label focus:border-action focus:outline-2 focus:outline-action/30 aria-[invalid=true]:border-[#ff3b30]";
@@ -116,7 +132,7 @@ export function JobForm({
         Submit a job
       </h2>
       <form noValidate onSubmit={onSubmit} className="mt-5">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-start">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-start">
           <div className="text-sm text-secondary">
             <label htmlFor="job-label">Name</label>
             <input
@@ -178,6 +194,21 @@ export function JobForm({
               </>
             )}
           </div>
+          <div className="text-sm text-secondary">
+            <label htmlFor="job-privacy">Where may it run?</label>
+            <select
+              id="job-privacy"
+              className={input}
+              value={fields.privacy}
+              onChange={(e) => set("privacy")(e.target.value)}
+            >
+              {(Object.keys(PLACES) as Privacy[]).map((place) => (
+                <option key={place} value={place}>
+                  {PLACES[place]}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
           <button
@@ -187,7 +218,9 @@ export function JobForm({
           >
             {busy ? "Submitting…" : "Submit job"}
           </button>
-          <p className="min-w-0 flex-1 basis-60 text-sm text-secondary">{HINTS[fields.kind]}</p>
+          <p className="min-w-0 flex-1 basis-60 text-sm text-secondary">
+            {HINTS[fields.kind]} {PLACE_HINTS[fields.privacy]}
+          </p>
         </div>
       </form>
       {status && (

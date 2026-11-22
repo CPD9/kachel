@@ -7,7 +7,15 @@ export type NewJob = {
   size: number;
   /** When a batch job must be done, as an ISO time; other kinds have none. */
   deadline: string | null;
+  /** Where it may run: anywhere, or only in Kachel's Swiss houses (fleet.py, rule 6). */
+  privacy: Privacy;
 };
+
+/**
+ * "site" (only in its own building) is not offered here: it names a house, and a buyer cannot
+ * name one (row level security, #73). The operator sets it.
+ */
+export type Privacy = "any" | "swiss";
 
 const JOB_COLUMNS =
   "id, label, kind, state, site_id, server_id, server_hours, deadline_at, active_cpu_s, moved_offsite, created_at, updated_at";
@@ -36,6 +44,7 @@ export function supabaseSubmit(db: KachelClient): SubmitJob {
       interruptible: job.kind !== "interactive",
       server_hours: job.size,
       deadline_at: job.deadline,
+      privacy: job.privacy,
       state: "QUEUED",
     };
     const { data, error } = await db.from("jobs").insert(row).select(JOB_COLUMNS).single();

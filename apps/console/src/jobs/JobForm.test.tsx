@@ -7,7 +7,13 @@ import { SignedOut, type NewJob } from "./submit";
 import { fakeAuth } from "../testing";
 
 const NOW = new Date("2026-11-21T12:00:00Z");
-const batch: Fields = { label: "Transcribe talks", kind: "batch", size: "8", deadline: "" };
+const batch: Fields = {
+  label: "Transcribe talks",
+  kind: "batch",
+  size: "8",
+  deadline: "",
+  privacy: "any",
+};
 const tomorrow = "2026-11-22T12:00";
 
 afterEach(cleanup);
@@ -21,12 +27,13 @@ describe("check", () => {
         kind: "batch",
         size: 8,
         deadline: new Date(tomorrow).toISOString(),
+        privacy: "any",
       },
     });
   });
 
   it("asks for a name, a positive size and a deadline", () => {
-    const result = check({ label: "  ", kind: "batch", size: "0", deadline: "" }, NOW);
+    const result = check({ ...batch, label: "  ", size: "0" }, NOW);
     expect(result).toEqual({
       errors: {
         label: "Give the job a name.",
@@ -57,6 +64,11 @@ describe("check", () => {
   it("gives backlog and interactive jobs no deadline", () => {
     const result = check({ ...batch, kind: "opportunistic", deadline: "garbage" }, NOW);
     expect(result).toHaveProperty("job.deadline", null);
+  });
+
+  it("keeps the buyer's choice of where the job may run", () => {
+    const result = check({ ...batch, privacy: "swiss", deadline: tomorrow }, NOW);
+    expect(result).toHaveProperty("job.privacy", "swiss");
   });
 });
 
@@ -123,6 +135,7 @@ describe("console", () => {
     fill("What is it?", "opportunistic");
     fill("Name", "Embed the archive");
     fill("Size, server-hours", "12");
+    fill("Where may it run?", "swiss");
     fireEvent.click(screen.getByRole("button", { name: "Submit job" }));
     expect(await screen.findByText("Queued: Embed the archive.")).toBeTruthy();
     expect(submit).toHaveBeenCalledWith({
@@ -130,6 +143,7 @@ describe("console", () => {
       kind: "opportunistic",
       size: 12,
       deadline: null,
+      privacy: "swiss",
     });
     const row = within(screen.getByRole("table")).getByText("Embed the archive").closest("tr");
     expect(row?.textContent).toMatch(/Queued/);

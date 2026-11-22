@@ -3,7 +3,7 @@
 -- Database CI job runs it on every push. Everything is rolled back at the end.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(69);
+select plan(70);
 
 -- Seed: host 01 owns site 100 with servers 201-206; buyer 02 owns jobs 301-305
 -- (301-304 on servers 201-204, 305 still queued). Here: host 03 with site 101 and server 211,
@@ -139,6 +139,11 @@ select lives_ok(
     values ('00000000-0000-4000-8000-000000000002', 'batch', 'Submitted in a test', true, 2,
             now() + interval '1 day')$$,
   'buyer submits a queued job of their own');
+select lives_ok(
+  $$insert into public.jobs (buyer_id, kind, label, interruptible, privacy)
+    values ('00000000-0000-4000-8000-000000000002', 'opportunistic', 'Swiss in a test', true,
+            'swiss')$$,
+  'buyer submits a job that must stay in Switzerland');
 select is((select count(*) from public.jobs where label = 'Submitted in a test'), 1::bigint,
   'buyer reads the job they submitted');
 select throws_ok(
@@ -199,8 +204,8 @@ set local role authenticated;
 select is((select count(*) from public.sites), 14::bigint, 'operator reads every site');
 -- 6 in the reference house, 60 in the twelve fleet houses, and server 211.
 select is((select count(*) from public.servers), 67::bigint, 'operator reads every server');
--- 28 from the seed, job 311 and the one the buyer submitted above.
-select is((select count(*) from public.jobs), 30::bigint, 'operator reads every buyer''s jobs');
+-- 28 from the seed, job 311 and the two the buyer submitted above.
+select is((select count(*) from public.jobs), 31::bigint, 'operator reads every buyer''s jobs');
 select is((select count(distinct buyer_id) from public.jobs), 9::bigint,
   'operator sees the jobs of all nine buyers');
 select is((select count(*) from public.buyers), 8::bigint, 'operator reads every buyer');
