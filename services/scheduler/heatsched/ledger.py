@@ -2,8 +2,8 @@
 
 An entry is one tick of the live loop (live.py): what the loop read (`inputs`: the clock time, the
 outdoor temperature, heat demand, the tank, the servers and the jobs), what it derived from them
-(`signal`, `decision`, `placed`, `run`), its place in the log (`seq`) and the previous entry's
-hash (`prev`). Its `hash` is SHA-256 of the entry's canonical JSON (sorted keys, no spaces) with
+(`signal`, `decision`, `placed`, `run`), when it decided by the wall clock (`at`), its place in the
+log (`seq`) and the previous entry's hash (`prev`). Its `hash` is SHA-256 of the entry's canonical JSON (sorted keys, no spaces) with
 `prev` inside, so changing any past entry breaks its own hash and every link after it.
 
 `verify` checks the links and the hashes, then hands each entry's inputs to `plan` (the same

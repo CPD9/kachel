@@ -82,4 +82,6 @@ class Supabase:
         self._call("PATCH", "servers", {"id": f"eq.{server_id}"}, fields)
 
     def add_decision(self, row):
-        self._call("POST", "decisions", body=row)
+        """Insert once: a row already in the table (a retry after a lost reply) is left as it is."""
+        self._call("POST", "decisions", {"on_conflict": "hash"}, row,
+                   prefer="resolution=ignore-duplicates,return=minimal")

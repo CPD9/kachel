@@ -101,6 +101,7 @@ class Loop:
     hours_per_tick: float = 1.0                      # the run time a tick gives each running job
     say: object = print
     unsent: list = field(default_factory=list)       # decision rows the table has not taken yet, oldest first
+    now: object = field(default=lambda: datetime.now().astimezone())   # the wall clock, faked in tests
 
     def inputs(self, heat):
         house = self.store.house(self.site_id)
@@ -133,7 +134,10 @@ class Loop:
     def tick(self, heat):
         """Decide one tick and carry it out. Returns the logged entry."""
         inputs, servers, rows = self.inputs(heat)
-        entry = self.ledger.append({"inputs": inputs, **plan(inputs)})
+        # `at` is when the loop decided, by the wall clock: hashed with the entry, so two runs of the
+        # same replayed day make two chains, but not an input of the decision.
+        entry = self.ledger.append({"at": self.now().isoformat(timespec="milliseconds"), "inputs": inputs,
+                                    **plan(inputs)})
         self.act(entry, servers, rows)
         self.unsent.append(decision_row(entry))
         self.mirror()

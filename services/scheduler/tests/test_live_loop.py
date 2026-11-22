@@ -125,7 +125,9 @@ def setup(tmp_path):
     store = FakeSupabase()
     signal = tmp_path / "heat"
     said = []
-    loop = Loop(store, SITE, Ledger(tmp_path / "decisions.jsonl"), {AGENT_JOB: signal}, say=said.append)
+    ticks = iter(range(1000))
+    clock = lambda: datetime(2026, 11, 22, 9, 0, next(ticks), tzinfo=ZURICH)  # noqa: E731
+    loop = Loop(store, SITE, Ledger(tmp_path / "decisions.jsonl"), {AGENT_JOB: signal}, say=said.append, now=clock)
     return store, loop, signal, tmp_path / "decisions.jsonl", said
 
 
@@ -216,3 +218,25 @@ def test_db_heat_reads_the_clock_s_hour_and_the_tank_before_it():
     assert got["soc_kwh"] == 7.0 and got["temp_c"] == 5.0 and got["demand_kwh"] == 8.2
     assert got["forecast_demand"] == [8.1, 8.0, 7.9]
     assert source.at(now + timedelta(hours=6)) is None
+
+
+def test_the_same_replay_twice_makes_two_chains_that_both_verify(tmp_path):
+    hashes = []
+    for run in range(2):
+        store = FakeSupabase()
+        stamps = iter([datetime(2026, 11, 22, 9 + run, 0, s, tzinfo=ZURICH) for s in range(3)])
+        log = tmp_path / f"run{run}.jsonl"
+        loop = Loop(
+            store,
+            SITE,
+            Ledger(log),
+            {AGENT_JOB: tmp_path / "heat"},
+            say=lambda _: None,
+            now=lambda stamps=stamps: next(stamps),
+        )
+        for hour in range(3):
+            loop.tick(heat(hour, 9.7, 0.0))
+        entries = read(log)
+        assert verify(entries, plan) == [] and entries[0]["at"].startswith(f"2026-11-22T{9 + run:02d}:00:00")
+        hashes.append({e["hash"] for e in entries})
+    assert not hashes[0] & hashes[1]
